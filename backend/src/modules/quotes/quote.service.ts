@@ -1,0 +1,267 @@
+import { prisma } from '../../config/database';
+import { CreateQuoteDTO, PaginatedResponse, QuoteStatus } from '../../types';
+import { createError } from '../../utils/error-handler';
+import { logger } from '../../utils/logger';
+import { dispatchQuoteJob } from '../../jobs/dispatch-quote.job';
+
+export class QuoteService {
+  /**
+   * Lista cotações com paginação e filtros
+   */
+  static async list(
+    page = 1,
+    limit = 10,
+    filters?: {
+      status?: QuoteStatus;
+      producerId?: string;
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<PaginatedResponse<any>> {
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.producerId) {
+      where.producerId = filters.producerId;
+    }
+
+    if (filters?.startDate || filters?.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) {
+        where.createdAt.gte = filters.startDate;
+      }
+      if (filters.endDate) {
+        where.createdAt.lte = filters.endDate;
+      }
+    }
+
+    const [quotes, total] = await Promise.all([
+      prisma.quote.findMany({
+        skip,
+        take: limit,
+        where,
+        include: {
+          producer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              region: true,
+            },
+          },
+          _count: {
+            select: {
+              proposals: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.quote.count({ where }),
+    ]);
+
+    return {
+      data: quotes,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Busca cotação por ID com propostas
+   */
+  static async getById(id: string) {
+    const quote = await prisma.quote.findUnique({
+      where: { id },
+      include: {
+        producer: true,
+        proposals: {
+          include: {
+            supplier: true,
+          },
+          orderBy: [{ price: 'asc' }, { deliveryDays: 'asc' }],
+        },
+      },
+    });
+
+    if (!quote) {
+      throw createError.notFound('Cotação não encontrada');
+    }
+
+    return quote;
+  }
+
+  /**
+   * Cria nova cotação (usado pela API, não pela FSM)
+   */
+  static async create(data: CreateQuoteDTO) {
+    // Verificar se produtor existe
+    const producer = await prisma.producer.findUnique({
+      where: { id: data.producerId },
+      include: { subscription: true },
+    });
+
+    if (!producer) {
+      throw createError.notFound('Produtor não encontrado');
+    }
+
+    // Verificar limite de cotações
+    if (producer.subscription) {
+      if (producer.subscription.quotesUsed >= producer.subscription.quotesLimit) {
+        throw createError.quotaExceeded(
+          `Limite de ${producer.subscription.quotesLimit} cotações atingido`
+        );
+      }
+    }
+
+    // Calcular expiresAt (2 horas a partir de agora)
+    const expiresAt = new Date(Date.now() + 120 * 60 * 1000);
+
+    const quote = await prisma.quote.create({
+      data: {
+        producerId: data.producerId,
+        product: data.product,
+        quantity: data.quantity,
+        unit: data.unit,
+        region: data.region,
+        deadline: data.deadline,
+        observations: data.observations,
+        supplierScope: data.supplierScope,
+        status: 'PENDING',
+        expiresAt,
+      },
+      include: {
+        producer: true,
+      },
+    });
+
+    // Incrementar contador de cotações usadas
+    if (producer.subscription) {
+      await prisma.subscription.update({
+        where: { id: producer.subscription.id },
+        data: { quotesUsed: { increment: 1 } },
+      });
+    }
+
+    logger.info('Quote created', { quoteId: quote.id, producerId: data.producerId });
+
+    return quote;
+  }
+
+  /**
+   * Dispara cotação para fornecedores
+   */
+  static async dispatch(id: string) {
+    const quote = await this.getById(id);
+
+    if (quote.status !== 'PENDING') {
+      throw createError.badRequest('Cotação já foi disparada');
+    }
+
+    const suppliersCount = await dispatchQuoteJob(id);
+
+    logger.info('Quote dispatch initiated', { quoteId: id, suppliersCount });
+
+    return { suppliersCount };
+  }
+
+  /**
+   * Fecha cotação com fornecedor escolhido
+   */
+  static async close(id: string, supplierId: string) {
+    const quote = await this.getById(id);
+
+    if (quote.status === 'CLOSED') {
+      throw createError.badRequest('Cotação já está fechada');
+    }
+
+    if (quote.status !== 'SUMMARIZED') {
+      throw createError.badRequest('Cotação precisa estar consolidada para ser fechada');
+    }
+
+    // Verificar se fornecedor tem proposta nesta cotação
+    const proposal = await prisma.proposal.findFirst({
+      where: {
+        quoteId: id,
+        supplierId,
+      },
+      include: {
+        supplier: true,
+      },
+    });
+
+    if (!proposal) {
+      throw createError.notFound('Fornecedor não tem proposta nesta cotação');
+    }
+
+    const updatedQuote = await prisma.quote.update({
+      where: { id },
+      data: {
+        status: 'CLOSED',
+        closedSupplierId: supplierId,
+      },
+      include: {
+        producer: true,
+        proposals: {
+          include: {
+            supplier: true,
+          },
+        },
+      },
+    });
+
+    logger.info('Quote closed', {
+      quoteId: id,
+      supplierId,
+      supplierName: proposal.supplier.name,
+    });
+
+    return updatedQuote;
+  }
+
+  /**
+   * Estatísticas de cotações
+   */
+  static async getStats() {
+    const [
+      totalQuotes,
+      pendingQuotes,
+      collectingQuotes,
+      closedQuotes,
+      expiredQuotes,
+      quotesToday,
+    ] = await Promise.all([
+      prisma.quote.count(),
+      prisma.quote.count({ where: { status: 'PENDING' } }),
+      prisma.quote.count({ where: { status: 'COLLECTING' } }),
+      prisma.quote.count({ where: { status: 'CLOSED' } }),
+      prisma.quote.count({ where: { status: 'EXPIRED' } }),
+      prisma.quote.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalQuotes,
+      pendingQuotes,
+      collectingQuotes,
+      closedQuotes,
+      expiredQuotes,
+      quotesToday,
+      closureRate: totalQuotes > 0 ? ((closedQuotes / totalQuotes) * 100).toFixed(2) : '0.00',
+    };
+  }
+}

@@ -1,0 +1,152 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===================================
+// MODELS
+// ===================================
+
+model Producer {
+  id                String             @id @default(uuid())
+  name              String
+  phone             String             @unique // número WhatsApp com DDI, ex: +5564999999999
+  region            String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  subscription      Subscription?
+  suppliers         ProducerSupplier[]
+  quotes            Quote[]
+  conversationState ConversationState?
+
+  @@index([phone])
+  @@map("producers")
+}
+
+model Supplier {
+  id                String             @id @default(uuid())
+  name              String
+  phone             String             @unique
+  regions           String[]           // lista de regiões atendidas
+  categories        String[]           // ex: ["sementes", "fertilizantes", "defensivos"]
+  isNetworkSupplier Boolean            @default(false) // true = rede da plataforma
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  producers         ProducerSupplier[]
+  proposals         Proposal[]
+
+  @@index([phone])
+  @@map("suppliers")
+}
+
+model ProducerSupplier {
+  id         String   @id @default(uuid())
+  producer   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  producerId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId String
+
+  @@unique([producerId, supplierId])
+  @@map("producer_suppliers")
+}
+
+model Quote {
+  id               String         @id @default(uuid())
+  producer         Producer       @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  producerId       String
+  product          String
+  quantity         String
+  unit             String         // ex: sacos, litros, kg
+  region           String
+  deadline         DateTime
+  observations     String?
+  supplierScope    SupplierScope  // MINE | NETWORK | ALL
+  status           QuoteStatus    // PENDING | COLLECTING | SUMMARIZED | CLOSED | EXPIRED
+  expiresAt        DateTime       // quando parar de aceitar propostas
+  closedSupplierId String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  proposals        Proposal[]
+
+  @@index([status])
+  @@index([producerId])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("quotes")
+}
+
+model Proposal {
+  id            String   @id @default(uuid())
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId       String
+  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId    String
+  price         Float
+  totalPrice    Float
+  paymentTerms  String
+  deliveryDays  Int
+  observations  String?
+  isOwnSupplier Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([quoteId])
+  @@map("proposals")
+}
+
+model Subscription {
+  id          String   @id @default(uuid())
+  producer    Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  producerId  String   @unique
+  plan        PlanType // BASIC | PRO | ENTERPRISE
+  quotesLimit Int      // cotações permitidas/mês
+  quotesUsed  Int      @default(0)
+  startDate   DateTime
+  endDate     DateTime
+  active      Boolean  @default(true)
+
+  @@map("subscriptions")
+}
+
+model ConversationState {
+  id         String   @id @default(uuid())
+  producer   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  producerId String   @unique
+  step       String   // ex: AWAITING_PRODUCT, AWAITING_QUANTITY, etc.
+  context    Json     // dados parciais da cotação em andamento
+  updatedAt  DateTime @updatedAt
+
+  @@map("conversation_states")
+}
+
+// ===================================
+// ENUMS
+// ===================================
+
+enum SupplierScope {
+  MINE    // apenas fornecedores do produtor
+  NETWORK // apenas fornecedores da rede
+  ALL     // todos (próprios + rede)
+}
+
+enum QuoteStatus {
+  PENDING    // cotação criada, ainda não disparada
+  COLLECTING // cotação disparada, aguardando propostas
+  SUMMARIZED // propostas consolidadas, aguardando escolha
+  CLOSED     // cotação fechada com fornecedor
+  EXPIRED    // prazo expirado
+}
+
+enum PlanType {
+  BASIC      // plano básico
+  PRO        // plano profissional
+  ENTERPRISE // plano empresarial
+}
