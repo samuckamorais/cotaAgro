@@ -31,6 +31,8 @@ async function main() {
     create: {
       name: 'João Silva',
       phone: '+5564999999999',
+      cpfCnpj: '12345678901',
+      city: 'Goiânia',
       region: 'Goiânia - GO',
       subscription: {
         create: {
@@ -57,6 +59,8 @@ async function main() {
     create: {
       name: 'Maria Santos',
       phone: '+5564988888888',
+      cpfCnpj: '98765432100',
+      city: 'Rio Verde',
       region: 'Rio Verde - GO',
       subscription: {
         create: {

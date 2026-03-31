@@ -45,7 +45,6 @@ export function createApp(): Application {
   const apiRouter = Router();
 
   // Auth routes (public)
-  apiRouter.post('/auth/otp', AuthController.requestOTP);
   apiRouter.post('/auth/login', AuthController.login);
 
   // WhatsApp webhook routes (public)

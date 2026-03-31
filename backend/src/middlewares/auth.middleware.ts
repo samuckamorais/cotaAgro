@@ -6,7 +6,7 @@ import { createError } from '../utils/error-handler';
  * Middleware de autenticação
  * Verifica se o token JWT é válido
  */
-export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
 
@@ -37,7 +37,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
  * Verifica se o usuário tem permissão para acessar um recurso
  */
 export function authorize(resource: string, action: 'view' | 'create' | 'edit' | 'delete') {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       const userId = (req as any).user?.userId;
 
@@ -61,7 +61,7 @@ export function authorize(resource: string, action: 'view' | 'create' | 'edit' |
 /**
  * Middleware que verifica se o usuário é admin
  */
-export async function adminOnly(req: Request, res: Response, next: NextFunction) {
+export async function adminOnly(req: Request, _res: Response, next: NextFunction) {
   try {
     const user = (req as any).user;
 

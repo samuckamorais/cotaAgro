@@ -180,7 +180,7 @@ export class UserService {
     }
 
     // Atualizar usuário
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { id },
       data: updateData,
       select: {

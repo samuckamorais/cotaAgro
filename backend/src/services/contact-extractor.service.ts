@@ -30,10 +30,10 @@ ${contactText}
 Responda apenas com o JSON, sem explicações.
 `.trim();
 
-      const response = await openaiService.chat(prompt);
+      const response = await openaiService.interpretMessage(prompt);
 
       // Tentar parsear o JSON da resposta
-      const cleanedResponse = response.trim().replace(/```json\n?|\n?```/g, '');
+      const cleanedResponse = JSON.stringify(response).trim().replace(/```json\n?|\n?```/g, '');
       const extracted = JSON.parse(cleanedResponse) as Partial<ContactData>;
 
       // Validar dados obrigatórios

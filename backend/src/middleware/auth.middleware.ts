@@ -16,7 +16,9 @@ declare global {
 
 interface JwtPayload {
   userId: string;
-  phone: string;
+  phone?: string;
+  email?: string;
+  role?: string;
 }
 
 /**
@@ -48,13 +50,17 @@ export const authenticate = async (
       throw createError.unauthorized('Token inválido');
     }
 
-    // Verificar se usuário ainda existe
-    const producer = await prisma.producer.findUnique({
+    // Verificar se usuário ainda existe (tabela User para painel admin)
+    const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
     });
 
-    if (!producer) {
+    if (!user) {
       throw createError.unauthorized('Usuário não encontrado');
+    }
+
+    if (!user.active) {
+      throw createError.unauthorized('Usuário inativo');
     }
 
     // Adicionar informações ao request

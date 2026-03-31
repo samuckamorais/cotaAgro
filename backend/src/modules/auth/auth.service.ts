@@ -56,7 +56,7 @@ export class AuthService {
     };
 
     const token = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
+      expiresIn: JWT_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}` | number,
     });
 
     logger.info('User logged in', { userId: user.id, email: user.email });

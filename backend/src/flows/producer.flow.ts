@@ -851,7 +851,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     producerId: string,
     phone: string,
     message: string,
-    context: ConversationContext
+    _context: ConversationContext
   ): Promise<void> {
     // Verificar se é um vCard
     if (contactExtractorService.isVCard(message)) {
