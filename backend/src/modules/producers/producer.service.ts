@@ -76,17 +76,30 @@ export class ProducerService {
    */
   static async create(data: CreateProducerDTO) {
     // Verificar se telefone já existe
-    const existing = await prisma.producer.findUnique({
+    const existingPhone = await prisma.producer.findUnique({
       where: { phone: data.phone },
     });
 
-    if (existing) {
+    if (existingPhone) {
       throw createError.conflict('Telefone já cadastrado');
+    }
+
+    // Verificar se CPF/CNPJ já existe
+    const existingCpfCnpj = await prisma.producer.findUnique({
+      where: { cpfCnpj: data.cpfCnpj },
+    });
+
+    if (existingCpfCnpj) {
+      throw createError.conflict('CPF/CNPJ já cadastrado');
     }
 
     const producer = await prisma.producer.create({
       data: {
         name: data.name,
+        cpfCnpj: data.cpfCnpj,
+        stateRegistration: data.stateRegistration,
+        farm: data.farm,
+        city: data.city,
         phone: data.phone,
         region: data.region,
         conversationState: {
@@ -124,6 +137,20 @@ export class ProducerService {
 
       if (existing) {
         throw createError.conflict('Telefone já cadastrado por outro produtor');
+      }
+    }
+
+    // Se mudou CPF/CNPJ, verificar se novo CPF/CNPJ está disponível
+    if (data.cpfCnpj) {
+      const existing = await prisma.producer.findFirst({
+        where: {
+          cpfCnpj: data.cpfCnpj,
+          id: { not: id },
+        },
+      });
+
+      if (existing) {
+        throw createError.conflict('CPF/CNPJ já cadastrado por outro produtor');
       }
     }
 
@@ -166,7 +193,7 @@ export class ProducerService {
       },
     });
 
-    return suppliers.map((ps) => ps.supplier);
+    return suppliers.map((ps: any) => ps.supplier);
   }
 
   /**

@@ -1,6 +1,95 @@
 import { z } from 'zod';
 
 // ===================================
+// CPF/CNPJ Validation
+// ===================================
+
+/**
+ * Remove caracteres não numéricos
+ */
+const removeNonDigits = (value: string): string => value.replace(/\D/g, '');
+
+/**
+ * Valida CPF
+ */
+export const isValidCPF = (cpf: string): boolean => {
+  const digits = removeNonDigits(cpf);
+
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false; // rejeita sequências iguais (111.111.111-11)
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(digits[i]) * (10 - i);
+  }
+  let digit = 11 - (sum % 11);
+  if (digit >= 10) digit = 0;
+  if (digit !== parseInt(digits[9])) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(digits[i]) * (11 - i);
+  }
+  digit = 11 - (sum % 11);
+  if (digit >= 10) digit = 0;
+  if (digit !== parseInt(digits[10])) return false;
+
+  return true;
+};
+
+/**
+ * Valida CNPJ
+ */
+export const isValidCNPJ = (cnpj: string): boolean => {
+  const digits = removeNonDigits(cnpj);
+
+  if (digits.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(digits)) return false; // rejeita sequências iguais
+
+  let sum = 0;
+  let pos = 5;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(digits[i]) * pos;
+    pos = pos === 2 ? 9 : pos - 1;
+  }
+  let digit = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (digit !== parseInt(digits[12])) return false;
+
+  sum = 0;
+  pos = 6;
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(digits[i]) * pos;
+    pos = pos === 2 ? 9 : pos - 1;
+  }
+  digit = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (digit !== parseInt(digits[13])) return false;
+
+  return true;
+};
+
+/**
+ * Valida CPF ou CNPJ
+ */
+export const isValidCpfCnpj = (value: string): boolean => {
+  const digits = removeNonDigits(value);
+
+  if (digits.length === 11) return isValidCPF(digits);
+  if (digits.length === 14) return isValidCNPJ(digits);
+
+  return false;
+};
+
+/**
+ * Schema Zod para CPF/CNPJ
+ */
+export const cpfCnpjSchema = z
+  .string()
+  .min(11, 'CPF/CNPJ inválido')
+  .max(18, 'CPF/CNPJ inválido')
+  .transform((value: string) => removeNonDigits(value))
+  .refine((value: string) => isValidCpfCnpj(value), 'CPF/CNPJ inválido');
+
+// ===================================
 // Phone Validation
 // ===================================
 
@@ -11,7 +100,7 @@ import { z } from 'zod';
 export const phoneSchema = z
   .string()
   .regex(/^\+\d{12,15}$/, 'Telefone deve estar no formato +5564999999999')
-  .transform((phone) => phone.trim());
+  .transform((phone: string) => phone.trim());
 
 /**
  * Valida se o telefone é brasileiro
@@ -29,7 +118,7 @@ export const validateBrazilianPhone = (phone: string): boolean => {
  */
 export const futureDateSchema = z.coerce
   .date()
-  .refine((date) => date > new Date(), 'Data deve ser futura');
+  .refine((date: Date) => date > new Date(), 'Data deve ser futura');
 
 /**
  * Parse de deadline em português
@@ -90,12 +179,20 @@ export const parseDeadline = (input: string): Date | null => {
 
 export const createProducerSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+  cpfCnpj: cpfCnpjSchema,
+  stateRegistration: z.string().optional(),
+  farm: z.string().optional(),
+  city: z.string().min(2, 'Município deve ter no mínimo 2 caracteres'),
   phone: phoneSchema,
   region: z.string().min(2, 'Região deve ter no mínimo 2 caracteres'),
 });
 
 export const updateProducerSchema = z.object({
   name: z.string().min(3).optional(),
+  cpfCnpj: cpfCnpjSchema.optional(),
+  stateRegistration: z.string().optional(),
+  farm: z.string().optional(),
+  city: z.string().min(2).optional(),
   phone: phoneSchema.optional(),
   region: z.string().min(2).optional(),
 });

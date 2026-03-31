@@ -2,10 +2,11 @@ import { FSMEngine } from './fsm';
 import { Messages } from './messages';
 import { whatsappService } from '../modules/whatsapp/whatsapp.service';
 import { prisma } from '../config/database';
-import { ProducerState, NLUResult, ConversationContext } from '../types';
+import { ProducerState, NLUResult, ConversationContext, ContactData } from '../types';
 import { logger, logWithContext } from '../utils/logger';
 import { parseDeadline } from '../utils/validators';
 import { dispatchQuoteJob } from '../jobs/dispatch-quote.job';
+import { contactExtractorService } from '../services/contact-extractor.service';
 
 /**
  * FSM do Produtor - Gerencia fluxo de criação de cotações
@@ -76,12 +77,28 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
           await this.handleAwaitingSupplierScope(producerId, producer.phone, message, context);
           break;
 
+        case 'AWAITING_SUPPLIER_SELECTION':
+          await this.handleAwaitingSupplierSelection(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_SUPPLIER_EXCLUSION':
+          await this.handleAwaitingSupplierExclusion(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_SUPPLIER_CONFIRMATION':
+          await this.handleAwaitingSupplierConfirmation(producerId, producer.phone, message, context);
+          break;
+
         case 'AWAITING_CONFIRMATION':
           await this.handleAwaitingConfirmation(producerId, producer.phone, message, context);
           break;
 
         case 'AWAITING_CHOICE':
           await this.handleAwaitingChoice(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_SUPPLIER_CONTACT':
+          await this.handleAwaitingSupplierContact(producerId, producer.phone, message, context);
           break;
 
         default:
@@ -109,6 +126,22 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     nluResult?: NLUResult
   ): Promise<void> {
     const normalized = message.toLowerCase().trim();
+
+    // Verificar se é um vCard (contato compartilhado)
+    if (contactExtractorService.isVCard(message)) {
+      await this.handleContactShared(producerId, phone, message);
+      return;
+    }
+
+    // Verificar se usuário quer cadastrar fornecedor
+    if (normalized === '2' || normalized.includes('cadastrar') || normalized.includes('fornecedor')) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.ADD_SUPPLIER_INSTRUCTIONS,
+      });
+      await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_CONTACT', {});
+      return;
+    }
 
     // Verificar se usuário quer iniciar cotação
     if (normalized === '1' || normalized.includes('nova') || normalized.includes('cotação') || normalized.includes('cotacao')) {
@@ -329,20 +362,16 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     const choice = message.trim();
 
     let scope: 'MINE' | 'NETWORK' | 'ALL';
-    let scopeLabel: string;
 
     switch (choice) {
       case '1':
         scope = 'MINE';
-        scopeLabel = 'Apenas seus fornecedores';
         break;
       case '2':
         scope = 'NETWORK';
-        scopeLabel = 'Apenas rede CotaAgro';
         break;
       case '3':
         scope = 'ALL';
-        scopeLabel = 'Todos (seus + rede)';
         break;
       default:
         await whatsappService.sendMessage({
@@ -354,7 +383,230 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     context.supplierScope = scope;
 
-    // Enviar resumo para confirmação
+    // Se escolheu "Apenas seus fornecedores" (MINE), mostrar lista para seleção
+    if (scope === 'MINE') {
+      await this.showSupplierListForSelection(producerId, phone, context);
+    } else {
+      // Para NETWORK ou ALL, ir direto para confirmação
+      await this.showQuoteConfirmation(producerId, phone, context);
+    }
+  }
+
+  /**
+   * Mostra lista de fornecedores para seleção
+   */
+  private async showSupplierListForSelection(
+    producerId: string,
+    phone: string,
+    context: ConversationContext
+  ): Promise<void> {
+    // Buscar fornecedores do produtor que atendem a categoria do produto
+    const suppliers = await prisma.supplier.findMany({
+      where: {
+        isNetworkSupplier: false,
+        producers: {
+          some: {
+            producerId: producerId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        categories: true,
+      },
+    });
+
+    if (suppliers.length === 0) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: 'Você ainda não possui fornecedores cadastrados. Vou enviar para a rede CotaAgro.',
+      });
+      context.supplierScope = 'NETWORK';
+      await this.showQuoteConfirmation(producerId, phone, context);
+      return;
+    }
+
+    // Salvar lista de fornecedores disponíveis no contexto
+    context.availableSuppliers = suppliers.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      phone: s.phone,
+    }));
+    context.excludedSuppliers = [];
+
+    // Montar mensagem com lista numerada
+    let message = '📋 *Seus Fornecedores*\n\n';
+    message += 'Encontrei os seguintes fornecedores:\n\n';
+
+    suppliers.forEach((supplier: any, index: number) => {
+      message += `${index + 1}. ${supplier.name}\n`;
+    });
+
+    message += '\n❓ *Deseja excluir algum fornecedor desta lista?*\n\n';
+    message += '✅ Digite *não* para manter todos\n';
+    message += '❌ Digite os *números* dos fornecedores que deseja excluir (separados por vírgula)\n';
+    message += '   Exemplo: 1,3';
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: message,
+    });
+
+    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SELECTION', context);
+  }
+
+  /**
+   * Estado AWAITING_SUPPLIER_SELECTION - Aguardando seleção inicial dos fornecedores
+   */
+  private async handleAwaitingSupplierSelection(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.toLowerCase().trim();
+
+    // Se não quer excluir ninguém
+    if (normalized === 'não' || normalized === 'nao') {
+      await this.showSupplierListForConfirmation(producerId, phone, context);
+      return;
+    }
+
+    // Processar números para exclusão
+    const numbers = message
+      .split(',')
+      .map((n) => parseInt(n.trim()))
+      .filter((n) => !isNaN(n));
+
+    if (numbers.length === 0) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: 'Por favor, digite os números separados por vírgula ou *não* para manter todos.',
+      });
+      return;
+    }
+
+    // Validar números
+    const availableSuppliers = context.availableSuppliers || [];
+    const invalidNumbers = numbers.filter((n) => n < 1 || n > availableSuppliers.length);
+
+    if (invalidNumbers.length > 0) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `Números inválidos: ${invalidNumbers.join(', ')}. Use números de 1 a ${availableSuppliers.length}.`,
+      });
+      return;
+    }
+
+    // Marcar fornecedores como excluídos
+    context.excludedSuppliers = numbers.map((n) => availableSuppliers[n - 1].id);
+
+    await this.showSupplierListForConfirmation(producerId, phone, context);
+  }
+
+  /**
+   * Mostra lista final de fornecedores e pede confirmação
+   */
+  private async showSupplierListForConfirmation(
+    producerId: string,
+    phone: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const availableSuppliers = context.availableSuppliers || [];
+    const excludedIds = context.excludedSuppliers || [];
+
+    // Filtrar fornecedores selecionados (não excluídos)
+    const selectedSuppliers = availableSuppliers.filter((s) => !excludedIds.includes(s.id));
+
+    if (selectedSuppliers.length === 0) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: 'Você excluiu todos os fornecedores. Vamos recomeçar a seleção.',
+      });
+      await this.showSupplierListForSelection(producerId, phone, context);
+      return;
+    }
+
+    context.selectedSuppliers = selectedSuppliers;
+
+    // Montar mensagem de confirmação
+    let message = '✅ *Lista Final de Fornecedores*\n\n';
+    message += 'A cotação será enviada para:\n\n';
+
+    selectedSuppliers.forEach((supplier, index) => {
+      message += `${index + 1}. ${supplier.name}\n`;
+    });
+
+    message += `\n📊 *Total: ${selectedSuppliers.length} fornecedor(es)*\n\n`;
+    message += '❓ *Deseja continuar com esta lista?*\n\n';
+    message += '✅ Digite *sim* para confirmar\n';
+    message += '🔄 Digite *refazer* para ajustar a seleção';
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: message,
+    });
+
+    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_EXCLUSION', context);
+  }
+
+  /**
+   * Estado AWAITING_SUPPLIER_EXCLUSION - Aguardando confirmação de mais exclusões
+   */
+  private async handleAwaitingSupplierExclusion(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.toLowerCase().trim();
+
+    if (normalized === 'sim') {
+      // Ir para confirmação final da cotação
+      await this.showQuoteConfirmation(producerId, phone, context);
+      return;
+    }
+
+    if (normalized === 'refazer') {
+      // Resetar exclusões e mostrar lista novamente
+      context.excludedSuppliers = [];
+      await this.showSupplierListForSelection(producerId, phone, context);
+      return;
+    }
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: 'Digite *sim* para confirmar ou *refazer* para ajustar.',
+    });
+  }
+
+  /**
+   * Mostra resumo da cotação e pede confirmação final
+   */
+  private async showQuoteConfirmation(
+    producerId: string,
+    phone: string,
+    context: ConversationContext
+  ): Promise<void> {
+    let scopeLabel: string;
+
+    switch (context.supplierScope) {
+      case 'MINE':
+        const count = context.selectedSuppliers?.length || 0;
+        scopeLabel = `Seus fornecedores selecionados (${count})`;
+        break;
+      case 'NETWORK':
+        scopeLabel = 'Rede CotaAgro';
+        break;
+      case 'ALL':
+        scopeLabel = 'Todos (seus + rede)';
+        break;
+      default:
+        scopeLabel = 'Não definido';
+    }
+
     const summary = {
       product: context.product!,
       quantity: context.quantity!,
@@ -370,7 +622,91 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       body: Messages.CONFIRM_QUOTE(summary),
     });
 
-    await this.setState(producerId, 'producer', 'AWAITING_CONFIRMATION', context);
+    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_CONFIRMATION', context);
+  }
+
+  /**
+   * Estado AWAITING_SUPPLIER_CONFIRMATION - Confirmação final antes de enviar
+   */
+  private async handleAwaitingSupplierConfirmation(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.toLowerCase().trim();
+
+    if (normalized === 'sim') {
+      await this.createAndDispatchQuote(producerId, phone, context);
+      return;
+    }
+
+    if (normalized === 'corrigir') {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: 'Vamos recomeçar. Digite *nova cotação* quando estiver pronto.',
+      });
+      await this.resetState(producerId, 'producer');
+      return;
+    }
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: 'Digite *sim* para confirmar ou *corrigir* para refazer.',
+    });
+  }
+
+  /**
+   * Cria cotação e dispara para fornecedores
+   */
+  private async createAndDispatchQuote(
+    producerId: string,
+    phone: string,
+    context: ConversationContext
+  ): Promise<void> {
+    // Criar cotação no banco
+    const quote = await prisma.quote.create({
+      data: {
+        producerId,
+        product: context.product!,
+        quantity: context.quantity!,
+        unit: context.unit!,
+        region: context.region!,
+        deadline: new Date(context.deadline!),
+        observations: context.observations,
+        supplierScope: context.supplierScope!,
+        status: 'PENDING',
+        expiresAt: new Date(Date.now() + 120 * 60 * 1000), // 2 horas
+      },
+    });
+
+    // Incrementar contador de cotações usadas
+    await prisma.subscription.update({
+      where: { producerId },
+      data: { quotesUsed: { increment: 1 } },
+    });
+
+    // Adicionar job para disparar cotações
+    // Se foi MINE e tem fornecedores selecionados, passar a lista
+    let suppliersCount: number;
+
+    if (context.supplierScope === 'MINE' && context.selectedSuppliers) {
+      // Disparar apenas para fornecedores selecionados
+      const selectedIds = context.selectedSuppliers.map((s) => s.id);
+      suppliersCount = await dispatchQuoteJob(quote.id, selectedIds);
+    } else {
+      // Disparar normalmente
+      suppliersCount = await dispatchQuoteJob(quote.id);
+    }
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: Messages.QUOTE_DISPATCHED(quote.id, suppliersCount),
+    });
+
+    // Atualizar contexto com quoteId e mudar estado
+    context.quoteId = quote.id;
+    await this.setState(producerId, 'producer', 'QUOTE_ACTIVE', context);
   }
 
   /**
@@ -506,5 +842,153 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     });
 
     await this.resetState(producerId, 'producer');
+  }
+
+  /**
+   * Estado AWAITING_SUPPLIER_CONTACT - Aguardando contato do fornecedor
+   */
+  private async handleAwaitingSupplierContact(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    // Verificar se é um vCard
+    if (contactExtractorService.isVCard(message)) {
+      await this.handleContactShared(producerId, phone, message);
+      return;
+    }
+
+    // Tentar extrair dados do texto livre
+    const contactData = await contactExtractorService.extractContactData(message);
+
+    if (!contactData) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.SUPPLIER_ADD_ERROR,
+      });
+      return;
+    }
+
+    // Criar fornecedor
+    await this.createSupplierFromContact(producerId, phone, contactData);
+  }
+
+  /**
+   * Processa contato compartilhado (vCard ou estruturado)
+   */
+  private async handleContactShared(
+    producerId: string,
+    phone: string,
+    message: string
+  ): Promise<void> {
+    logWithContext('info', 'Processing shared contact', { producerId });
+
+    // Extrair dados do vCard
+    const contactData = contactExtractorService.extractFromVCard(message);
+
+    if (!contactData) {
+      // Tentar extrair com OpenAI
+      const extracted = await contactExtractorService.extractContactData(message);
+      if (!extracted) {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.SUPPLIER_ADD_ERROR,
+        });
+        return;
+      }
+      await this.createSupplierFromContact(producerId, phone, extracted);
+      return;
+    }
+
+    await this.createSupplierFromContact(producerId, phone, contactData);
+  }
+
+  /**
+   * Cria fornecedor a partir dos dados do contato
+   */
+  private async createSupplierFromContact(
+    producerId: string,
+    phone: string,
+    contactData: ContactData
+  ): Promise<void> {
+    try {
+      // Verificar se fornecedor já existe
+      const existingSupplier = await prisma.supplier.findUnique({
+        where: { phone: contactData.phone },
+      });
+
+      if (existingSupplier) {
+        // Verificar se já está vinculado ao produtor
+        const link = await prisma.producerSupplier.findFirst({
+          where: {
+            producerId,
+            supplierId: existingSupplier.id,
+          },
+        });
+
+        if (!link) {
+          // Vincular ao produtor
+          await prisma.producerSupplier.create({
+            data: {
+              producerId,
+              supplierId: existingSupplier.id,
+            },
+          });
+        }
+
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.SUPPLIER_ALREADY_EXISTS(existingSupplier.name),
+        });
+        await this.resetState(producerId, 'producer');
+        return;
+      }
+
+      // Buscar região do produtor para usar como padrão
+      const producer = await prisma.producer.findUniqueOrThrow({
+        where: { id: producerId },
+      });
+
+      // Criar novo fornecedor
+      const supplier = await prisma.supplier.create({
+        data: {
+          name: contactData.name,
+          phone: contactData.phone,
+          company: contactData.company,
+          email: contactData.email,
+          regions: [producer.region], // região do produtor como padrão
+          categories: [], // será preenchido posteriormente
+          isNetworkSupplier: false, // fornecedor da rede do produtor
+        },
+      });
+
+      // Vincular ao produtor
+      await prisma.producerSupplier.create({
+        data: {
+          producerId,
+          supplierId: supplier.id,
+        },
+      });
+
+      logWithContext('info', 'Supplier created from contact', {
+        producerId,
+        supplierId: supplier.id,
+        supplierName: supplier.name,
+      });
+
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.SUPPLIER_ADDED_SUCCESS(supplier.name),
+      });
+
+      await this.resetState(producerId, 'producer');
+    } catch (error) {
+      logger.error('Failed to create supplier from contact', { error, producerId, contactData });
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.SUPPLIER_ADD_ERROR,
+      });
+    }
   }
 }

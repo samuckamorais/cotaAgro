@@ -44,6 +44,25 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      fontSize: {
+        // Clean Minimal Utility typography
+        'xs': ['11px', { lineHeight: '16px', fontWeight: '400' }],
+        'sm': ['12px', { lineHeight: '18px', fontWeight: '400' }],
+        'base': ['13px', { lineHeight: '20px', fontWeight: '400' }],
+        'lg': ['14px', { lineHeight: '22px', fontWeight: '400' }],
+        'xl': ['16px', { lineHeight: '24px', fontWeight: '500' }],
+        '2xl': ['22px', { lineHeight: '28px', fontWeight: '500' }],
+        '3xl': ['28px', { lineHeight: '36px', fontWeight: '500' }],
+      },
+      fontWeight: {
+        normal: '400',
+        medium: '500',
+      },
+      borderWidth: {
+        DEFAULT: '0.5px',
+        '0.5': '0.5px',
+        '1': '1px',
+      },
       keyframes: {
         'accordion-down': {
           from: { height: '0' },

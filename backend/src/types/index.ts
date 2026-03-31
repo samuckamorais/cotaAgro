@@ -7,12 +7,20 @@ export { SupplierScope, QuoteStatus, PlanType, Producer, Supplier, Quote, Propos
 
 export interface CreateProducerDTO {
   name: string;
+  cpfCnpj: string;
+  stateRegistration?: string;
+  farm?: string;
+  city: string;
   phone: string;
   region: string;
 }
 
 export interface UpdateProducerDTO {
   name?: string;
+  cpfCnpj?: string;
+  stateRegistration?: string;
+  farm?: string;
+  city?: string;
   phone?: string;
   region?: string;
 }
@@ -20,6 +28,8 @@ export interface UpdateProducerDTO {
 export interface CreateSupplierDTO {
   name: string;
   phone: string;
+  company?: string;
+  email?: string;
   regions: string[];
   categories: string[];
   isNetworkSupplier?: boolean;
@@ -28,6 +38,8 @@ export interface CreateSupplierDTO {
 export interface UpdateSupplierDTO {
   name?: string;
   phone?: string;
+  company?: string;
+  email?: string;
   regions?: string[];
   categories?: string[];
   isNetworkSupplier?: boolean;
@@ -81,7 +93,18 @@ export interface WhatsAppWebhookPayload {
   from: string;
   body: string;
   timestamp?: string;
+  contacts?: Array<{
+    name?: string;
+    phones?: Array<{ phone: string; type?: string }>;
+  }>;
   [key: string]: unknown; // permite outras propriedades específicas do provider
+}
+
+export interface ContactData {
+  name: string;
+  phone: string;
+  company?: string;
+  email?: string;
 }
 
 // ===================================
@@ -96,9 +119,13 @@ export type ProducerState =
   | 'AWAITING_DEADLINE'
   | 'AWAITING_OBSERVATIONS'
   | 'AWAITING_SUPPLIER_SCOPE'
+  | 'AWAITING_SUPPLIER_SELECTION'
+  | 'AWAITING_SUPPLIER_EXCLUSION'
+  | 'AWAITING_SUPPLIER_CONFIRMATION'
   | 'AWAITING_CONFIRMATION'
   | 'QUOTE_ACTIVE'
   | 'AWAITING_CHOICE'
+  | 'AWAITING_SUPPLIER_CONTACT'
   | 'CLOSED';
 
 export type SupplierState =
@@ -119,6 +146,11 @@ export interface ConversationContext {
   observations?: string;
   supplierScope?: 'MINE' | 'NETWORK' | 'ALL';
   quoteId?: string;
+
+  // Supplier selection context
+  availableSuppliers?: Array<{ id: string; name: string; phone: string }>;
+  excludedSuppliers?: string[]; // IDs dos fornecedores excluídos
+  selectedSuppliers?: Array<{ id: string; name: string; phone: string }>;
 
   // Supplier context
   price?: number;

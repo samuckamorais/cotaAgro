@@ -71,7 +71,7 @@ export class DashboardService {
     });
 
     // Agrupar por dia
-    const groupedByDay = quotes.reduce((acc, quote) => {
+    const groupedByDay = quotes.reduce((acc: Record<string, number>, quote: any) => {
       const date = quote.createdAt.toISOString().split('T')[0];
       acc[date] = (acc[date] || 0) + 1;
       return acc;
@@ -109,7 +109,7 @@ export class DashboardService {
       take: limit,
     });
 
-    return quotes.map((q) => ({
+    return quotes.map((q: any) => ({
       product: q.product,
       count: q._count.product,
     }));
@@ -138,14 +138,234 @@ export class DashboardService {
   }
 
   /**
+   * Estatísticas de fornecedores
+   */
+  static async getSupplierStats() {
+    const [totalSuppliers, networkSuppliers, producerSuppliers, topSuppliersByProposals] =
+      await Promise.all([
+        // Total de fornecedores
+        prisma.supplier.count(),
+
+        // Fornecedores da rede
+        prisma.supplier.count({
+          where: { isNetworkSupplier: true },
+        }),
+
+        // Fornecedores de produtores
+        prisma.supplier.count({
+          where: { isNetworkSupplier: false },
+        }),
+
+        // Top fornecedores por propostas enviadas
+        prisma.supplier.findMany({
+          take: 5,
+          select: {
+            id: true,
+            name: true,
+            _count: {
+              select: {
+                proposals: true,
+              },
+            },
+          },
+          orderBy: {
+            proposals: {
+              _count: 'desc',
+            },
+          },
+        }),
+      ]);
+
+    return {
+      totalSuppliers,
+      networkSuppliers,
+      producerSuppliers,
+      topSuppliers: topSuppliersByProposals.map((s: any) => ({
+        name: s.name,
+        proposalsCount: s._count.proposals,
+      })),
+    };
+  }
+
+  /**
+   * Estatísticas de produtores
+   */
+  static async getProducerStats() {
+    const [
+      totalProducers,
+      producersWithQuotes,
+      producersWithActiveSubscription,
+      topProducersByQuotes,
+    ] = await Promise.all([
+      // Total de produtores
+      prisma.producer.count(),
+
+      // Produtores que já fizeram cotações
+      prisma.producer.count({
+        where: {
+          quotes: {
+            some: {},
+          },
+        },
+      }),
+
+      // Produtores com assinatura ativa
+      prisma.producer.count({
+        where: {
+          subscription: {
+            active: true,
+          },
+        },
+      }),
+
+      // Top produtores por cotações
+      prisma.producer.findMany({
+        take: 5,
+        select: {
+          id: true,
+          name: true,
+          _count: {
+            select: {
+              quotes: true,
+            },
+          },
+        },
+        orderBy: {
+          quotes: {
+            _count: 'desc',
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalProducers,
+      producersWithQuotes,
+      producersWithActiveSubscription,
+      topProducers: topProducersByQuotes.map((p: any) => ({
+        name: p.name,
+        quotesCount: p._count.quotes,
+      })),
+    };
+  }
+
+  /**
+   * Estatísticas por categoria de fornecedor
+   */
+  static async getStatsByCategory() {
+    const suppliers = await prisma.supplier.findMany({
+      select: {
+        categories: true,
+        _count: {
+          select: {
+            proposals: true,
+          },
+        },
+      },
+    });
+
+    // Agrupar por categoria
+    const categoryStats: Record<string, { suppliers: number; proposals: number }> = {};
+
+    suppliers.forEach((supplier: any) => {
+      supplier.categories.forEach((category: string) => {
+        if (!categoryStats[category]) {
+          categoryStats[category] = { suppliers: 0, proposals: 0 };
+        }
+        categoryStats[category].suppliers += 1;
+        categoryStats[category].proposals += supplier._count.proposals;
+      });
+    });
+
+    return Object.entries(categoryStats).map(([category, stats]) => ({
+      category,
+      suppliersCount: stats.suppliers,
+      proposalsCount: stats.proposals,
+    }));
+  }
+
+  /**
+   * Estatísticas de propostas e valores
+   */
+  static async getProposalStats() {
+    const proposals = await prisma.proposal.findMany({
+      select: {
+        totalPrice: true,
+        createdAt: true,
+      },
+    });
+
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const thisMonthProposals = proposals.filter((p: any) => p.createdAt >= thisMonthStart);
+    const lastMonthProposals = proposals.filter(
+      (p: any) => p.createdAt >= lastMonthStart && p.createdAt < thisMonthStart
+    );
+
+    const totalVolume = proposals.reduce((sum: number, p: any) => sum + p.totalPrice, 0);
+    const thisMonthVolume = thisMonthProposals.reduce((sum: number, p: any) => sum + p.totalPrice, 0);
+    const lastMonthVolume = lastMonthProposals.reduce((sum: number, p: any) => sum + p.totalPrice, 0);
+
+    const avgProposalValue = proposals.length > 0 ? totalVolume / proposals.length : 0;
+
+    return {
+      totalProposals: proposals.length,
+      totalVolume,
+      avgProposalValue,
+      thisMonth: {
+        count: thisMonthProposals.length,
+        volume: thisMonthVolume,
+      },
+      lastMonth: {
+        count: lastMonthProposals.length,
+        volume: lastMonthVolume,
+      },
+    };
+  }
+
+  /**
+   * Status de cotações
+   */
+  static async getQuoteStatusStats() {
+    const statusCounts = await prisma.quote.groupBy({
+      by: ['status'],
+      _count: {
+        status: true,
+      },
+    });
+
+    return statusCounts.map((s: any) => ({
+      status: s.status,
+      count: s._count.status,
+    }));
+  }
+
+  /**
    * Dashboard completo (combina todos os dados)
    */
   static async getDashboardData() {
-    const [stats, quotesByDay, topProducts, recentQuotes] = await Promise.all([
+    const [
+      stats,
+      quotesByDay,
+      topProducts,
+      recentQuotes,
+      supplierStats,
+      producerStats,
+      categoryStats,
+      proposalStats,
+      quoteStatusStats,
+    ] = await Promise.all([
       this.getStats(),
       this.getQuotesByDay(30),
       this.getTopProducts(5),
       this.getRecentQuotes(10),
+      this.getSupplierStats(),
+      this.getProducerStats(),
+      this.getStatsByCategory(),
+      this.getProposalStats(),
+      this.getQuoteStatusStats(),
     ]);
 
     return {
@@ -153,7 +373,12 @@ export class DashboardService {
       charts: {
         quotesByDay,
         topProducts,
+        categoryStats,
+        quoteStatusStats,
       },
+      supplierStats,
+      producerStats,
+      proposalStats,
       recentQuotes,
     };
   }

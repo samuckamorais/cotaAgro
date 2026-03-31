@@ -7,11 +7,11 @@ import { logger, logWithContext } from '../utils/logger';
  * Job para disparar cotação para fornecedores elegíveis
  * Adiciona job na fila Bull para processamento assíncrono
  */
-export async function dispatchQuoteJob(quoteId: string): Promise<number> {
+export async function dispatchQuoteJob(quoteId: string, selectedSupplierIds?: string[]): Promise<number> {
   // Adicionar job na fila
-  await quoteDispatchQueue.add({ quoteId });
+  await quoteDispatchQueue.add({ quoteId, selectedSupplierIds });
 
-  logger.info('Quote dispatch job added to queue', { quoteId });
+  logger.info('Quote dispatch job added to queue', { quoteId, selectedSupplierIds });
 
   // Retorna número estimado de fornecedores (cálculo rápido)
   const quote = await prisma.quote.findUniqueOrThrow({
@@ -28,7 +28,12 @@ export async function dispatchQuoteJob(quoteId: string): Promise<number> {
   let suppliersCount = 0;
 
   if (quote.supplierScope === 'MINE' || quote.supplierScope === 'ALL') {
-    suppliersCount += quote.producer.suppliers.length;
+    // Se tem lista de IDs selecionados, contar apenas esses
+    if (selectedSupplierIds && selectedSupplierIds.length > 0) {
+      suppliersCount += selectedSupplierIds.length;
+    } else {
+      suppliersCount += quote.producer.suppliers.length;
+    }
   }
 
   if (quote.supplierScope === 'NETWORK' || quote.supplierScope === 'ALL') {
@@ -48,7 +53,7 @@ export async function dispatchQuoteJob(quoteId: string): Promise<number> {
  * Processor do job - executa o disparo efetivamente
  */
 quoteDispatchQueue.process(async (job) => {
-  const { quoteId } = job.data;
+  const { quoteId, selectedSupplierIds } = job.data;
 
   logWithContext('info', 'Processing quote dispatch job', { quoteId });
 
@@ -73,9 +78,18 @@ quoteDispatchQueue.process(async (job) => {
 
     // 1. Fornecedores próprios do produtor
     if (quote.supplierScope === 'MINE' || quote.supplierScope === 'ALL') {
-      for (const ps of quote.producer.suppliers) {
-        await supplierFSM.notifyNewQuote(ps.supplier.id, quoteId, true);
-        notifiedSuppliers.add(ps.supplier.id);
+      // Se tem lista de IDs selecionados, disparar apenas para esses
+      if (selectedSupplierIds && selectedSupplierIds.length > 0) {
+        for (const supplierId of selectedSupplierIds) {
+          await supplierFSM.notifyNewQuote(supplierId, quoteId, true);
+          notifiedSuppliers.add(supplierId);
+        }
+      } else {
+        // Disparar para todos os fornecedores do produtor
+        for (const ps of quote.producer.suppliers) {
+          await supplierFSM.notifyNewQuote(ps.supplier.id, quoteId, true);
+          notifiedSuppliers.add(ps.supplier.id);
+        }
       }
     }
 

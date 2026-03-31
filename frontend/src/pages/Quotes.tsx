@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useQuotes } from '../hooks/useQuotes';
 import { formatDate } from '../lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 const statusColors: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
   PENDING: 'default',
@@ -25,6 +26,7 @@ const statusLabels: Record<string, string> = {
 export function Quotes() {
   const [page, setPage] = useState(1);
   const limit = 10;
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuotes(page, limit);
 
@@ -68,6 +70,7 @@ export function Quotes() {
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Propostas</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Data</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,6 +94,16 @@ export function Quotes() {
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600">
                       {formatDate(quote.createdAt)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/quotes/${quote.id}`)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Ver Detalhes
+                      </Button>
                     </td>
                   </tr>
                 ))}

@@ -16,6 +16,10 @@ datasource db {
 model Producer {
   id                String             @id @default(uuid())
   name              String
+  cpfCnpj           String             @unique // CPF ou CNPJ (apenas números)
+  stateRegistration String?            // Inscrição estadual (opcional)
+  farm              String?            // nome da fazenda (opcional)
+  city              String             // município
   phone             String             @unique // número WhatsApp com DDI, ex: +5564999999999
   region            String
   createdAt         DateTime           @default(now())
@@ -27,6 +31,7 @@ model Producer {
   conversationState ConversationState?
 
   @@index([phone])
+  @@index([cpfCnpj])
   @@map("producers")
 }
 
@@ -34,9 +39,11 @@ model Supplier {
   id                String             @id @default(uuid())
   name              String
   phone             String             @unique
+  company           String?            // nome da empresa (opcional)
+  email             String?            // e-mail do fornecedor (opcional)
   regions           String[]           // lista de regiões atendidas
   categories        String[]           // ex: ["sementes", "fertilizantes", "defensivos"]
-  isNetworkSupplier Boolean            @default(false) // true = rede da plataforma
+  isNetworkSupplier Boolean            @default(false) // true = rede da plataforma, false = rede do produtor
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -127,6 +134,36 @@ model ConversationState {
   @@map("conversation_states")
 }
 
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String   // hash bcrypt
+  role      UserRole @default(USER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions Permission[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Permission {
+  id       String   @id @default(uuid())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  resource Resource // quotes, suppliers, producers, users, dashboard
+  canView  Boolean  @default(false)
+  canCreate Boolean @default(false)
+  canEdit  Boolean  @default(false)
+  canDelete Boolean @default(false)
+
+  @@unique([userId, resource])
+  @@map("permissions")
+}
+
 // ===================================
 // ENUMS
 // ===================================
@@ -149,4 +186,18 @@ enum PlanType {
   BASIC      // plano básico
   PRO        // plano profissional
   ENTERPRISE // plano empresarial
+}
+
+enum UserRole {
+  ADMIN // acesso total
+  USER  // acesso baseado em permissões
+}
+
+enum Resource {
+  DASHBOARD
+  QUOTES
+  SUPPLIERS
+  PRODUCERS
+  SUBSCRIPTIONS
+  USERS
 }

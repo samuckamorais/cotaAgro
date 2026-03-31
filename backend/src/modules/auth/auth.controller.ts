@@ -2,41 +2,60 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { ErrorHandler } from '../../utils/error-handler';
 import { z } from 'zod';
-import { phoneSchema } from '../../utils/validators';
+
+const loginSchema = z.object({
+  email: z.string().email('E-mail inválido'),
+  password: z.string().min(1, 'Senha é obrigatória'),
+});
+
+const changePasswordSchema = z.object({
+  oldPassword: z.string().min(1, 'Senha atual é obrigatória'),
+  newPassword: z.string().min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
+});
 
 export class AuthController {
   /**
-   * POST /api/auth/otp
-   * Solicita código OTP
+   * POST /api/auth/login
    */
-  static requestOTP = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const schema = z.object({ phone: phoneSchema });
-    const { phone } = schema.parse(req.body);
+  static login = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const data = loginSchema.parse(req.body);
 
-    await AuthService.requestOTP(phone);
+    const result = await AuthService.login(data);
 
     res.json({
       success: true,
-      message: 'Código enviado via WhatsApp',
+      data: result,
     });
   });
 
   /**
-   * POST /api/auth/login
-   * Valida OTP e retorna JWT token
+   * GET /api/auth/me
    */
-  static login = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const schema = z.object({
-      phone: phoneSchema,
-      code: z.string().length(6),
-    });
-    const { phone, code } = schema.parse(req.body);
+  static me = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req as any).user.userId;
 
-    const token = await AuthService.validateOTP(phone, code);
+    const user = await AuthService.getUserWithPermissions(userId);
 
     res.json({
       success: true,
-      data: { token },
+      data: user,
     });
   });
+
+  /**
+   * POST /api/auth/change-password
+   */
+  static changePassword = ErrorHandler.asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const userId = (req as any).user.userId;
+      const data = changePasswordSchema.parse(req.body);
+
+      await AuthService.changePassword(userId, data.oldPassword, data.newPassword);
+
+      res.json({
+        success: true,
+        message: 'Senha alterada com sucesso',
+      });
+    }
+  );
 }
