@@ -56,7 +56,7 @@ export class AuthService {
 
     // Gerar JWT token
     const token = jwt.sign({ userId: producer.id, phone: producer.phone }, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN,
+      expiresIn: env.JWT_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}` | number,
     });
 
     logger.info('User authenticated', { userId: producer.id });

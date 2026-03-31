@@ -41,18 +41,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      NODE_ENV: development
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cotaagro
       REDIS_URL: redis://redis:6379
       PORT: 3000
     ports:
       - "3000:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - /app/dist
-    command: npm run dev
+    command: npm start
 
   frontend:
     build:
@@ -61,14 +58,8 @@ services:
     container_name: cotaagro-frontend
     depends_on:
       - backend
-    environment:
-      VITE_API_URL: http://localhost:3000
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev
+      - "5173:80"
 
 volumes:
   postgres_data:

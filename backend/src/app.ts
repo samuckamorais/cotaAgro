@@ -12,7 +12,6 @@ import { ProducerController } from './modules/producers/producer.controller';
 import { SupplierController } from './modules/suppliers/supplier.controller';
 import { QuoteController } from './modules/quotes/quote.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
-import { logger } from './utils/logger';
 
 /**
  * Configuração do Express App
@@ -33,7 +32,7 @@ export function createApp(): Application {
   // ===================================
   // Health check
   // ===================================
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),

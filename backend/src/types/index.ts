@@ -124,6 +124,9 @@ export interface ConversationContext {
   price?: number;
   deliveryDays?: number;
   paymentTerms?: string;
+  isOwnSupplier?: boolean;
+
+  [key: string]: unknown;
 }
 
 export interface StateTransition {

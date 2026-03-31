@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { ConversationContext, ProducerState, SupplierState } from '../types';
+import { ConversationContext } from '../types';
 import { logger } from '../utils/logger';
 
 /**
@@ -47,11 +47,11 @@ export class FSMEngine<TState extends string> {
         create: {
           producerId: entityId,
           step,
-          context,
+          context: context as object,
         },
         update: {
           step,
-          context,
+          context: context as object,
         },
       });
 

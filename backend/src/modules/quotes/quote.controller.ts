@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { QuoteService } from './quote.service';
-import { ErrorHandler } from '../../utils/error-handler';
+import { ErrorHandler, createError } from '../../utils/error-handler';
 import { createQuoteSchema, paginationSchema } from '../../utils/validators';
 import { z } from 'zod';
 
@@ -94,7 +94,7 @@ export class QuoteController {
   /**
    * GET /api/quotes/stats
    */
-  static getStats = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  static getStats = ErrorHandler.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     const stats = await QuoteService.getStats();
 
     res.json({

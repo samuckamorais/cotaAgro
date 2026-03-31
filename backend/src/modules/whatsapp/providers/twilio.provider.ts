@@ -51,7 +51,7 @@ export class TwilioProvider implements IWhatsAppProvider {
     }
   }
 
-  verifyWebhook(query: Record<string, unknown>): boolean {
+  verifyWebhook(_query: Record<string, unknown>): boolean {
     // Twilio não requer verificação GET inicial (diferente do Facebook/Meta)
     // A validação é feita via assinatura X-Twilio-Signature no POST
     return true;

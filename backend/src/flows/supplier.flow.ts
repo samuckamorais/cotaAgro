@@ -225,7 +225,7 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
     }
 
     // Criar proposta no banco
-    const quote = await prisma.quote.findUniqueOrThrow({
+    await prisma.quote.findUniqueOrThrow({
       where: { id: context.quoteId! },
     });
 

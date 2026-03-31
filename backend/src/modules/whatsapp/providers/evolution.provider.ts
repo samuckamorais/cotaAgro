@@ -62,7 +62,7 @@ export class EvolutionProvider implements IWhatsAppProvider {
     }
   }
 
-  verifyWebhook(query: Record<string, unknown>): boolean {
+  verifyWebhook(_query: Record<string, unknown>): boolean {
     // Evolution API não requer verificação especial
     // A autenticação é feita via apikey no header
     return true;

@@ -7,7 +7,6 @@ import { logger } from '../utils/logger';
  */
 export class OTPService {
   private static readonly OTP_TTL = 600; // 10 minutos em segundos
-  private static readonly OTP_LENGTH = 6;
 
   /**
    * Gera um código OTP de 6 dígitos

@@ -6,7 +6,7 @@ export class DashboardController {
   /**
    * GET /api/dashboard/stats
    */
-  static getStats = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  static getStats = ErrorHandler.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     const stats = await DashboardService.getStats();
 
     res.json({
@@ -46,7 +46,7 @@ export class DashboardController {
   /**
    * GET /api/dashboard
    */
-  static getDashboard = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  static getDashboard = ErrorHandler.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     const data = await DashboardService.getDashboardData();
 
     res.json({
