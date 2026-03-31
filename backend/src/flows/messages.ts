@@ -14,7 +14,8 @@ Sou seu assistente de cotações de insumos agrícolas.
 
 Para começar, envie:
 • *1* ou *nova cotação* - Solicitar cotação
-• *2* ou *ajuda* - Ver instruções
+• *2* ou *cadastrar fornecedor* - Adicionar fornecedor
+• *ajuda* - Ver instruções
 
 Como posso ajudar?`,
 
@@ -134,6 +135,48 @@ Se precisar de ajuda, digite *ajuda*.`,
 Você atingiu o limite de *${limit} cotações* do seu plano neste mês.
 
 Entre em contato para fazer upgrade do seu plano. 📈`,
+
+  // ===================================
+  // CADASTRO DE FORNECEDOR
+  // ===================================
+
+  ADD_SUPPLIER_INSTRUCTIONS: `Ótimo! Vou te ajudar a cadastrar um fornecedor. 📇
+
+*Compartilhe o contato* do fornecedor usando o WhatsApp:
+1. Toque no ícone de anexo (📎)
+2. Selecione "Contato"
+3. Escolha o fornecedor
+4. Envie
+
+Ou você pode digitar os dados no formato:
+*Nome:* João Silva
+*Telefone:* 64999999999
+*Empresa:* (opcional)
+*Email:* (opcional)`,
+
+  SUPPLIER_ADDED_SUCCESS: (supplierName: string) => `✅ *Fornecedor cadastrado com sucesso!*
+
+*Nome:* ${supplierName}
+
+O fornecedor foi adicionado à sua rede pessoal e já pode receber cotações.
+
+Digite *1* para fazer uma nova cotação ou *ajuda* para ver mais opções.`,
+
+  SUPPLIER_ALREADY_EXISTS: (supplierName: string) => `⚠️ Este fornecedor já está cadastrado!
+
+*Nome:* ${supplierName}
+
+Digite *1* para fazer uma nova cotação ou *2* para adicionar outro fornecedor.`,
+
+  SUPPLIER_ADD_ERROR: `❌ Não consegui processar o contato.
+
+Por favor, tente novamente ou digite os dados manualmente no formato:
+*Nome:* João Silva
+*Telefone:* 64999999999
+*Empresa:* (opcional)
+*Email:* (opcional)
+
+Digite *cancelar* para voltar ao menu.`,
 
   // ===================================
   // MENSAGENS DO FORNECEDOR

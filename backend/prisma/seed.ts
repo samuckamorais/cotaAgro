@@ -1,9 +1,28 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
+
+  // Criar usuário Administrator
+  const adminPassword = await bcrypt.hash('Farmflow0147*', 10);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@cotaagro.com' },
+    update: {},
+    create: {
+      name: 'Administrator',
+      email: 'admin@cotaagro.com',
+      password: adminPassword,
+      role: 'ADMIN',
+      active: true,
+    },
+  });
+
+  console.log('✅ Administrator user created');
+  console.log('   Email: admin@cotaagro.com');
+  console.log('   Password: Farmflow0147*');
 
   // Criar produtores
   const producer1 = await prisma.producer.upsert({
@@ -113,9 +132,14 @@ async function main() {
   console.log('✅ Database seeded successfully!');
   console.log(`
 📊 Dados criados:
+  - 1 Usuário Administrator
   - 2 Produtores
   - 3 Fornecedores
   - 1 Vínculo produtor-fornecedor
+
+🔐 Login do sistema:
+  - Email: admin@cotaagro.com
+  - Senha: Farmflow0147*
 
 📱 Teste com WhatsApp:
   - Produtor 1: ${producer1.phone} (${producer1.name})

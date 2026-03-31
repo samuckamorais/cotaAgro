@@ -1,66 +1,187 @@
-import jwt from 'jsonwebtoken';
 import { prisma } from '../../config/database';
-import { env } from '../../config/env';
-import { OTPService } from '../../services/otp.service';
-import { whatsappService } from '../whatsapp/whatsapp.service';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { createError } from '../../utils/error-handler';
 import { logger } from '../../utils/logger';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+interface LoginDTO {
+  email: string;
+  password: string;
+}
+
+interface TokenPayload {
+  userId: string;
+  email: string;
+  role: string;
+}
+
 export class AuthService {
   /**
-   * Solicita código OTP e envia via WhatsApp
+   * Faz login do usuário
    */
-  static async requestOTP(phone: string): Promise<void> {
-    // Verificar se produtor existe
-    const producer = await prisma.producer.findUnique({ where: { phone } });
-    if (!producer) {
-      throw createError.notFound('Produtor não encontrado');
-    }
+  static async login(data: LoginDTO) {
+    const { email, password } = data;
 
-    // Verificar se já existe um código ativo
-    if (await OTPService.hasActiveCode(phone)) {
-      const ttl = await OTPService.getCodeTTL(phone);
-      throw createError.badRequest(
-        `Código OTP já enviado. Aguarde ${Math.ceil(ttl / 60)} minutos para solicitar novo código.`
-      );
-    }
-
-    // Gerar e enviar código
-    const code = OTPService.generateCode();
-    await OTPService.saveCode(phone, code);
-
-    // Enviar via WhatsApp
-    await whatsappService.sendMessage({
-      to: phone,
-      body: `🔐 Seu código de verificação CotaAgro: *${code}*\n\nVálido por 10 minutos.`,
+    // Buscar usuário
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        permissions: true,
+      },
     });
 
-    logger.info('OTP sent', { phone });
+    if (!user) {
+      throw createError.unauthorized('E-mail ou senha inválidos');
+    }
+
+    if (!user.active) {
+      throw createError.forbidden('Usuário inativo');
+    }
+
+    // Verificar senha
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw createError.unauthorized('E-mail ou senha inválidos');
+    }
+
+    // Gerar token JWT
+    const payload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
+
+    logger.info('User logged in', { userId: user.id, email: user.email });
+
+    // Remover senha da resposta
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      token,
+      user: userWithoutPassword,
+    };
   }
 
   /**
-   * Valida código OTP e retorna JWT token
+   * Verifica e decodifica um token JWT
    */
-  static async validateOTP(phone: string, code: string): Promise<string> {
-    const isValid = await OTPService.validateCode(phone, code);
-
-    if (!isValid) {
-      throw createError.unauthorized('Código inválido ou expirado');
+  static async verifyToken(token: string): Promise<TokenPayload> {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+      return decoded;
+    } catch (error) {
+      throw createError.unauthorized('Token inválido ou expirado');
     }
+  }
 
-    // Buscar produtor
-    const producer = await prisma.producer.findUnique({ where: { phone } });
-    if (!producer) {
-      throw createError.notFound('Produtor não encontrado');
-    }
-
-    // Gerar JWT token
-    const token = jwt.sign({ userId: producer.id, phone: producer.phone }, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}` | number,
+  /**
+   * Busca usuário com permissões
+   */
+  static async getUserWithPermissions(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        permissions: true,
+      },
     });
 
-    logger.info('User authenticated', { userId: producer.id });
+    if (!user) {
+      throw createError.notFound('Usuário não encontrado');
+    }
 
-    return token;
+    if (!user.active) {
+      throw createError.forbidden('Usuário inativo');
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return userWithoutPassword;
+  }
+
+  /**
+   * Altera senha do usuário
+   */
+  static async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw createError.notFound('Usuário não encontrado');
+    }
+
+    // Verificar senha antiga
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isPasswordValid) {
+      throw createError.unauthorized('Senha atual inválida');
+    }
+
+    // Hash da nova senha
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    logger.info('User password changed', { userId });
+  }
+
+  /**
+   * Verifica se usuário tem permissão para uma ação
+   */
+  static async checkPermission(
+    userId: string,
+    resource: string,
+    action: 'view' | 'create' | 'edit' | 'delete'
+  ): Promise<boolean> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        permissions: {
+          where: {
+            resource: resource as any,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    // Admin tem acesso total
+    if (user.role === 'ADMIN') {
+      return true;
+    }
+
+    // Verificar permissão específica
+    const permission = user.permissions[0];
+
+    if (!permission) {
+      return false;
+    }
+
+    switch (action) {
+      case 'view':
+        return permission.canView;
+      case 'create':
+        return permission.canCreate;
+      case 'edit':
+        return permission.canEdit;
+      case 'delete':
+        return permission.canDelete;
+      default:
+        return false;
+    }
   }
 }

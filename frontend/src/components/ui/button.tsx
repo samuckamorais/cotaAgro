@@ -2,8 +2,8 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'destructive' | 'outline' | 'ghost';
-  size?: 'default' | 'sm' | 'lg';
+  variant?: 'default' | 'destructive' | 'outline' | 'ghost' | 'secondary';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -11,21 +11,23 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          'inline-flex items-center justify-center rounded-md font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'inline-flex items-center justify-center rounded-md text-sm font-normal transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:pointer-events-none',
+          'border-0.5',
           {
-            'bg-primary text-primary-foreground hover:bg-primary/90': variant === 'default',
-            'bg-destructive text-destructive-foreground hover:bg-destructive/90':
+            'bg-primary text-primary-foreground hover:bg-primary/90 border-primary': variant === 'default',
+            'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive':
               variant === 'destructive',
-            'border border-input hover:bg-accent hover:text-accent-foreground':
-              variant === 'outline',
-            'hover:bg-accent hover:text-accent-foreground': variant === 'ghost',
+            'border-border bg-transparent hover:bg-secondary': variant === 'outline',
+            'border-transparent hover:bg-secondary': variant === 'ghost',
+            'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-border': variant === 'secondary',
           },
           {
-            'h-10 px-4 py-2': size === 'default',
-            'h-9 px-3 text-sm': size === 'sm',
-            'h-11 px-8': size === 'lg',
+            'h-9 px-4': size === 'default',
+            'h-8 px-3 text-xs': size === 'sm',
+            'h-10 px-6': size === 'lg',
+            'h-9 w-9': size === 'icon',
           },
           className
         )}
