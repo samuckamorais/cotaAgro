@@ -102,17 +102,35 @@ echo -e "${GREEN}✅ PostgreSQL pronto${NC}"
 # 5. Migrations e seed
 # -----------------------------------------------------------
 echo -e "${YELLOW}[5/5] Executando migrations...${NC}"
-docker compose exec -T backend npx prisma migrate deploy
+
+# Verifica se já existem migrations criadas
+MIGRATIONS_DIR="backend/prisma/migrations"
+if [ -d "$MIGRATIONS_DIR" ] && [ "$(ls -A $MIGRATIONS_DIR 2>/dev/null)" ]; then
+  # Já tem migrations — aplica sem criar novas
+  docker compose exec -T backend npx prisma migrate deploy
+else
+  # Primeira vez — cria e aplica as migrations
+  docker compose exec -T backend npx prisma migrate dev --name init --skip-seed
+fi
 echo -e "${GREEN}✅ Migrations aplicadas${NC}"
 
-# Seed apenas na primeira vez (verifica se tabela users está vazia)
-USER_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
-if [ "$USER_COUNT" = "0" ]; then
+# Seed apenas na primeira vez (verifica se tabela users existe e está vazia)
+USER_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+  "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users';" 2>/dev/null || echo "0")
+if [ "$USER_COUNT" = "1" ]; then
+  DATA_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+    "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
+  if [ "$(echo $DATA_COUNT | tr -d ' ')" = "0" ]; then
+    echo -e "${YELLOW}Populando banco com dados iniciais...${NC}"
+    docker compose exec -T backend npx tsx prisma/seed.ts
+    echo -e "${GREEN}✅ Seed executado${NC}"
+  else
+    echo "Banco já possui dados, seed ignorado."
+  fi
+else
   echo -e "${YELLOW}Populando banco com dados iniciais...${NC}"
   docker compose exec -T backend npx tsx prisma/seed.ts
   echo -e "${GREEN}✅ Seed executado${NC}"
-else
-  echo "Banco já possui dados, seed ignorado."
 fi
 
 # -----------------------------------------------------------
