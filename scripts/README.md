@@ -1,242 +1,148 @@
-# 🚀 Scripts de Automação - CotaAgro
+# Scripts de Deploy e Manutenção - CotaAgro
 
-Scripts para facilitar o gerenciamento da aplicação.
-
----
+Scripts para facilitar o deploy e manutenção da aplicação na VPS.
 
 ## 📋 Scripts Disponíveis
 
-### 🎬 Setup e Controle
+### 1. `vps-install.sh` - Instalação Inicial
+Instala todas as dependências necessárias na VPS.
 
-#### `setup.sh` - Setup Completo
-**Uso**: `./scripts/setup.sh`
-
-Configura e inicia a aplicação do zero:
-- ✅ Verifica Docker
-- ✅ Para containers existentes
-- ✅ Cria arquivo .env (se não existir)
-- ✅ Sobe containers
-- ✅ Executa migrations
-- ✅ Popula banco de dados
-- ✅ Verifica saúde da API
-
-**Use este script na primeira vez!**
-
-#### `start.sh` - Iniciar
-**Uso**: `./scripts/start.sh`
-
-Inicia os containers (assume que já foram configurados).
-
-#### `stop.sh` - Parar
-**Uso**: `./scripts/stop.sh`
-
-Para os containers sem remover dados.
-
-#### `restart.sh` - Reiniciar
-**Uso**: `./scripts/restart.sh`
-
-Reinicia os containers.
-
-#### `reset.sh` - Reset Completo
-**Uso**: `./scripts/reset.sh`
-
-⚠️ **CUIDADO**: Remove containers e volumes. **APAGA TODOS OS DADOS!**
-
----
-
-### 📊 Logs
-
-#### `logs.sh` - Ver Logs
-**Uso**:
+**Uso na VPS:**
 ```bash
-# Todos os serviços
-./scripts/logs.sh
-
-# Apenas backend
-./scripts/logs.sh backend
-
-# Apenas frontend
-./scripts/logs.sh frontend
-```
-
-Mostra logs dos containers em tempo real.
-
----
-
-### 🗄️ Banco de Dados
-
-#### `prisma.sh` - Comandos Prisma
-**Uso**: `./scripts/prisma.sh <comando>`
-
-**Comandos disponíveis**:
-- `studio` - Abre Prisma Studio (GUI do banco em http://localhost:5555)
-- `migrate` - Executa migrations
-- `seed` - Popula banco com dados de exemplo
-- `generate` - Gera Prisma Client
-- `reset` - Reset completo do banco ⚠️
-
-**Exemplos**:
-```bash
-# Abrir GUI do banco
-./scripts/prisma.sh studio
-
-# Popular banco
-./scripts/prisma.sh seed
+bash scripts/vps-install.sh
 ```
 
 ---
 
-### 🧪 Testes
+### 2. `vps-deploy.sh` - Deploy Completo ⭐
+Script principal de deploy. Execute após fazer push das alterações.
 
-#### `test-api.sh` - Testar API
-**Uso**: `./scripts/test-api.sh`
+**Uso na VPS:**
+```bash
+bash scripts/vps-deploy.sh
+```
 
-Testa os principais endpoints da API.
+**O que faz:**
+1. ✅ Verifica e cria `.env` se não existir
+2. ✅ Copia `.env` para `backend/.env`
+3. ✅ Detecta IP público e atualiza `WEBHOOK_URL`
+4. ✅ Faz `git pull` do repositório
+5. ✅ Build e inicia containers Docker
+6. ✅ Executa migrations do Prisma
+7. ✅ Gera Prisma Client atualizado
+8. ✅ Executa seed (cria usuário Admin)
+9. ✅ Reinicia backend
+10. ✅ Faz health check
+
+**Credenciais criadas:**
+- Email: `admin@cotaagro.com`
+- Senha: `Farmflow0147*`
 
 ---
 
-## 🎯 Makefile (Atalhos)
+### 3. `vps-fix-db.sh` - Correção Rápida 🔧
+Para corrigir problemas de login ou banco de dados.
 
-Para facilitar ainda mais, use o **Makefile**:
-
+**Uso na VPS:**
 ```bash
-# Ver todos os comandos
-make help
-
-# Setup completo
-make setup
-
-# Iniciar
-make start
-
-# Ver logs
-make logs
-make logs-backend
-make logs-frontend
-
-# Prisma Studio
-make prisma-studio
-
-# Testar API
-make test-api
-
-# Reset completo
-make reset
+bash scripts/vps-fix-db.sh
 ```
+
+**Use quando:**
+- ❌ Não consegue fazer login
+- ❌ Erro "User not found"
+- ❌ Prisma Client desatualizado
 
 ---
 
-## 🚀 Fluxo de Trabalho Recomendado
+## 🚀 Como Usar
 
-### Primeira Vez (Setup Inicial)
+### Primeira Instalação
+
 ```bash
-cd /Users/samuelgm/Workspace/flow/cotaagro
+# 1. Conectar na VPS
+ssh usuario@187.77.255.92
 
-# Opção 1: Com script
-./scripts/setup.sh
+# 2. Clonar repositório
+git clone https://github.com/samuckamorais/cotaAgro.git
+cd cotaAgro
 
-# Opção 2: Com make
-make setup
+# 3. Instalar dependências (opcional)
+bash scripts/vps-install.sh
+
+# 4. Deploy
+bash scripts/vps-deploy.sh
 ```
 
-### Desenvolvimento Diário
+### Atualizações
+
 ```bash
-# Iniciar
-make start
-
-# Ver logs
-make logs-backend
-
-# Parar
-make stop
+# Na VPS, no diretório do projeto
+bash scripts/vps-deploy.sh
 ```
 
-### Trabalhar com Banco de Dados
+### Correção de Login
+
 ```bash
-# Ver dados (GUI)
-make prisma-studio
-
-# Popular com dados de exemplo
-make prisma-seed
-```
-
-### Testar
-```bash
-# Testar API
-make test-api
-
-# Ver logs de erros
-make logs-backend
+# Na VPS
+bash scripts/vps-fix-db.sh
 ```
 
 ---
 
-## 📁 Estrutura de Scripts
+## 🔧 Comandos Docker Úteis
 
-```
-scripts/
-├── README.md           # Este arquivo
-├── setup.sh           # Setup completo
-├── start.sh           # Iniciar containers
-├── stop.sh            # Parar containers
-├── restart.sh         # Reiniciar containers
-├── reset.sh           # Reset completo
-├── logs.sh            # Ver logs
-├── prisma.sh          # Comandos Prisma
-└── test-api.sh        # Testar API
+```bash
+# Ver status
+docker compose ps
+
+# Logs
+docker compose logs -f
+docker compose logs -f backend
+
+# Reiniciar
+docker compose restart
+docker compose restart backend
+
+# Parar/Iniciar
+docker compose down
+docker compose up -d
 ```
 
 ---
 
-## ⚙️ Requisitos
+## 🔐 Credenciais Padrão
 
-- **Docker** instalado e rodando
-- **Docker Compose** disponível
-- **Make** (opcional, mas recomendado)
+- **Email:** admin@cotaagro.com
+- **Senha:** Farmflow0147*
+
+---
+
+## 🌐 URLs (substitua SEU_IP)
+
+- Frontend: `http://SEU_IP:5173`
+- Backend: `http://SEU_IP:3000`
+- Health: `http://SEU_IP:3000/health`
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Script não executa
+### Não consigo fazer login
 ```bash
-# Tornar executável
-chmod +x scripts/*.sh
+bash scripts/vps-fix-db.sh
 ```
 
-### Docker não encontrado
+### Container não inicia
 ```bash
-# Verificar se Docker está rodando
-docker --version
-docker compose version
+docker compose logs backend
+docker compose down
+docker compose up -d
 ```
 
-### Porta já em uso
+### Banco não responde
 ```bash
-# Verificar o que está usando a porta
-lsof -i :3000  # Backend
-lsof -i :5173  # Frontend
-lsof -i :5432  # PostgreSQL
+docker compose restart postgres
+sleep 10
+docker compose exec postgres pg_isready -U postgres
 ```
-
-### Reset completo
-```bash
-# Parar tudo e remover volumes
-make reset
-
-# Setup novamente
-make setup
-```
-
----
-
-## 📖 Documentação Adicional
-
-- **QUICKSTART.md** - Guia rápido
-- **README.md** - Documentação principal
-- **ARCHITECTURE.md** - Arquitetura técnica
-
----
-
-**Criado por**: Claude Code
-**Data**: 30 de Março de 2024

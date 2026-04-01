@@ -30,9 +30,27 @@ if ! command -v docker &> /dev/null; then
   exit 1
 fi
 
+# Verificar e criar .env se não existir
 if [ ! -f ".env" ]; then
-  echo -e "${RED}❌ Arquivo .env não encontrado. Copie .env.example e configure.${NC}"
-  exit 1
+  echo -e "${YELLOW}⚠️  Arquivo .env não encontrado. Criando a partir de .env.example...${NC}"
+  if [ -f ".env.example" ]; then
+    cp .env.example .env
+    echo -e "${GREEN}✅ Arquivo .env criado${NC}"
+    echo -e "${YELLOW}⚠️  IMPORTANTE: Configure as variáveis obrigatórias no .env antes de continuar!${NC}"
+    echo -e "${YELLOW}   Edite: nano .env${NC}"
+    echo ""
+    read -p "Pressione ENTER após configurar o .env ou Ctrl+C para cancelar..."
+  else
+    echo -e "${RED}❌ Arquivo .env.example não encontrado.${NC}"
+    exit 1
+  fi
+fi
+
+# Copiar .env para backend se não existir
+if [ ! -f "backend/.env" ]; then
+  echo -e "${YELLOW}Copiando .env para backend/...${NC}"
+  cp .env backend/.env
+  echo -e "${GREEN}✅ backend/.env criado${NC}"
 fi
 
 # Verificar variáveis obrigatórias
@@ -118,49 +136,97 @@ fi
 echo -e "${GREEN}✅ PostgreSQL pronto${NC}"
 
 # -----------------------------------------------------------
-# 5. Migrations e seed
+# 5. Migrations, Prisma Client e Seed
 # -----------------------------------------------------------
-echo -e "${YELLOW}[5/5] Executando migrations...${NC}"
+echo -e "${YELLOW}[5/6] Executando migrations e configurando banco...${NC}"
 
-# Verifica se já existem migrations criadas
-MIGRATIONS_DIR="backend/prisma/migrations"
+# 5.1 - Aplicar migrations do Prisma
+echo "  → Aplicando migrations..."
 docker compose exec -T backend npx prisma migrate deploy
 echo -e "${GREEN}✅ Migrations aplicadas${NC}"
 
-# Seed apenas na primeira vez (verifica se tabela users existe e está vazia)
+# 5.2 - Gerar Prisma Client atualizado
+echo "  → Gerando Prisma Client..."
+docker compose exec -T backend npx prisma generate
+echo -e "${GREEN}✅ Prisma Client gerado${NC}"
+
+# 5.3 - Seed: Verificar e popular dados iniciais
+echo "  → Verificando dados iniciais..."
 USER_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
-  "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users';" 2>/dev/null || echo "0")
+  "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='User';" 2>/dev/null || echo "0")
+
 if [ "$USER_COUNT" = "1" ]; then
+  # Tabela User existe, verificar se está vazia
   DATA_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
-    "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
+    "SELECT COUNT(*) FROM \"User\";" 2>/dev/null || echo "0")
+
   if [ "$(echo $DATA_COUNT | tr -d ' ')" = "0" ]; then
-    echo -e "${YELLOW}Populando banco com dados iniciais...${NC}"
-    docker compose exec -T backend npx tsx prisma/seed.ts
-    echo -e "${GREEN}✅ Seed executado${NC}"
+    echo -e "${YELLOW}  → Populando banco com dados iniciais (Admin user)...${NC}"
+    docker compose exec -T backend npm run prisma:seed
+    echo -e "${GREEN}✅ Seed executado - Usuário Admin criado${NC}"
+    echo -e "${GREEN}   Email: admin@cotaagro.com${NC}"
+    echo -e "${GREEN}   Senha: Farmflow0147*${NC}"
   else
-    echo "Banco já possui dados, seed ignorado."
+    echo "  ℹ️  Banco já possui dados, seed ignorado."
   fi
 else
-  echo -e "${YELLOW}Populando banco com dados iniciais...${NC}"
-  docker compose exec -T backend npx tsx prisma/seed.ts
-  echo -e "${GREEN}✅ Seed executado${NC}"
+  # Tabela não existe, executar seed
+  echo -e "${YELLOW}  → Populando banco com dados iniciais (Admin user)...${NC}"
+  docker compose exec -T backend npm run prisma:seed
+  echo -e "${GREEN}✅ Seed executado - Usuário Admin criado${NC}"
+  echo -e "${GREEN}   Email: admin@cotaagro.com${NC}"
+  echo -e "${GREEN}   Senha: Farmflow0147*${NC}"
 fi
 
 # -----------------------------------------------------------
-# Status final
+# 6. Reiniciar backend para aplicar mudanças
+# -----------------------------------------------------------
+echo -e "${YELLOW}[6/6] Reiniciando serviços...${NC}"
+docker compose restart backend
+echo -e "${GREEN}✅ Backend reiniciado${NC}"
+
+# Aguardar o backend estar pronto
+echo "  → Aguardando backend inicializar..."
+sleep 5
+
+# -----------------------------------------------------------
+# Status final e health check
 # -----------------------------------------------------------
 echo ""
+echo "============================================="
+echo " Verificando status dos serviços"
+echo "============================================="
 docker compose ps
+echo ""
+
+# Health check do backend
+echo -e "${YELLOW}Verificando health do backend...${NC}"
+sleep 2
+HEALTH_CHECK=$(curl -s http://localhost:3000/health || echo "FAILED")
+if [[ "$HEALTH_CHECK" == *"ok"* ]] || [[ "$HEALTH_CHECK" == *"healthy"* ]]; then
+  echo -e "${GREEN}✅ Backend está saudável${NC}"
+else
+  echo -e "${YELLOW}⚠️  Backend pode não estar totalmente inicializado. Verifique os logs.${NC}"
+fi
+
 echo ""
 echo "============================================="
 echo -e "${GREEN}✅ Deploy concluído!${NC}"
 echo "============================================="
 echo ""
-echo "URLs:"
-echo "  Frontend:  http://$(curl -s ifconfig.me):5173"
-echo "  Backend:   http://$(curl -s ifconfig.me):3000"
-echo "  Health:    http://$(curl -s ifconfig.me):3000/health"
+echo -e "${GREEN}Credenciais padrão:${NC}"
+echo "  Email: admin@cotaagro.com"
+echo "  Senha: Farmflow0147*"
 echo ""
-echo "Logs:"
-echo "  docker compose logs -f"
+echo "URLs:"
+PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me || echo "seu-ip")
+echo "  Frontend:  http://${PUBLIC_IP}:5173"
+echo "  Backend:   http://${PUBLIC_IP}:3000"
+echo "  Health:    http://${PUBLIC_IP}:3000/health"
+echo ""
+echo "Comandos úteis:"
+echo "  Ver logs:        docker compose logs -f"
+echo "  Ver log backend: docker compose logs -f backend"
+echo "  Reiniciar:       docker compose restart"
+echo "  Parar:           docker compose down"
 echo ""
