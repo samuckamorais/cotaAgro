@@ -22,15 +22,15 @@ export function Dashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-gray-600">Carregando...</div>
+        <div className="text-sm text-muted-foreground">Carregando...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Erro ao carregar dashboard</p>
+      <div className="bg-[hsl(var(--error-bg))] border-0.5 border-[hsl(var(--error))] rounded-md p-4">
+        <p className="text-sm text-[hsl(var(--error))]">Erro ao carregar dashboard</p>
       </div>
     );
   }
@@ -62,98 +62,98 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Visão geral completa do sistema</p>
+        <h1 className="text-2xl font-medium text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">Visão geral completa do sistema</p>
       </div>
 
       {/* KPIs Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cotações Hoje</CardTitle>
-            <FileText className="h-4 w-4 text-blue-600" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs text-muted-foreground font-normal">Cotações Hoje</CardTitle>
+            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats?.quotesToday || 0}</div>
-            <p className="text-xs text-gray-600">cotações criadas hoje</p>
+            <div className="text-2xl font-medium text-foreground">{stats?.quotesToday || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">cotações criadas hoje</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Propostas Recebidas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs text-muted-foreground font-normal">Propostas Recebidas</CardTitle>
+            <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.proposalsReceived || 0}</div>
-            <p className="text-xs text-gray-600">total de propostas</p>
+            <div className="text-2xl font-medium text-foreground">{stats?.proposalsReceived || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">total de propostas</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Fechamento</CardTitle>
-            <CheckCircle className="h-4 w-4 text-purple-600" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs text-muted-foreground font-normal">Taxa de Fechamento</CardTitle>
+            <CheckCircle className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats?.closureRate || 0}%</div>
-            <p className="text-xs text-gray-600">cotações fechadas</p>
+            <div className="text-2xl font-medium text-foreground">{stats?.closureRate || 0}%</div>
+            <p className="text-xs text-muted-foreground mt-1">cotações fechadas</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Produtores Ativos</CardTitle>
-            <Users className="h-4 w-4 text-orange-600" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs text-muted-foreground font-normal">Produtores Ativos</CardTitle>
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats?.activeProducers || 0}</div>
-            <p className="text-xs text-gray-600">com assinatura ativa</p>
+            <div className="text-2xl font-medium text-foreground">{stats?.activeProducers || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">com assinatura ativa</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Estatísticas de Propostas e Valores */}
       {proposalStats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Volume Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs text-muted-foreground font-normal">Volume Total</CardTitle>
+              <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-medium text-foreground">
                 {formatCurrency(proposalStats.totalVolume)}
               </div>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-muted-foreground mt-1">
                 em {proposalStats.totalProposals} propostas
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-              <BarChart3 className="h-4 w-4 text-blue-600" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs text-muted-foreground font-normal">Ticket Médio</CardTitle>
+              <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-medium text-foreground">
                 {formatCurrency(proposalStats.avgProposalValue)}
               </div>
-              <p className="text-xs text-gray-600">valor médio por proposta</p>
+              <p className="text-xs text-muted-foreground mt-1">valor médio por proposta</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Este Mês</CardTitle>
-              <Calendar className="h-4 w-4 text-purple-600" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs text-muted-foreground font-normal">Este Mês</CardTitle>
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-medium text-foreground">
                 {formatCurrency(proposalStats.thisMonth.volume)}
               </div>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-muted-foreground mt-1">
                 {proposalStats.thisMonth.count} propostas
               </p>
             </CardContent>
@@ -166,42 +166,42 @@ export function Dashboard() {
         {producerStats && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-blue-600" />
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <UserCheck className="w-4 h-4 text-muted-foreground" />
                 Produtores
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-medium text-foreground">
                     {producerStats.totalProducers}
                   </div>
-                  <p className="text-xs text-gray-600">Total</p>
+                  <p className="text-xs text-muted-foreground mt-1">Total</p>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-medium text-foreground">
                     {producerStats.producersWithQuotes}
                   </div>
-                  <p className="text-xs text-gray-600">Com Cotações</p>
+                  <p className="text-xs text-muted-foreground mt-1">Com Cotações</p>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-purple-600">
+                  <div className="text-2xl font-medium text-foreground">
                     {producerStats.producersWithActiveSubscription}
                   </div>
-                  <p className="text-xs text-gray-600">Ativos</p>
+                  <p className="text-xs text-muted-foreground mt-1">Ativos</p>
                 </div>
               </div>
 
               {producerStats.topProducers.length > 0 && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-700 mb-3">
+                <div className="pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Top Produtores (por cotações)
                   </p>
                   <div className="space-y-2">
                     {producerStats.topProducers.map((producer, index) => (
                       <div key={index} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">{producer.name}</span>
+                        <span className="text-sm text-foreground">{producer.name}</span>
                         <Badge variant="outline">{producer.quotesCount} cotações</Badge>
                       </div>
                     ))}
@@ -216,42 +216,42 @@ export function Dashboard() {
         {supplierStats && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-orange-600" />
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
                 Fornecedores
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-orange-600">
+                  <div className="text-2xl font-medium text-foreground">
                     {supplierStats.totalSuppliers}
                   </div>
-                  <p className="text-xs text-gray-600">Total</p>
+                  <p className="text-xs text-muted-foreground mt-1">Total</p>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-medium text-foreground">
                     {supplierStats.networkSuppliers}
                   </div>
-                  <p className="text-xs text-gray-600">Rede</p>
+                  <p className="text-xs text-muted-foreground mt-1">Rede</p>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-medium text-foreground">
                     {supplierStats.producerSuppliers}
                   </div>
-                  <p className="text-xs text-gray-600">Produtores</p>
+                  <p className="text-xs text-muted-foreground mt-1">Produtores</p>
                 </div>
               </div>
 
               {supplierStats.topSuppliers.length > 0 && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-700 mb-3">
+                <div className="pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Top Fornecedores (por propostas)
                   </p>
                   <div className="space-y-2">
                     {supplierStats.topSuppliers.map((supplier, index) => (
                       <div key={index} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">{supplier.name}</span>
+                        <span className="text-sm text-foreground">{supplier.name}</span>
                         <Badge variant="outline">{supplier.proposalsCount} propostas</Badge>
                       </div>
                     ))}
@@ -268,8 +268,8 @@ export function Dashboard() {
         {charts?.topProducts && charts.topProducts.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-green-600" />
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Package className="w-4 h-4 text-muted-foreground" />
                 Produtos Mais Cotados
               </CardTitle>
             </CardHeader>
@@ -280,14 +280,14 @@ export function Dashboard() {
                   const percentage = (product.count / maxCount) * 100;
 
                   return (
-                    <div key={index} className="space-y-1">
+                    <div key={index} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-gray-700">{product.product}</span>
-                        <span className="text-gray-600">{product.count} cotações</span>
+                        <span className="font-normal text-foreground">{product.product}</span>
+                        <span className="text-xs text-muted-foreground">{product.count} cotações</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-1.5">
                         <div
-                          className="bg-green-600 h-2 rounded-full transition-all"
+                          className="bg-primary h-1.5 rounded-full transition-all"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -303,8 +303,8 @@ export function Dashboard() {
         {charts?.quoteStatusStats && charts.quoteStatusStats.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <BarChart3 className="w-4 h-4 text-muted-foreground" />
                 Status das Cotações
               </CardTitle>
             </CardHeader>
@@ -319,16 +319,16 @@ export function Dashboard() {
                   const percentage = (statusItem.count / totalQuotes) * 100;
 
                   return (
-                    <div key={index} className="space-y-1">
+                    <div key={index} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
                         <Badge variant={badge.variant}>{badge.label}</Badge>
-                        <span className="text-gray-600">
+                        <span className="text-xs text-muted-foreground">
                           {statusItem.count} ({percentage.toFixed(1)}%)
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-1.5">
                         <div
-                          className="bg-blue-600 h-2 rounded-full transition-all"
+                          className="bg-primary h-1.5 rounded-full transition-all"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -345,33 +345,33 @@ export function Dashboard() {
       {charts?.categoryStats && charts.categoryStats.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-purple-600" />
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Package className="w-4 h-4 text-muted-foreground" />
               Fornecedores por Categoria
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {charts.categoryStats
                 .sort((a, b) => b.suppliersCount - a.suppliersCount)
                 .map((category, index) => (
                   <div
                     key={index}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition"
+                    className="border-0.5 border-border rounded-md p-4 hover:bg-secondary/50 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-normal text-foreground">
                         {getCategoryLabel(category.category)}
                       </span>
                     </div>
-                    <div className="space-y-1 text-sm">
+                    <div className="space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Fornecedores:</span>
-                        <span className="font-medium">{category.suppliersCount}</span>
+                        <span className="text-muted-foreground">Fornecedores:</span>
+                        <span className="font-normal text-foreground">{category.suppliersCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Propostas:</span>
-                        <span className="font-medium">{category.proposalsCount}</span>
+                        <span className="text-muted-foreground">Propostas:</span>
+                        <span className="font-normal text-foreground">{category.proposalsCount}</span>
                       </div>
                     </div>
                   </div>
@@ -384,26 +384,26 @@ export function Dashboard() {
       {/* Últimas Cotações */}
       <Card>
         <CardHeader>
-          <CardTitle>Últimas Cotações</CardTitle>
+          <CardTitle className="text-sm font-medium text-foreground">Últimas Cotações</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {data?.recentQuotes?.slice(0, 5).map((quote: any) => {
               const badge = getStatusBadge(quote.status);
               return (
                 <div
                   key={quote.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition"
+                  className="flex items-center justify-between p-3 border-0.5 border-border rounded-md hover:bg-secondary/50 transition-colors"
                 >
                   <div className="flex-1">
-                    <p className="font-medium">{quote.product}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm font-normal text-foreground">{quote.product}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {quote.quantity} {quote.unit} • {quote.producer.name}
                     </p>
-                    <p className="text-xs text-gray-500">{formatDate(quote.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(quote.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-xs text-muted-foreground">
                       {quote._count.proposals} proposta(s)
                     </div>
                     <Badge variant={badge.variant}>{badge.label}</Badge>

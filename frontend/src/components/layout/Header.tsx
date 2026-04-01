@@ -29,24 +29,24 @@ export function Header() {
   const CurrentThemeIcon = currentThemeOption.icon;
 
   return (
-    <header className="h-14 border-b border-border/50 bg-background px-5 flex items-center justify-between">
+    <header className="h-14 border-b border-border bg-background px-6 flex items-center justify-between">
       <div>
-        <h2 className="text-base font-medium text-foreground">
+        <h2 className="text-sm font-medium text-foreground">
           Bem-vindo, {user?.name}
         </h2>
         <p className="text-xs text-muted-foreground">Gerencie suas cotações agrícolas</p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* User Info */}
-        <div className="flex items-center gap-2.5 px-3 py-1.5 bg-secondary/50 rounded-md border-0.5 border-border">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-secondary/50 rounded-md border-0.5 border-border">
+          <div className="flex items-center gap-1.5">
             <UserIcon className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-normal text-foreground">{user?.email}</span>
           </div>
           {user?.role === 'ADMIN' && (
             <Badge variant="default" className="text-xs">
-              <ShieldCheck className="w-3 h-3 mr-1" />
+              <ShieldCheck className="w-3 h-3 mr-0.5" />
               Admin
             </Badge>
           )}
@@ -72,7 +72,7 @@ export function Header() {
               />
 
               {/* Menu */}
-              <div className="absolute right-0 top-full mt-2 w-36 bg-popover border-0.5 border-border rounded-md shadow-lg z-50 py-1">
+              <div className="absolute right-0 top-full mt-1 w-32 bg-popover border-0.5 border-border rounded-md z-50 py-1">
                 {themeOptions.map((option) => {
                   const Icon = option.icon;
                   return (
@@ -82,13 +82,13 @@ export function Header() {
                         setTheme(option.value);
                         setShowThemeMenu(false);
                       }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary transition-colors ${
+                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs hover:bg-secondary transition-colors ${
                         theme === option.value
                           ? 'text-primary font-medium'
                           : 'text-foreground font-normal'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-3.5 h-3.5" />
                       {option.label}
                     </button>
                   );

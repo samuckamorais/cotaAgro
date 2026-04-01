@@ -34,8 +34,8 @@ export function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-lg mb-4">
-            <span className="text-lg font-medium text-primary-foreground">CA</span>
+          <div className="inline-flex items-center justify-center w-11 h-11 bg-primary rounded-md mb-4">
+            <span className="text-base font-medium text-primary-foreground">CA</span>
           </div>
           <h1 className="text-2xl font-medium text-foreground mb-1">CotaAgro</h1>
           <p className="text-sm text-muted-foreground">
@@ -44,7 +44,7 @@ export function Login() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-card border-0.5 border-border rounded-lg p-6">
+        <div className="bg-card border-0.5 border-border rounded-md p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="bg-[hsl(var(--error-bg))] border-0.5 border-[hsl(var(--error))]/20 rounded-md p-3">
