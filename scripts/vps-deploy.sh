@@ -105,13 +105,7 @@ echo -e "${YELLOW}[5/5] Executando migrations...${NC}"
 
 # Verifica se já existem migrations criadas
 MIGRATIONS_DIR="backend/prisma/migrations"
-if [ -d "$MIGRATIONS_DIR" ] && [ "$(ls -A $MIGRATIONS_DIR 2>/dev/null)" ]; then
-  # Já tem migrations — aplica sem criar novas
-  docker compose exec -T backend npx prisma migrate deploy
-else
-  # Primeira vez — cria e aplica as migrations
-  docker compose exec -T backend npx prisma migrate dev --name init --skip-seed
-fi
+docker compose exec -T backend npx prisma migrate deploy
 echo -e "${GREEN}✅ Migrations aplicadas${NC}"
 
 # Seed apenas na primeira vez (verifica se tabela users existe e está vazia)
