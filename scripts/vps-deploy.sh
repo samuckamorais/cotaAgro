@@ -52,6 +52,25 @@ if [ ${#MISSING[@]} -gt 0 ]; then
 fi
 
 # -----------------------------------------------------------
+# 0. Atualizar WEBHOOK_URL com IP público da VPS
+# -----------------------------------------------------------
+echo -e "${YELLOW}[0/5] Detectando IP público da VPS...${NC}"
+PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "")
+
+if [ -n "$PUBLIC_IP" ]; then
+  WEBHOOK_URL="http://${PUBLIC_IP}:3000"
+  # Atualiza ou adiciona WEBHOOK_URL no .env
+  if grep -q "^WEBHOOK_URL=" .env; then
+    sed -i "s|^WEBHOOK_URL=.*|WEBHOOK_URL=${WEBHOOK_URL}|" .env
+  else
+    echo "WEBHOOK_URL=${WEBHOOK_URL}" >> .env
+  fi
+  echo -e "${GREEN}✅ WEBHOOK_URL atualizado: ${WEBHOOK_URL}${NC}"
+else
+  echo -e "${YELLOW}⚠️  Não foi possível detectar o IP público. WEBHOOK_URL não atualizado.${NC}"
+fi
+
+# -----------------------------------------------------------
 # 1. Pull do repositório
 # -----------------------------------------------------------
 echo -e "${YELLOW}[1/5] Atualizando código...${NC}"
