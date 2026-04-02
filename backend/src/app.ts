@@ -12,6 +12,7 @@ import { ProducerController } from './modules/producers/producer.controller';
 import { SupplierController } from './modules/suppliers/supplier.controller';
 import { QuoteController } from './modules/quotes/quote.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
+import subscriptionsRouter from './modules/subscriptions/subscriptions.routes';
 
 /**
  * Configuração do Express App
@@ -81,6 +82,9 @@ export function createApp(): Application {
   apiRouter.post('/quotes', authenticate, QuoteController.create);
   apiRouter.post('/quotes/:id/dispatch', authenticate, QuoteController.dispatch);
   apiRouter.put('/quotes/:id/close', authenticate, QuoteController.close);
+
+  // Subscription routes (protected)
+  apiRouter.use('/subscriptions', subscriptionsRouter);
 
   app.use('/api', apiRouter);
 

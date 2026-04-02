@@ -9,6 +9,7 @@ import { QuoteDetail } from './pages/QuoteDetail';
 import { Suppliers } from './pages/Suppliers';
 import { Producers } from './pages/Producers';
 import { Users } from './pages/Users';
+import { Subscriptions } from './pages/Subscriptions';
 import { Login } from './pages/Login';
 
 function App() {
@@ -55,19 +56,10 @@ function ProtectedLayout() {
             <Route path="/producers" element={<Producers />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/users" element={<Users />} />
-            <Route path="/subscriptions" element={<PlaceholderPage title="Assinaturas" />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
           </Routes>
         </main>
       </div>
-    </div>
-  );
-}
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="bg-white rounded-lg shadow p-8 text-center">
-      <h1 className="text-3xl font-bold text-gray-900 mb-4">{title}</h1>
-      <p className="text-gray-600">Página em construção...</p>
     </div>
   );
 }

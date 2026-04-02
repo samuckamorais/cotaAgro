@@ -4,15 +4,27 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useSuppliers, useDeleteSupplier } from '../hooks/useSuppliers';
 import { formatDate } from '../lib/utils';
-import { getCategoryLabel, CATEGORY_COLORS } from '../types/supplier';
-import { ChevronLeft, ChevronRight, Plus, Edit, Trash2, Building2, Mail, Phone, Package } from 'lucide-react';
+import { getCategoryLabel } from '../types/supplier';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Edit,
+  Trash2,
+  Building2,
+  Mail,
+  Phone,
+  Package,
+  Users,
+  FileText
+} from 'lucide-react';
 import { SupplierFormModal } from '../components/suppliers/SupplierFormModal';
 
 export function Suppliers() {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
-  const limit = 10;
+  const limit = 15;
 
   const { data, isLoading, error } = useSuppliers(page, limit);
   const deleteMutation = useDeleteSupplier();
@@ -41,13 +53,44 @@ export function Suppliers() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-12">Carregando fornecedores...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-medium text-foreground">Fornecedores</h1>
+            <p className="text-sm text-muted-foreground mt-1">Gerencie sua rede de fornecedores</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-5 bg-muted rounded w-3/4 mb-2" />
+                <div className="h-4 bg-muted rounded w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Erro ao carregar fornecedores</p>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-medium text-foreground">Fornecedores</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gerencie sua rede de fornecedores</p>
+        </div>
+        <div className="bg-[hsl(var(--error-bg))] border-0.5 border-[hsl(var(--error))] rounded-md p-4">
+          <p className="text-sm text-[hsl(var(--error))]">Erro ao carregar fornecedores</p>
+        </div>
       </div>
     );
   }
@@ -57,180 +100,193 @@ export function Suppliers() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Fornecedores</h1>
-          <p className="text-gray-600">Gerencie sua rede de fornecedores</p>
+          <h1 className="text-2xl font-medium text-foreground">Fornecedores</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gerencie sua rede de fornecedores</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Plus className="w-3.5 h-3.5" />
           Novo Fornecedor
         </Button>
       </div>
 
       {/* Filtros rápidos */}
       <div className="flex gap-2">
-        <Badge variant="default" className="cursor-pointer">
+        <Badge variant="default" className="cursor-pointer text-xs">
           Todos ({pagination?.total || 0})
         </Badge>
-        <Badge variant="outline" className="cursor-pointer">
+        <Badge variant="outline" className="cursor-pointer text-xs">
           Meus Fornecedores
         </Badge>
-        <Badge variant="outline" className="cursor-pointer">
+        <Badge variant="outline" className="cursor-pointer text-xs">
           Rede CotaAgro
         </Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Todos os Fornecedores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {suppliers.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">Nenhum fornecedor cadastrado</p>
-              <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Cadastrar Primeiro Fornecedor
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {suppliers.map((supplier: any) => (
-                  <div
-                    key={supplier.id}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold">{supplier.name}</h3>
-                          {supplier.isNetworkSupplier ? (
-                            <Badge variant="default">Rede CotaAgro</Badge>
-                          ) : (
-                            <Badge variant="outline">Meu Fornecedor</Badge>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
-                            <span>{supplier.phone}</span>
-                          </div>
-
-                          {supplier.company && (
-                            <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4" />
-                              <span>{supplier.company}</span>
-                            </div>
-                          )}
-
-                          {supplier.email && (
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4" />
-                              <span>{supplier.email}</span>
-                            </div>
-                          )}
-
-                          <div>
-                            <span className="font-medium">Regiões:</span>{' '}
-                            {supplier.regions.length > 0
-                              ? supplier.regions.join(', ')
-                              : 'Não informado'}
-                          </div>
-                        </div>
-
-                        {/* Categorias/Áreas de Atuação */}
-                        {supplier.categories.length > 0 && (
-                          <div className="mt-3 pt-3 border-t">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Package className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm font-medium text-gray-700">
-                                Áreas de Atuação:
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {supplier.categories.map((category: string) => (
-                                <span
-                                  key={category}
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    CATEGORY_COLORS[category] || 'bg-gray-100 text-gray-800'
-                                  }`}
-                                >
-                                  {getCategoryLabel(category)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex gap-4 text-xs text-gray-500">
-                          {supplier._count && (
-                            <>
-                              <span>{supplier._count.producers} produtores vinculados</span>
-                              <span>{supplier._count.proposals} propostas enviadas</span>
-                            </>
-                          )}
-                          <span>Cadastrado em {formatDate(supplier.createdAt)}</span>
-                        </div>
+      {/* Empty State ou Grid de Cards */}
+      {suppliers.length === 0 ? (
+        <Card className="p-16 text-center">
+          <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-base font-medium text-foreground mb-2">
+            Nenhum fornecedor cadastrado
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Cadastre o primeiro fornecedor para começar
+          </p>
+          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+            <Plus className="w-3.5 h-3.5" />
+            Cadastrar Fornecedor
+          </Button>
+        </Card>
+      ) : (
+        <>
+          {/* Grid de Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {suppliers.map((supplier: any) => (
+              <Card
+                key={supplier.id}
+                className="hover:bg-secondary/50 transition-colors"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CardTitle className="text-base font-medium">
+                          {supplier.name}
+                        </CardTitle>
                       </div>
-
-                      <div className="flex gap-2 ml-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(supplier)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(supplier.id, supplier.name)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </div>
+                      <Badge
+                        variant={supplier.isNetworkSupplier ? 'default' : 'outline'}
+                        className="text-xs"
+                      >
+                        {supplier.isNetworkSupplier ? 'Rede' : 'Próprio'}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(supplier)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(supplier.id, supplier.name)}
+                        disabled={deleteMutation.isPending}
+                        className="h-8 w-8 p-0 text-[hsl(var(--error))] hover:text-[hsl(var(--error))] hover:bg-[hsl(var(--error-bg))]"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </CardHeader>
 
-              {/* Paginação */}
-              {pagination && pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                  <div className="text-sm text-gray-600">
-                    Página {pagination.page} de {pagination.totalPages} • Total: {pagination.total}{' '}
-                    fornecedores
+                <CardContent className="space-y-3">
+                  {/* Informações de contato */}
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{supplier.phone}</span>
+                    </div>
+                    {supplier.company && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Building2 className="w-3.5 h-3.5" />
+                        <span className="truncate">{supplier.company}</span>
+                      </div>
+                    )}
+                    {supplier.email && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Mail className="w-3.5 h-3.5" />
+                        <span className="truncate">{supplier.email}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                      disabled={page === pagination.totalPages}
-                    >
-                      Próxima
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+
+                  {/* Categorias */}
+                  {supplier.categories && supplier.categories.length > 0 && (
+                    <div className="pt-3 border-t border-border">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Categorias:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {supplier.categories.slice(0, 3).map((category: string) => (
+                          <Badge key={category} variant="secondary" className="text-xs">
+                            {getCategoryLabel(category)}
+                          </Badge>
+                        ))}
+                        {supplier.categories.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{supplier.categories.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Estatísticas */}
+                  {supplier._count && (
+                    <div className="flex gap-2 pt-3 border-t border-border">
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Users className="w-3 h-3" />
+                        {supplier._count.producers || 0}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <FileText className="w-3 h-3" />
+                        {supplier._count.proposals || 0}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Data de cadastro */}
+                  <div className="text-xs text-muted-foreground pt-2 border-t border-border">
+                    Cadastrado em {formatDate(supplier.createdAt)}
                   </div>
-                </div>
-              )}
-            </>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Paginação */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex justify-between items-center pt-4 border-t border-border">
+              <div className="text-sm text-muted-foreground">
+                Página {pagination.page} de {pagination.totalPages} • Mostrando{' '}
+                {(pagination.page - 1) * limit + 1}-
+                {Math.min(pagination.page * limit, pagination.total)} de{' '}
+                {pagination.total} fornecedores
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="gap-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                  disabled={page === pagination.totalPages}
+                  className="gap-1.5"
+                >
+                  Próxima
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
 
       {/* Modal de cadastro/edição */}
       <SupplierFormModal

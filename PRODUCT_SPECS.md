@@ -958,7 +958,735 @@ Response: {
 
 ---
 
-**[CONTINUA... Especificações das próximas telas: Detalhe da Cotação, Produtores, Fornecedores, Assinaturas, Usuários]**
+## 7. ASSINATURAS
+
+### 🎯 Objetivo
+Gerenciar planos de assinatura dos produtores: visualizar status, alterar planos, renovar assinaturas e controlar limites de cotações mensais. Monetização principal da plataforma.
+
+### 📐 Layout e Estrutura
+
+#### Header da Página
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Assinaturas                                                │
+│  Gerencie planos e cobranças dos produtores                 │
+└─────────────────────────────────────────────────────────────┘
+```
+- Título: `text-2xl`, `font-medium`, `text-foreground`
+- Descrição: `text-sm`, `text-muted-foreground`, `mt-1`
+- Espaçamento: `mb-6`
+
+#### KPIs de Assinaturas (4 colunas)
+```
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│ Assinaturas  │ Receita      │ Taxa de      │ Cancelamentos│
+│ Ativas       │ Mensal       │ Renovação    │ Este Mês     │
+│              │              │              │              │
+│   [42]       │  R$ 12.400   │   [94%]      │   [3]        │
+│ produtores   │ recorrente   │ renovações   │ produtores   │
+│ com plano    │ este mês     │ automáticas  │              │
+└──────────────┴──────────────┴──────────────┴──────────────┘
+```
+
+**Card KPI - Especificações:**
+- Grid: `grid-cols-1 md:grid-cols-4 gap-3`
+- Card: Mesmas especificações do Dashboard
+- Ícone: `w-3.5 h-3.5 text-muted-foreground`
+- Métrica: `text-2xl font-medium text-foreground`
+- Label: `text-xs text-muted-foreground mt-1`
+
+#### Distribuição por Plano (3 colunas)
+```
+┌───────────────────┬───────────────────┬───────────────────┐
+│     BASIC         │       PRO         │    ENTERPRISE     │
+│                   │                   │                   │
+│   12 assinantes   │   24 assinantes   │    6 assinantes   │
+│ R$ 79/mês         │ R$ 149/mês        │ R$ 299/mês        │
+│ 20 cotações/mês   │ 100 cotações/mês  │ ilimitado         │
+│                   │                   │                   │
+│ [Ver Detalhes]    │ [Ver Detalhes]    │ [Ver Detalhes]    │
+└───────────────────┴───────────────────┴───────────────────┘
+```
+
+**Card de Plano:**
+```tsx
+<Card className="hover:bg-secondary/50 transition-colors">
+  <CardHeader className="pb-3">
+    <div className="flex items-center justify-between mb-2">
+      <Badge variant="default" className="text-xs">BASIC</Badge>
+      <span className="text-xs text-muted-foreground">12 assinantes</span>
+    </div>
+    <CardTitle className="text-xl font-medium text-primary">
+      R$ 79<span className="text-sm text-muted-foreground">/mês</span>
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="space-y-1.5 text-xs">
+      <div className="flex items-center gap-1.5">
+        <CheckCircle className="w-3.5 h-3.5 text-primary" />
+        <span>20 cotações por mês</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <CheckCircle className="w-3.5 h-3.5 text-primary" />
+        <span>Rede de fornecedores</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <CheckCircle className="w-3.5 h-3.5 text-primary" />
+        <span>Suporte via WhatsApp</span>
+      </div>
+    </div>
+    <Button variant="outline" size="sm" className="w-full">
+      Ver Detalhes
+    </Button>
+  </CardContent>
+</Card>
+```
+
+**Grid:** `grid-cols-1 md:grid-cols-3 gap-4`
+
+#### Filtros e Busca
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ 🔍 Buscar por produtor, CPF/CNPJ...                    │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ [Status ▼] [Plano ▼] [Período ▼] [Limpar filtros]         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Dropdowns de Filtro:**
+- **Status**: Todos, Ativa, Trial, Expirada, Cancelada
+- **Plano**: Todos, Basic, Pro, Enterprise
+- **Período**: Todos, Vence em 7 dias, Vence em 30 dias, Expiradas
+
+#### Lista de Assinaturas (Grid de Cards)
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ João Silva                                        [✓ Ativa]│
+│ CPF: 123.456.789-00                                        │
+│                                                            │
+│ ┌──────────────┐  Fazenda Santa Maria • Rio Verde/GO     │
+│ │    PRO       │  +55 64 99999-9999                       │
+│ │  R$ 149/mês  │                                          │
+│ └──────────────┘  📊 Uso: 45/100 cotações (45%)          │
+│                   ██████████░░░░░░░░░░                    │
+│                                                            │
+│ 📅 Início: 01/01/2026    🔄 Renovação: 01/05/2026        │
+│                                                            │
+│ [Editar Plano] [Renovar] [Cancelar]                       │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Card de Assinatura - Estrutura Completa:**
+```tsx
+<Card className="hover:bg-secondary/50 transition-colors">
+  <CardHeader className="pb-3">
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <CardTitle className="text-base font-medium">João Silva</CardTitle>
+          <Badge variant="success" className="text-xs gap-1">
+            <CheckCircle className="w-3 h-3" />
+            Ativa
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          CPF: 123.456.789-00
+        </p>
+      </div>
+      <div className="flex gap-1">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Edit className="w-3.5 h-3.5" />
+        </Button>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <MoreHorizontal className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  </CardHeader>
+
+  <CardContent className="space-y-3">
+    {/* Plano atual */}
+    <div className="flex items-start gap-3">
+      <div className="bg-primary/10 text-primary px-3 py-2 rounded-md">
+        <div className="text-xs font-normal">PRO</div>
+        <div className="text-sm font-medium">R$ 149/mês</div>
+      </div>
+      <div className="flex-1 text-xs text-muted-foreground space-y-1">
+        <div className="flex items-center gap-1.5">
+          <Building2 className="w-3.5 h-3.5" />
+          <span>Fazenda Santa Maria</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5" />
+          <span>Rio Verde/GO</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Phone className="w-3.5 h-3.5" />
+          <span>+55 64 99999-9999</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Uso de cotações */}
+    <div className="pt-3 border-t border-border">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs text-muted-foreground">Uso mensal</span>
+        <span className="text-xs font-normal text-foreground">45/100 cotações</span>
+      </div>
+      <div className="w-full bg-muted rounded-full h-1.5">
+        <div 
+          className="bg-primary h-1.5 rounded-full transition-all"
+          style={{ width: '45%' }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">45% utilizado</p>
+    </div>
+
+    {/* Datas */}
+    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border text-xs">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Calendar className="w-3.5 h-3.5" />
+        <div>
+          <span className="text-xs text-muted-foreground">Início</span>
+          <p className="text-xs font-normal text-foreground">01/01/2026</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <RefreshCw className="w-3.5 h-3.5" />
+        <div>
+          <span className="text-xs text-muted-foreground">Renovação</span>
+          <p className="text-xs font-normal text-foreground">01/05/2026</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Ações */}
+    <div className="flex gap-2 pt-3 border-t border-border">
+      <Button variant="outline" size="sm" className="flex-1 gap-1.5">
+        <Edit className="w-3.5 h-3.5" />
+        Editar Plano
+      </Button>
+      <Button variant="outline" size="sm" className="flex-1 gap-1.5">
+        <RefreshCw className="w-3.5 h-3.5" />
+        Renovar
+      </Button>
+    </div>
+  </CardContent>
+</Card>
+```
+
+**Grid:** `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`
+
+#### Estados Visuais do Badge
+
+**Status da Assinatura:**
+- **Ativa**: `variant="success"`, ícone CheckCircle, verde
+- **Trial**: `variant="info"`, ícone Clock, azul
+- **Expirada**: `variant="error"`, ícone XCircle, vermelho
+- **Cancelada**: `variant="outline"`, ícone Ban, cinza
+
+**Alertas de Renovação:**
+```
+┌────────────────────────────────────────────────────────────┐
+│ ⚠️  Renovação em 3 dias                                    │
+│ Esta assinatura vence em 04/04/2026. Contate o produtor.  │
+└────────────────────────────────────────────────────────────┘
+```
+- Aparece no card quando: `endDate - NOW() <= 7 days`
+- Container: `bg-warning-bg`, `border-0.5`, `border-warning`, `p-2`, `rounded-md`, `text-xs`
+
+#### Paginação
+```
+┌────────────────────────────────────────────────────────────┐
+│ Página 1 de 5 • Mostrando 1-15 de 42 assinaturas          │
+│                     [← Anterior] [Próxima →]               │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Especificações:** Mesmas da tela de Cotações
+
+#### Empty State
+```
+┌────────────────────────────────────────────────────────────┐
+│                         💳                                 │
+│              Nenhuma assinatura ativa                      │
+│                                                            │
+│  Quando produtores criarem suas primeiras cotações,       │
+│  as assinaturas aparecerão aqui automaticamente.          │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 🔄 Estados e Comportamentos
+
+#### Loading State
+- Skeleton cards (3-6 placeholders)
+- KPIs com shimmer effect
+- Desabilitar filtros durante loading
+
+#### Filtragem em Tempo Real
+- Debounce de 500ms na busca
+- Filtros aplicam imediatamente
+- URL params persistem filtros: `/subscriptions?status=ACTIVE&plan=PRO`
+
+#### Atualização de Uso de Cotações
+- Polling a cada 60 segundos
+- Atualiza apenas o campo `quotesUsed/quotesLimit`
+- Progress bar com animação suave
+
+#### Alertas Contextuais
+
+**90% do limite usado:**
+```
+┌────────────────────────────────────────────────────────────┐
+│ 📊 Uso: 90/100 cotações (90%)                              │
+│ ██████████████████░░                                       │
+│ ⚠️  Produtor está próximo do limite mensal.               │
+└────────────────────────────────────────────────────────────┘
+```
+
+**100% do limite usado:**
+```
+┌────────────────────────────────────────────────────────────┐
+│ 📊 Uso: 100/100 cotações (100%)                            │
+│ ████████████████████                                       │
+│ 🚫 Limite mensal atingido. Upgrade ou aguarde renovação.  │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Trial expirando:**
+```
+┌────────────────────────────────────────────────────────────┐
+│ 🕐 TRIAL - Expira em 2 dias                                │
+│ Contate o produtor para conversão em plano pago.          │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 🎨 Interações
+
+#### 1. Editar Plano (Modal)
+```
+┌────────────────────────────────────────────────────────┐
+│  Editar Plano de Assinatura                           │
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│  Produtor: João Silva                                 │
+│  Plano Atual: PRO (R$ 149/mês)                        │
+│                                                        │
+│  Novo Plano:                                          │
+│  ○ BASIC    - R$ 79/mês  - 20 cotações/mês           │
+│  ● PRO      - R$ 149/mês - 100 cotações/mês          │
+│  ○ ENTERPRISE - R$ 299/mês - ilimitado               │
+│                                                        │
+│  Data de Início:                                      │
+│  ○ Imediatamente (prorrateado)                       │
+│  ○ Próxima renovação (01/05/2026)                    │
+│                                                        │
+│               [Cancelar] [Salvar Alterações]          │
+└────────────────────────────────────────────────────────┘
+```
+
+**Validações:**
+- Não permitir downgrade se `quotesUsed > novo quotesLimit`
+- Calcular valor proporcional se mudança imediata
+- Confirmar alteração com admin
+
+#### 2. Renovar Assinatura (Modal)
+```
+┌────────────────────────────────────────────────────────┐
+│  Renovar Assinatura                                   │
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│  Produtor: João Silva                                 │
+│  Plano: PRO (R$ 149/mês)                              │
+│  Vencimento atual: 01/05/2026                         │
+│                                                        │
+│  Período de Renovação:                                │
+│  ○ 1 mês  - R$ 149                                    │
+│  ● 3 meses - R$ 424 (5% desconto)                     │
+│  ○ 6 meses - R$ 805 (10% desconto)                    │
+│  ○ 12 meses - R$ 1.521 (15% desconto)                 │
+│                                                        │
+│  Nova data de vencimento: 01/08/2026                  │
+│                                                        │
+│  Método de Pagamento:                                 │
+│  ○ PIX                                                │
+│  ○ Boleto                                             │
+│  ○ Cartão de Crédito                                  │
+│                                                        │
+│               [Cancelar] [Confirmar Renovação]        │
+└────────────────────────────────────────────────────────┘
+```
+
+#### 3. Cancelar Assinatura (Dialog de Confirmação)
+```
+┌────────────────────────────────────────────────────────┐
+│  ⚠️  Cancelar Assinatura                              │
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│  Tem certeza que deseja cancelar a assinatura de:    │
+│                                                        │
+│  • Produtor: João Silva                               │
+│  • Plano: PRO (R$ 149/mês)                            │
+│  • Vencimento: 01/05/2026                             │
+│                                                        │
+│  ⚠️  Atenção:                                         │
+│  • O acesso permanece até 01/05/2026                 │
+│  • Não haverá renovação automática                   │
+│  • Produtor será notificado por WhatsApp             │
+│                                                        │
+│  Motivo do cancelamento (opcional):                  │
+│  ┌──────────────────────────────────────────────┐    │
+│  │                                              │    │
+│  └──────────────────────────────────────────────┘    │
+│                                                        │
+│               [Voltar] [Confirmar Cancelamento]       │
+└────────────────────────────────────────────────────────┘
+```
+
+#### 4. Criar Nova Assinatura (Modal)
+```
+┌────────────────────────────────────────────────────────┐
+│  Nova Assinatura                                      │
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│  Produtor:                                            │
+│  ┌──────────────────────────────────────────────┐    │
+│  │ [Buscar produtor...] 🔍                      │    │
+│  └──────────────────────────────────────────────┘    │
+│                                                        │
+│  Selecione o Plano:                                   │
+│  ┌────────────┬────────────┬────────────┐            │
+│  │   BASIC    │    PRO     │ ENTERPRISE │            │
+│  │  R$ 79/mês │ R$ 149/mês │ R$ 299/mês │            │
+│  └────────────┴────────────┴────────────┘            │
+│                                                        │
+│  Tipo:                                                │
+│  ○ Trial (14 dias grátis)                            │
+│  ● Pago                                               │
+│                                                        │
+│  Data de Início:                                      │
+│  [📅 02/04/2026]                                      │
+│                                                        │
+│  Duração:                                             │
+│  ○ 1 mês                                              │
+│  ● 3 meses                                            │
+│  ○ 6 meses                                            │
+│  ○ 12 meses                                           │
+│                                                        │
+│               [Cancelar] [Criar Assinatura]           │
+└────────────────────────────────────────────────────────┘
+```
+
+### ✅ Critérios de Aceite
+
+**Listagem:**
+- [ ] Lista todas as assinaturas com paginação (15 por página)
+- [ ] Ordenação: Status (Ativa primeiro) > Renovação próxima
+- [ ] KPIs carregam corretamente do backend
+- [ ] Progress bar de uso atualiza em tempo real
+- [ ] Skeleton loading durante carregamento
+
+**Busca e Filtros:**
+- [ ] Busca por nome do produtor (parcial, case-insensitive)
+- [ ] Busca por CPF/CNPJ (apenas números)
+- [ ] Filtro por status (Ativa, Trial, Expirada, Cancelada)
+- [ ] Filtro por plano (Basic, Pro, Enterprise)
+- [ ] Filtro por período de renovação
+- [ ] Debounce de 500ms na busca
+- [ ] Filtros persistem na URL
+
+**Visual:**
+- [ ] Cards com Clean Minimal Design
+- [ ] Badges coloridos por status
+- [ ] Progress bar com porcentagem correta
+- [ ] Alertas contextuais aparecem quando aplicável
+- [ ] Responsivo (1/2/3 colunas)
+- [ ] Hover states aplicados
+
+**Funcionalidades:**
+- [ ] Editar plano abre modal correto
+- [ ] Renovar calcula valores e descontos corretamente
+- [ ] Cancelar exige confirmação e motivo opcional
+- [ ] Criar nova assinatura valida campos obrigatórios
+- [ ] Notificações são enviadas ao produtor (WhatsApp)
+
+**Regras de Negócio:**
+- [ ] Limite de cotações respeitado (bloqueia novas cotações)
+- [ ] Trial expira após 14 dias automaticamente
+- [ ] Renovação automática se configurada
+- [ ] Downgrades só permitem se quotesUsed <= novo quotesLimit
+- [ ] Cálculo proporcional em mudanças de plano
+
+### 🔐 Regras de Negócio
+
+#### Planos e Preços
+
+**BASIC:**
+- Preço: R$ 79/mês
+- Limite: 20 cotações/mês
+- Rede: Fornecedores da plataforma
+- Suporte: Via WhatsApp
+- Target: Pequenos produtores
+
+**PRO:**
+- Preço: R$ 149/mês
+- Limite: 100 cotações/mês
+- Rede: Fornecedores da plataforma + próprios fornecedores
+- Suporte: Prioritário via WhatsApp
+- Target: Médios produtores
+
+**ENTERPRISE:**
+- Preço: R$ 299/mês
+- Limite: Ilimitado
+- Rede: Fornecedores da plataforma + próprios fornecedores
+- Suporte: Dedicado (WhatsApp + telefone)
+- Gestor de conta dedicado
+- Target: Grandes produtores / Cooperativas
+
+#### Descontos por Período
+
+- **1 mês**: Preço cheio
+- **3 meses**: 5% desconto
+- **6 meses**: 10% desconto
+- **12 meses**: 15% desconto
+
+Cálculo: `(precoMensal × meses) × (1 - desconto)`
+
+#### Trial
+
+- Duração: 14 dias
+- Limite: 10 cotações (independente do plano escolhido)
+- Sem cobrança
+- Conversão: Manual (admin contata produtor)
+- Expiração: Status muda para EXPIRED, bloqueia novas cotações
+
+#### Renovação
+
+**Automática:**
+- 3 dias antes do vencimento, notifica produtor via WhatsApp
+- Se configurado pagamento recorrente: renova automaticamente
+- Atualiza `endDate` e reseta `quotesUsed = 0`
+
+**Manual:**
+- Admin pode renovar antecipadamente
+- Gera cobrança (PIX, Boleto ou Cartão)
+- Envia link de pagamento ao produtor
+
+#### Limites e Bloqueios
+
+**Quando atingir limite:**
+- Bloqueia criação de novas cotações via WhatsApp
+- Mensagem ao produtor: "Você atingiu o limite de X cotações do plano [PLANO]. Faça upgrade ou aguarde a renovação em [DATA]."
+- Admin pode: Resetar contador manualmente (emergência) ou fazer upgrade
+
+**Quando expirar:**
+- Status muda para EXPIRED
+- Bloqueia novas cotações
+- Cotações em andamento continuam
+- Propostas existentes ainda visíveis (read-only)
+- Mensagem: "Sua assinatura expirou. Renove para continuar criando cotações."
+
+#### Upgrade/Downgrade
+
+**Upgrade (ex: BASIC → PRO):**
+- Mudança imediata
+- Calcula valor proporcional dos dias restantes
+- Aumenta `quotesLimit` imediatamente
+- Mantém `quotesUsed` atual
+
+**Downgrade (ex: PRO → BASIC):**
+- Validação: `quotesUsed <= novo quotesLimit`
+- Se falhar: Bloqueia downgrade até próxima renovação
+- Mudança: Apenas na próxima renovação (não imediata)
+- Aviso ao produtor
+
+#### Cancelamento
+
+**Cancelamento imediato:**
+- Admin pode forçar cancelamento
+- Bloqueia acesso imediatamente
+- Reembolso proporcional (se aplicável)
+
+**Cancelamento ao final do período:**
+- Acesso permanece até `endDate`
+- `active = false` mas ainda funcional
+- Não renova automaticamente
+- Produtor notificado
+
+#### Notificações WhatsApp
+
+**Eventos que geram notificação:**
+1. Nova assinatura criada (boas-vindas)
+2. Trial iniciado (instruções de uso)
+3. 7 dias antes da renovação (lembrete)
+4. 3 dias antes da renovação (urgente)
+5. Renovação concluída (confirmação)
+6. Limite de 80% atingido (alerta)
+7. Limite de 100% atingido (bloqueio)
+8. Assinatura expirada (renovação necessária)
+9. Upgrade/Downgrade confirmado
+10. Cancelamento confirmado
+
+#### Permissões
+
+**Admin:**
+- Ver todas as assinaturas
+- Criar nova assinatura
+- Editar plano
+- Renovar
+- Cancelar
+- Resetar contador de cotações
+
+**Operador com permissão SUBSCRIPTIONS:**
+- `canView`: Ver lista e detalhes
+- `canCreate`: Criar nova assinatura
+- `canEdit`: Editar plano e renovar
+- `canDelete`: Cancelar assinatura
+
+### 📊 Query e Performance
+
+**Endpoint Principal:**
+```typescript
+GET /api/subscriptions?page=1&limit=15&status=ACTIVE&plan=PRO&search=joao
+
+Response: {
+  data: Array<{
+    id: string;
+    producer: {
+      id: string;
+      name: string;
+      cpfCnpj: string;
+      phone: string;
+      city: string;
+      farm: string;
+    };
+    plan: 'BASIC' | 'PRO' | 'ENTERPRISE';
+    quotesLimit: number;
+    quotesUsed: number;
+    startDate: string; // ISO
+    endDate: string;   // ISO
+    active: boolean;
+    daysUntilRenewal: number; // calculado
+    usagePercentage: number;  // (quotesUsed / quotesLimit) × 100
+  }>;
+  pagination: {
+    page: 1,
+    limit: 15,
+    total: 42,
+    totalPages: 3
+  };
+  stats: {
+    activeSubscriptions: 42;
+    monthlyRevenue: 12400;    // soma de todos os planos ativos
+    renewalRate: 94;          // % de renovações automáticas
+    cancellationsThisMonth: 3;
+    planDistribution: {
+      BASIC: 12,
+      PRO: 24,
+      ENTERPRISE: 6
+    };
+  }
+}
+```
+
+**Endpoints Adicionais:**
+```typescript
+// Criar assinatura
+POST /api/subscriptions
+Body: {
+  producerId: string;
+  plan: 'BASIC' | 'PRO' | 'ENTERPRISE';
+  duration: 1 | 3 | 6 | 12; // meses
+  startDate: string;
+  isTrial: boolean;
+}
+
+// Editar plano
+PATCH /api/subscriptions/:id/plan
+Body: {
+  newPlan: 'BASIC' | 'PRO' | 'ENTERPRISE';
+  applyImmediately: boolean; // true = agora com proporcional, false = próxima renovação
+}
+
+// Renovar
+POST /api/subscriptions/:id/renew
+Body: {
+  duration: 1 | 3 | 6 | 12;
+  paymentMethod: 'PIX' | 'BOLETO' | 'CREDIT_CARD';
+}
+
+// Cancelar
+POST /api/subscriptions/:id/cancel
+Body: {
+  immediate: boolean;
+  reason?: string;
+}
+
+// Resetar contador (emergência)
+POST /api/subscriptions/:id/reset-quota
+```
+
+**Otimizações:**
+- Índices: `producerId`, `active`, `endDate`, `plan`
+- Eager loading: `producer` data
+- Cache de 60s para stats
+- Cálculos: `daysUntilRenewal` e `usagePercentage` no backend
+
+**Job Cron (diário, 00:00):**
+```typescript
+// Verifica assinaturas expiradas
+UPDATE subscriptions 
+SET active = false, status = 'EXPIRED'
+WHERE endDate < NOW() AND active = true;
+
+// Envia lembretes de renovação
+SELECT * FROM subscriptions 
+WHERE active = true 
+AND endDate BETWEEN NOW() AND NOW() + INTERVAL '7 days'
+→ Envia WhatsApp notification
+
+// Renovações automáticas (se configurado)
+UPDATE subscriptions
+SET endDate = endDate + INTERVAL '30 days',
+    quotesUsed = 0
+WHERE active = true 
+AND endDate <= NOW() + INTERVAL '3 days'
+AND autoRenew = true;
+```
+
+### 📱 Comportamento Responsivo
+
+**Desktop (>1024px):**
+- KPIs: 4 colunas
+- Planos: 3 colunas
+- Assinaturas: 3 colunas
+
+**Tablet (768px - 1024px):**
+- KPIs: 4 colunas
+- Planos: 3 colunas
+- Assinaturas: 2 colunas
+
+**Mobile (<768px):**
+- Tudo em 1 coluna
+- Filtros stack vertical
+- Progress bar sempre visível
+- Botões de ação empilhados
+
+### ♿ Acessibilidade
+
+- Labels descritivos em todos os campos
+- ARIA labels em progress bars: "45 de 100 cotações utilizadas"
+- Focus trap em modais
+- Escape fecha modais
+- Mensagens de erro anunciadas
+- Contraste WCAG AA em badges de status
+
+---
+
+**[FIM DAS ESPECIFICAÇÕES DA TELA DE ASSINATURAS]**
 
 ---
 
