@@ -7,12 +7,51 @@ import { logger, logWithContext } from '../utils/logger';
 import { parseDeadline } from '../utils/validators';
 import { dispatchQuoteJob } from '../jobs/dispatch-quote.job';
 import { contactExtractorService } from '../services/contact-extractor.service';
+import { nluExtractorService } from '../services/nlu-extractor.service';
+
+/**
+ * Mapa de progresso para cada estado do fluxo
+ * Usado para mostrar "Passo X de Y" nas mensagens
+ */
+const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label: string; icon: string } | null> = {
+  'IDLE': null,
+  'AWAITING_PRODUCT': { step: 1, total: 4, label: 'Produto', icon: '📦' },
+  'AWAITING_QUANTITY': { step: 2, total: 4, label: 'Quantidade', icon: '📊' },
+  'AWAITING_REGION': { step: 3, total: 4, label: 'Região', icon: '📍' },
+  'AWAITING_DEADLINE': { step: 4, total: 4, label: 'Prazo', icon: '⏰' },
+  'AWAITING_OBSERVATIONS': null,
+  'AWAITING_SUPPLIER_SCOPE': null,
+  'AWAITING_SUPPLIER_SELECTION': null,
+  'AWAITING_SUPPLIER_EXCLUSION': null,
+  'AWAITING_SUPPLIER_CONFIRMATION': null,
+  'AWAITING_CONFIRMATION': null,
+  'AWAITING_CHOICE': null,
+  'AWAITING_SUPPLIER_CONTACT': null,
+  'QUOTE_ACTIVE': null,
+  'CLOSED': null,
+};
 
 /**
  * FSM do Produtor - Gerencia fluxo de criação de cotações
  * Estados: IDLE → AWAITING_PRODUCT → ... → QUOTE_ACTIVE → CLOSED
  */
 export class ProducerFSM extends FSMEngine<ProducerState> {
+  /**
+   * Gera header de progresso para o estado atual
+   * @returns String formatada ou string vazia se estado não tem progresso
+   */
+  private getProgressHeader(state: ProducerState): string {
+    const progress = FLOW_PROGRESS[state];
+
+    if (!progress) return '';
+
+    // Barra de progresso visual
+    const filled = '▓'.repeat(progress.step);
+    const empty = '░'.repeat(progress.total - progress.step);
+
+    return `[${progress.step}/${progress.total}] ${progress.icon} *${progress.label}*\n${filled}${empty}\n\n`;
+  }
+
   /**
    * Handler principal que roteia mensagem para o handler do estado atual
    */
@@ -125,6 +164,12 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     message: string,
     nluResult?: NLUResult
   ): Promise<void> {
+    // Buscar dados do produtor uma única vez (otimização)
+    const producer = await prisma.producer.findUniqueOrThrow({
+      where: { id: producerId },
+      include: { subscription: true },
+    });
+
     const normalized = message.toLowerCase().trim();
 
     // Verificar se é um vCard (contato compartilhado)
@@ -144,16 +189,12 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     }
 
     // Verificar se usuário quer iniciar cotação
-    if (normalized === '1' || normalized.includes('nova') || normalized.includes('cotação') || normalized.includes('cotacao')) {
-      // Verificar limite de cotações
-      const subscription = await prisma.subscription.findUnique({
-        where: { producerId },
-      });
-
-      if (subscription && subscription.quotesUsed >= subscription.quotesLimit) {
+    if (normalized === '1' || normalized === 'começar' || normalized === 'comecar' || normalized.includes('nova') || normalized.includes('cotação') || normalized.includes('cotacao')) {
+      // Verificar limite de cotações (já temos subscription do fetch acima)
+      if (producer.subscription && producer.subscription.quotesUsed >= producer.subscription.quotesLimit) {
         await whatsappService.sendMessage({
           to: phone,
-          body: Messages.QUOTA_EXCEEDED(subscription.quotesLimit),
+          body: Messages.QUOTA_EXCEEDED(producer.subscription.quotesLimit),
         });
         return;
       }
@@ -188,29 +229,30 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       } else if (!context.region) {
         await whatsappService.sendMessage({
           to: phone,
-          body: Messages.ASK_REGION,
+          body: Messages.ASK_REGION(context.quantity, context.unit),
         });
         await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
       } else {
         // Pular para confirmação
         await whatsappService.sendMessage({
           to: phone,
-          body: Messages.ASK_DEADLINE,
+          body: Messages.ASK_DEADLINE(context.region),
         });
         await this.setState(producerId, 'producer', 'AWAITING_DEADLINE', context);
       }
       return;
     }
 
-    // Mensagem padrão
+    // Mensagem padrão com nome personalizado
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.WELCOME,
+      body: Messages.WELCOME(producer.name),
     });
   }
 
   /**
    * Estado AWAITING_PRODUCT - Aguardando nome do produto
+   * Usa NLU para extrair múltiplas entidades de uma vez
    */
   private async handleAwaitingProduct(
     producerId: string,
@@ -218,9 +260,26 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     message: string,
     context: ConversationContext
   ): Promise<void> {
-    const product = message.trim();
+    // Usar NLU para extrair todas as entidades possíveis
+    const extracted = await nluExtractorService.extractEntities(
+      message,
+      'AWAITING_PRODUCT',
+      context
+    );
 
-    if (product.length < 2) {
+    // Merge dos dados extraídos (NLU pode ter falhado, então usar fallback)
+    if (Object.keys(extracted).length > 0) {
+      Object.assign(context, extracted);
+    } else {
+      // Fallback: comportamento antigo (pegar apenas o produto)
+      const product = message.trim();
+      if (product.length >= 2) {
+        context.product = product;
+      }
+    }
+
+    // Validação mínima
+    if (!context.product || context.product.length < 2) {
       await whatsappService.sendMessage({
         to: phone,
         body: 'Por favor, informe um produto válido (mínimo 2 caracteres).',
@@ -228,14 +287,44 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       return;
     }
 
-    context.product = product;
+    // Determinar próximo estado baseado no que foi extraído
+    const nextState = nluExtractorService.determineNextState(context);
+
+    // Se extraiu tudo, mostrar resumo e pedir confirmação
+    if (nextState === 'AWAITING_SUPPLIER_SCOPE') {
+      const confirmationMessage = nluExtractorService.buildConfirmationMessage(context, nextState);
+
+      await whatsappService.sendMessage({
+        to: phone,
+        body: confirmationMessage,
+      });
+
+      await this.setState(producerId, 'producer', nextState, context);
+      return;
+    }
+
+    // Caso contrário, continuar fluxo normal com progress header
+    const progressHeader = this.getProgressHeader(nextState);
+    let askMessage = '';
+
+    switch (nextState) {
+      case 'AWAITING_QUANTITY':
+        askMessage = Messages.ASK_QUANTITY(context.product);
+        break;
+      case 'AWAITING_REGION':
+        askMessage = Messages.ASK_REGION(context.quantity, context.unit);
+        break;
+      case 'AWAITING_DEADLINE':
+        askMessage = Messages.ASK_DEADLINE(context.region);
+        break;
+    }
 
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.ASK_QUANTITY(product),
+      body: progressHeader + askMessage,
     });
 
-    await this.setState(producerId, 'producer', 'AWAITING_QUANTITY', context);
+    await this.setState(producerId, 'producer', nextState, context);
   }
 
   /**
@@ -261,9 +350,11 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     context.quantity = match[1];
     context.unit = match[2] || 'unidades';
 
+    const progressHeader = this.getProgressHeader('AWAITING_REGION');
+
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.ASK_REGION,
+      body: progressHeader + Messages.ASK_REGION(context.quantity, context.unit),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
@@ -290,9 +381,11 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     context.region = region;
 
+    const progressHeader = this.getProgressHeader('AWAITING_DEADLINE');
+
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.ASK_DEADLINE,
+      body: progressHeader + Messages.ASK_DEADLINE(context.region),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_DEADLINE', context);
@@ -359,26 +452,29 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     message: string,
     context: ConversationContext
   ): Promise<void> {
-    const choice = message.trim();
+    const normalized = message.toLowerCase().trim();
 
+    // Validação tolerante - aceita variações
     let scope: 'MINE' | 'NETWORK' | 'ALL';
 
-    switch (choice) {
-      case '1':
-        scope = 'MINE';
-        break;
-      case '2':
-        scope = 'NETWORK';
-        break;
-      case '3':
-        scope = 'ALL';
-        break;
-      default:
-        await whatsappService.sendMessage({
-          to: phone,
-          body: 'Opção inválida. Digite *1*, *2* ou *3*.',
-        });
-        return;
+    if (normalized === '1' || normalized.includes('meus') || normalized.includes('apenas meus')) {
+      scope = 'MINE';
+    } else if (normalized === '2' || normalized.includes('rede') || normalized.includes('cotaagro')) {
+      scope = 'NETWORK';
+    } else if (normalized === '3' || normalized.includes('todos') || normalized.includes('meus + rede')) {
+      scope = 'ALL';
+    } else {
+      // Erro mais amigável
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `❌ Não entendi "${message}".
+
+Por favor, responda com:
+• *1* para apenas seus fornecedores
+• *2* para rede CotaAgro
+• *3* para todos`,
+      });
+      return;
     }
 
     context.supplierScope = scope;
@@ -636,12 +732,13 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
   ): Promise<void> {
     const normalized = message.toLowerCase().trim();
 
-    if (normalized === 'sim') {
+    // Validação tolerante
+    if (normalized === 'sim' || normalized === 's' || normalized.includes('enviar') || normalized.includes('confirmar')) {
       await this.createAndDispatchQuote(producerId, phone, context);
       return;
     }
 
-    if (normalized === 'corrigir') {
+    if (normalized === 'corrigir' || normalized === 'não' || normalized === 'nao' || normalized.includes('editar')) {
       await whatsappService.sendMessage({
         to: phone,
         body: 'Vamos recomeçar. Digite *nova cotação* quando estiver pronto.',

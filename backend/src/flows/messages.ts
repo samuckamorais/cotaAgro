@@ -8,16 +8,19 @@ export const Messages = {
   // MENSAGENS DO PRODUTOR
   // ===================================
 
-  WELCOME: `Olá! 👋 Bem-vindo ao *CotaAgro*!
+  WELCOME: (producerName?: string) => {
+    const greeting = producerName ? `Olá ${producerName}!` : 'Olá!';
+    return `${greeting} 👋 Bem-vindo ao *CotaAgro*
 
-Sou seu assistente de cotações de insumos agrícolas.
+💡 *Economize até 5 horas por semana* em cotações de insumos agrícolas.
 
-Para começar, envie:
-• *1* ou *nova cotação* - Solicitar cotação
-• *2* ou *cadastrar fornecedor* - Adicionar fornecedor
-• *ajuda* - Ver instruções
+Vou te ajudar a encontrar os melhores preços de forma rápida e automática!
 
-Como posso ajudar?`,
+🚀 Pronto para sua primeira cotação?
+• *1* ou *começar* - Solicitar cotação
+• *2* ou *fornecedor* - Adicionar fornecedor
+• *ajuda* - Ver como funciona`;
+  },
 
   START_QUOTE: `Ótimo! Vamos criar sua cotação. 📋
 
@@ -25,26 +28,28 @@ Como posso ajudar?`,
 
 Exemplos: soja, milho, fertilizante, defensivo, semente`,
 
-  ASK_QUANTITY: (product: string) => `Perfeito! Você quer cotar *${product}*. ✅
+  ASK_QUANTITY: (product: string) => `✅ *Produto:* ${product}
 
 *Qual a quantidade desejada?*
 
 Exemplos: 100 sacos, 500 kg, 20 litros`,
 
-  ASK_REGION: `Entendido! 📦
+  ASK_REGION: (quantity?: string, unit?: string) => {
+    const quantityText = quantity && unit ? `✅ *Quantidade:* ${quantity} ${unit}\n\n` : '';
+    return `${quantityText}*Qual a região/cidade de entrega?*
 
-*Qual a região/cidade de entrega?*
+Exemplo: Goiânia, Rio Verde, Jataí`;
+  },
 
-Exemplo: Goiânia, Rio Verde, Jataí`,
-
-  ASK_DEADLINE: `Certo! 📍
-
-*Qual o prazo desejado para entrega?*
+  ASK_DEADLINE: (region?: string) => {
+    const regionText = region ? `✅ *Região:* ${region}\n\n` : '';
+    return `${regionText}*Qual o prazo desejado para entrega?*
 
 Exemplos:
 • amanhã
 • em 5 dias
-• 30/03/2024`,
+• 30/03/2024`;
+  },
 
   ASK_OBSERVATIONS: `Perfeito! ⏰
 
@@ -58,11 +63,19 @@ Digite *não* se não houver observações.`,
 
 *Para quais fornecedores deseja enviar a cotação?*
 
-*1* - Apenas meus fornecedores
-*2* - Apenas rede CotaAgro
-*3* - Todos (meus + rede)
+┌───────────────────────────┐
+│ 1️⃣ Apenas meus fornecedores  │
+└───────────────────────────┘
 
-Digite o número da opção:`,
+┌───────────────────────────┐
+│ 2️⃣ Apenas rede CotaAgro      │
+└───────────────────────────┘
+
+┌───────────────────────────┐
+│ 3️⃣ Todos (meus + rede)       │
+└───────────────────────────┘
+
+*Responda com o número:* 1, 2 ou 3`,
 
   CONFIRM_QUOTE: (summary: {
     product: string;
@@ -72,7 +85,7 @@ Digite o número da opção:`,
     deadline: string;
     observations?: string;
     scope: string;
-  }) => `Confirme os dados da sua cotação: ✅
+  }) => `✅ *Confirme os dados da sua cotação:*
 
 📦 *Produto:* ${summary.product}
 📊 *Quantidade:* ${summary.quantity} ${summary.unit}
@@ -81,9 +94,15 @@ Digite o número da opção:`,
 ${summary.observations ? `📝 *Obs:* ${summary.observations}` : ''}
 🎯 *Fornecedores:* ${summary.scope}
 
-Está correto?
-• Digite *sim* para confirmar
-• Digite *corrigir* para alterar algum campo`,
+┌──────────────────┐
+│ ✅ Sim, enviar    │
+└──────────────────┘
+
+┌──────────────────┐
+│ ✏️ Corrigir        │
+└──────────────────┘
+
+*Está correto?*`,
 
   QUOTE_DISPATCHED: (quoteId: string, suppliersCount: number) => `Cotação enviada com sucesso! 🚀
 
