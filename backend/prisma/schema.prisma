@@ -23,6 +23,7 @@ model Producer {
   phone                String             @unique // número WhatsApp com DDI, ex: +5564999999999
   region               String
   lastQuotePreferences Json?              // Última cotação para repetir (product, quantity, unit, region, deadline)
+  preferences          Json?              // Preferências gerais do produtor (notificações, etc)
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -137,6 +138,59 @@ model ConversationState {
   updatedAt  DateTime @updatedAt
 
   @@map("conversation_states")
+}
+
+model ConversationMetric {
+  id           String   @id @default(uuid())
+  userId       String   // producerId or supplierId
+  userType     String   // "producer" or "supplier"
+  eventType    String   // message_sent, message_received, state_changed, error, quote_completed, quote_abandoned
+  state        String?  // current FSM state
+  previousState String? // previous FSM state (for transitions)
+  errorType    String?  // error category if eventType = error
+  metadata     Json?    // additional event data
+  durationMs   Int?     // time spent in state (for state_changed events)
+  timestamp    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userType])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([state])
+  @@map("conversation_metrics")
+}
+
+model Experiment {
+  id          String   @id @default(uuid())
+  name        String   @unique // feature flag name
+  description String?
+  variants    Json     // array of variant configs: [{ name: "control", weight: 50 }, { name: "treatment", weight: 50 }]
+  active      Boolean  @default(true)
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignments ExperimentAssignment[]
+
+  @@index([name])
+  @@index([active])
+  @@map("experiments")
+}
+
+model ExperimentAssignment {
+  id           String     @id @default(uuid())
+  experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  experimentId String
+  userId       String     // producerId or supplierId
+  userType     String     // "producer" or "supplier"
+  variant      String     // which variant this user is assigned to
+  assignedAt   DateTime   @default(now())
+
+  @@unique([experimentId, userId, userType])
+  @@index([userId])
+  @@index([experimentId])
+  @@map("experiment_assignments")
 }
 
 model User {

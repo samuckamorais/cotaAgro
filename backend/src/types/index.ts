@@ -82,6 +82,9 @@ export interface IncomingMessage {
   from: string; // número do remetente com DDI
   body: string; // corpo da mensagem
   timestamp?: Date;
+  type?: 'text' | 'audio' | 'image'; // tipo de mensagem
+  mediaUrl?: string; // URL do arquivo de mídia
+  mimeType?: string; // MIME type do arquivo
 }
 
 export interface OutgoingMessage {
@@ -114,6 +117,8 @@ export interface ContactData {
 export type ProducerState =
   | 'IDLE'
   | 'AWAITING_REPEAT_CHOICE'
+  | 'AWAITING_IMAGE_CHOICE'
+  | 'AWAITING_PROACTIVE_CHOICE'
   | 'AWAITING_PRODUCT'
   | 'AWAITING_QUANTITY'
   | 'AWAITING_REGION'

@@ -21,6 +21,119 @@ export class OpenAIService {
   }
 
   /**
+   * Transcreve áudio usando Whisper API
+   */
+  async transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<string> {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    try {
+      // Converter buffer para File-like object
+      const file = new File([audioBuffer], 'audio.ogg', { type: mimeType });
+
+      const response = await this.client.audio.transcriptions.create(
+        {
+          file,
+          model: 'whisper-1',
+          language: 'pt', // Português brasileiro
+          response_format: 'text',
+        },
+        {
+          timeout: 15000, // 15s timeout para processar áudio
+        }
+      );
+
+      logger.info('Audio transcribed successfully', {
+        length: audioBuffer.length,
+        transcriptionLength: response.length,
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Failed to transcribe audio', { error });
+      throw new Error('Não consegui entender o áudio. Tente novamente ou digite sua mensagem.');
+    }
+  }
+
+  /**
+   * Analisa imagem de nota fiscal usando GPT-4 Vision
+   */
+  async analyzeInvoiceImage(
+    imageBuffer: Buffer
+  ): Promise<{
+    product?: string;
+    quantity?: string;
+    unit?: string;
+    price?: number;
+    supplier?: string;
+  }> {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    try {
+      // Converter imagem para base64
+      const base64Image = imageBuffer.toString('base64');
+
+      const response = await this.client.chat.completions.create(
+        {
+          model: 'gpt-4-vision-preview',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analise esta nota fiscal ou recibo de compra de insumos agrícolas e extraia as seguintes informações:
+- Produto (nome completo do item)
+- Quantidade (número)
+- Unidade (sacos, kg, litros, etc)
+- Preço unitário (em R$)
+- Fornecedor/Empresa
+
+Retorne APENAS um JSON com os campos: product, quantity, unit, price, supplier.
+Se não conseguir identificar algum campo, deixe como null.`,
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
+                  },
+                },
+              ],
+            },
+          ],
+          max_tokens: 500,
+          temperature: 0.2,
+        },
+        {
+          timeout: 20000, // 20s timeout para processar imagem
+        }
+      );
+
+      const content = response.choices[0]?.message?.content || '{}';
+
+      // Parse do JSON
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const extracted = JSON.parse(cleaned);
+
+      logger.info('Image analyzed successfully', { extracted });
+
+      return {
+        product: extracted.product || undefined,
+        quantity: extracted.quantity ? String(extracted.quantity) : undefined,
+        unit: extracted.unit || undefined,
+        price: extracted.price ? parseFloat(String(extracted.price)) : undefined,
+        supplier: extracted.supplier || undefined,
+      };
+    } catch (error) {
+      logger.error('Failed to analyze image', { error });
+      throw new Error('Não consegui analisar a imagem. Tente fotografar novamente com melhor iluminação.');
+    }
+  }
+
+  /**
    * Sugere correções para entrada inválida usando GPT-4
    */
   async suggestCorrections(

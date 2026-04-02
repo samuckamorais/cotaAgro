@@ -45,9 +45,42 @@ export class WhatsAppService {
    * 3. Roteia para FSM apropriada
    */
   async handleIncomingMessage(incomingMessage: IncomingMessage): Promise<void> {
-    const { from, body } = incomingMessage;
+    const { from, body, type, mediaUrl, mimeType } = incomingMessage;
 
-    logger.info('Processing incoming message', { from, body });
+    // Se for mensagem de áudio, transcrever primeiro
+    let processedMessage = body;
+    let extractedData: any = null;
+
+    if (type === 'audio' && mediaUrl) {
+      try {
+        processedMessage = await this.transcribeAudioMessage(from, mediaUrl, mimeType);
+      } catch (error) {
+        logger.error('Failed to transcribe audio', { error, from });
+        await this.sendMessage({
+          to: from,
+          body: '❌ Não consegui entender o áudio. Tente novamente ou digite sua mensagem.',
+        });
+        return;
+      }
+    }
+
+    // Se for mensagem de imagem, extrair dados da nota fiscal
+    if (type === 'image' && mediaUrl) {
+      try {
+        extractedData = await this.analyzeImageMessage(from, mediaUrl);
+        // Criar mensagem confirmando dados extraídos
+        processedMessage = `nota fiscal: ${JSON.stringify(extractedData)}`;
+      } catch (error) {
+        logger.error('Failed to analyze image', { error, from });
+        await this.sendMessage({
+          to: from,
+          body: '❌ Não consegui analisar a imagem. Tente fotografar novamente com melhor iluminação.',
+        });
+        return;
+      }
+    }
+
+    logger.info('Processing incoming message', { from, body: processedMessage, type });
 
     try {
       // Verificar se é produtor
@@ -58,7 +91,7 @@ export class WhatsAppService {
 
       if (producer) {
         // Rotear para FSM de produtor
-        await this.handleProducerMessage(producer.id, body);
+        await this.handleProducerMessage(producer.id, processedMessage);
         return;
       }
 
@@ -69,7 +102,7 @@ export class WhatsAppService {
 
       if (supplier) {
         // Rotear para FSM de fornecedor
-        await this.handleSupplierMessage(supplier.id, body);
+        await this.handleSupplierMessage(supplier.id, processedMessage);
         return;
       }
 
@@ -89,6 +122,109 @@ export class WhatsAppService {
       }).catch((sendError) => {
         logger.error('Failed to send error message', { sendError });
       });
+    }
+  }
+
+  /**
+   * Transcreve mensagem de áudio
+   */
+  private async transcribeAudioMessage(
+    phone: string,
+    mediaUrl: string,
+    mimeType?: string
+  ): Promise<string> {
+    // Enviar feedback visual
+    await this.sendMessage({
+      to: phone,
+      body: '🎙️ Ouvindo áudio...',
+    });
+
+    // Download do áudio
+    const audioBuffer = await this.downloadMedia(mediaUrl);
+
+    // Transcrever com Whisper
+    const transcription = await openaiService.transcribeAudio(
+      audioBuffer,
+      mimeType || 'audio/ogg'
+    );
+
+    // Confirmar transcrição
+    await this.sendMessage({
+      to: phone,
+      body: `✅ Transcrevi: "${transcription}"\n\nProcessando...`,
+    });
+
+    return transcription;
+  }
+
+  /**
+   * Analisa mensagem de imagem (nota fiscal)
+   */
+  private async analyzeImageMessage(
+    phone: string,
+    mediaUrl: string
+  ): Promise<{
+    product?: string;
+    quantity?: string;
+    unit?: string;
+    price?: number;
+    supplier?: string;
+  }> {
+    // Enviar feedback visual
+    await this.sendMessage({
+      to: phone,
+      body: '📷 Analisando nota fiscal...',
+    });
+
+    // Download da imagem
+    const imageBuffer = await this.downloadMedia(mediaUrl);
+
+    // Analisar com GPT-4 Vision
+    const extracted = await openaiService.analyzeInvoiceImage(imageBuffer);
+
+    // Confirmar dados extraídos
+    let confirmationMsg = '✅ *Extraí os seguintes dados:*\n\n';
+
+    if (extracted.product) confirmationMsg += `📦 *Produto:* ${extracted.product}\n`;
+    if (extracted.quantity && extracted.unit) {
+      confirmationMsg += `📊 *Quantidade:* ${extracted.quantity} ${extracted.unit}\n`;
+    }
+    if (extracted.price) confirmationMsg += `💰 *Preço anterior:* R$ ${extracted.price.toFixed(2)}\n`;
+    if (extracted.supplier) confirmationMsg += `🏢 *Fornecedor:* ${extracted.supplier}\n`;
+
+    confirmationMsg += '\n*Quer cotar o mesmo produto?*\n\n';
+    confirmationMsg += '┌────────────────────────────┐\n';
+    confirmationMsg += '│ 1️⃣ Sim, mesma quantidade      │\n';
+    confirmationMsg += '└────────────────────────────┘\n\n';
+    confirmationMsg += '┌────────────────────────────┐\n';
+    confirmationMsg += '│ 2️⃣ Sim, mas alterar quantidade│\n';
+    confirmationMsg += '└────────────────────────────┘\n\n';
+    confirmationMsg += '┌────────────────────────────┐\n';
+    confirmationMsg += '│ 3️⃣ Nova cotação               │\n';
+    confirmationMsg += '└────────────────────────────┘';
+
+    await this.sendMessage({
+      to: phone,
+      body: confirmationMsg,
+    });
+
+    return extracted;
+  }
+
+  /**
+   * Download de arquivo de mídia
+   */
+  private async downloadMedia(url: string): Promise<Buffer> {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to download media: ${response.statusText}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (error) {
+      logger.error('Failed to download media', { error, url });
+      throw new Error('Não consegui baixar o arquivo de mídia.');
     }
   }
 

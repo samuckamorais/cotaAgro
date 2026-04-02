@@ -18,6 +18,8 @@ import { supplierNotificationService } from '../services/supplier-notification.s
 const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label: string; icon: string } | null> = {
   'IDLE': null,
   'AWAITING_REPEAT_CHOICE': null,
+  'AWAITING_IMAGE_CHOICE': null,
+  'AWAITING_PROACTIVE_CHOICE': null,
   'AWAITING_PRODUCT': { step: 1, total: 4, label: 'Produto', icon: '📦' },
   'AWAITING_QUANTITY': { step: 2, total: 4, label: 'Quantidade', icon: '📊' },
   'AWAITING_REGION': { step: 3, total: 4, label: 'Região', icon: '📍' },
