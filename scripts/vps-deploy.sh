@@ -19,6 +19,7 @@ echo ""
 echo "============================================="
 echo " CotaAgro - Deploy"
 echo " Diretório: $REPO_DIR"
+echo " Versão: 1.1 (Subscriptions + Clean Minimal)"
 echo "============================================="
 echo ""
 
@@ -111,17 +112,36 @@ if [ ! -f "frontend/package-lock.json" ]; then
 fi
 
 # -----------------------------------------------------------
-# 3. Build e subir containers
+# 3. Verificar dependências do frontend (Tailwind v3)
 # -----------------------------------------------------------
-echo -e "${YELLOW}[3/5] Fazendo build e subindo containers...${NC}"
+echo -e "${YELLOW}[3/7] Verificando dependências do frontend...${NC}"
+cd frontend
+if [ -f "package.json" ]; then
+  # Verificar se Tailwind está na versão correta
+  TAILWIND_VERSION=$(npm list tailwindcss --depth=0 2>/dev/null | grep tailwindcss || echo "")
+  if [[ "$TAILWIND_VERSION" == *"4."* ]]; then
+    echo -e "${YELLOW}⚠️  Tailwind CSS v4 detectado. Forçando v3 para compatibilidade...${NC}"
+    npm uninstall tailwindcss
+    npm install -D tailwindcss@^3.4.0
+    echo -e "${GREEN}✅ Tailwind CSS v3 instalado${NC}"
+  else
+    echo -e "${GREEN}✅ Tailwind CSS v3 já está instalado${NC}"
+  fi
+fi
+cd ..
+
+# -----------------------------------------------------------
+# 4. Build e subir containers
+# -----------------------------------------------------------
+echo -e "${YELLOW}[4/7] Fazendo build e subindo containers...${NC}"
 docker compose down --remove-orphans
 docker compose up -d --build
 echo -e "${GREEN}✅ Containers iniciados${NC}"
 
 # -----------------------------------------------------------
-# 4. Aguardar banco de dados
+# 5. Aguardar banco de dados
 # -----------------------------------------------------------
-echo -e "${YELLOW}[4/5] Aguardando banco de dados...${NC}"
+echo -e "${YELLOW}[5/7] Aguardando banco de dados...${NC}"
 RETRIES=15
 until docker compose exec -T postgres pg_isready -U postgres &>/dev/null || [ $RETRIES -eq 0 ]; do
   echo "  Aguardando PostgreSQL... ($RETRIES)"
@@ -136,9 +156,9 @@ fi
 echo -e "${GREEN}✅ PostgreSQL pronto${NC}"
 
 # -----------------------------------------------------------
-# 5. Migrations, Prisma Client e Seed
+# 6. Migrations, Prisma Client e Seed
 # -----------------------------------------------------------
-echo -e "${YELLOW}[5/6] Executando migrations e configurando banco...${NC}"
+echo -e "${YELLOW}[6/7] Executando migrations e configurando banco...${NC}"
 
 # 5.1 - Aplicar migrations do Prisma
 echo "  → Aplicando migrations..."
@@ -178,16 +198,56 @@ else
   echo -e "${GREEN}   Senha: Farmflow0147*${NC}"
 fi
 
+# 5.4 - Validar tabelas críticas criadas
+echo "  → Validando estrutura do banco..."
+CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription")
+MISSING_TABLES=()
+
+for table in "${CRITICAL_TABLES[@]}"; do
+  TABLE_EXISTS=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='$table';" 2>/dev/null || echo "0")
+
+  if [ "$(echo $TABLE_EXISTS | tr -d ' ')" = "0" ]; then
+    MISSING_TABLES+=("$table")
+  fi
+done
+
+if [ ${#MISSING_TABLES[@]} -gt 0 ]; then
+  echo -e "${RED}❌ Tabelas ausentes no banco:${NC}"
+  for table in "${MISSING_TABLES[@]}"; do
+    echo "   - $table"
+  done
+  echo -e "${YELLOW}⚠️  Execute: docker compose exec backend npx prisma migrate reset${NC}"
+else
+  echo -e "${GREEN}✅ Todas as tabelas críticas estão presentes${NC}"
+fi
+
 # -----------------------------------------------------------
-# 6. Reiniciar backend para aplicar mudanças
+# 7. Reiniciar backend para aplicar mudanças
 # -----------------------------------------------------------
-echo -e "${YELLOW}[6/6] Reiniciando serviços...${NC}"
+echo -e "${YELLOW}[7/7] Reiniciando serviços...${NC}"
 docker compose restart backend
 echo -e "${GREEN}✅ Backend reiniciado${NC}"
 
 # Aguardar o backend estar pronto
 echo "  → Aguardando backend inicializar..."
 sleep 5
+
+# Verificar módulos críticos no backend
+echo "  → Verificando módulos do backend..."
+BACKEND_MODULES=("auth" "producers" "suppliers" "quotes" "subscriptions" "dashboard" "users")
+BACKEND_SRC="backend/src/modules"
+
+if [ -d "$BACKEND_SRC" ]; then
+  for module in "${BACKEND_MODULES[@]}"; do
+    if [ ! -d "$BACKEND_SRC/$module" ]; then
+      echo -e "${YELLOW}   ⚠️  Módulo '$module' não encontrado${NC}"
+    fi
+  done
+  echo -e "${GREEN}✅ Módulos principais verificados${NC}"
+else
+  echo -e "${YELLOW}⚠️  Diretório de módulos não encontrado${NC}"
+fi
 
 # -----------------------------------------------------------
 # Status final e health check
@@ -224,9 +284,27 @@ echo "  Frontend:  http://${PUBLIC_IP}:5173"
 echo "  Backend:   http://${PUBLIC_IP}:3000"
 echo "  Health:    http://${PUBLIC_IP}:3000/health"
 echo ""
+echo -e "${GREEN}Funcionalidades disponíveis:${NC}"
+echo "  ✅ Dashboard com KPIs"
+echo "  ✅ Gestão de Cotações"
+echo "  ✅ Gestão de Produtores"
+echo "  ✅ Gestão de Fornecedores"
+echo "  ✅ Gestão de Usuários (permissões)"
+echo "  ✅ Gestão de Assinaturas (planos: BASIC, PRO, ENTERPRISE)"
+echo "  ✅ Design System: Clean Minimal Utility"
+echo ""
 echo "Comandos úteis:"
-echo "  Ver logs:        docker compose logs -f"
-echo "  Ver log backend: docker compose logs -f backend"
-echo "  Reiniciar:       docker compose restart"
-echo "  Parar:           docker compose down"
+echo "  Ver logs:              docker compose logs -f"
+echo "  Ver log backend:       docker compose logs -f backend"
+echo "  Ver log frontend:      docker compose logs -f frontend"
+echo "  Reiniciar tudo:        docker compose restart"
+echo "  Reiniciar backend:     docker compose restart backend"
+echo "  Parar:                 docker compose down"
+echo "  Ver banco (Prisma):    docker compose exec backend npx prisma studio"
+echo ""
+echo "Troubleshooting:"
+echo "  Se frontend não carrega: docker compose logs frontend"
+echo "  Se backend dá erro:      docker compose logs backend | tail -50"
+echo "  Se banco não conecta:    docker compose logs postgres"
+echo "  Resetar banco:           docker compose exec backend npx prisma migrate reset"
 echo ""
