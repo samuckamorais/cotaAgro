@@ -51,13 +51,16 @@ Exemplos:
 • 30/03/2024`;
   },
 
-  ASK_OBSERVATIONS: `Perfeito! ⏰
+  ASK_OBSERVATIONS_OPTIONAL: (deadline: string) => `✅ *Prazo:* ${deadline}
 
-*Alguma observação adicional?*
+📝 *Alguma observação adicional?*
 
-Exemplo: preferência de marca, forma de pagamento
+Se não tiver observações, é só confirmar:
+┌───────────────────────────┐
+│ ✅ Continuar sem observações │
+└───────────────────────────┘
 
-Digite *não* se não houver observações.`,
+Ou digite sua observação e pressione Enter.`,
 
   ASK_SUPPLIER_SCOPE: `Entendido! 📝
 
@@ -282,4 +285,52 @@ Dúvidas? Entre em contato com o suporte.`,
   ERROR: `Ops! Ocorreu um erro. 😔
 
 Tente novamente em alguns instantes. Se o problema persistir, entre em contato com o suporte.`,
+
+  /**
+   * Mensagem de erro com sugestões inteligentes
+   */
+  ERROR_WITH_SUGGESTIONS: (userInput: string, suggestions: string[]) => {
+    let message = `❌ Não entendi "${userInput}".\n\n`;
+
+    if (suggestions.length > 0) {
+      message += `Você quis dizer:\n`;
+      suggestions.forEach((suggestion, index) => {
+        message += `${index + 1}️⃣ ${suggestion}\n`;
+      });
+      message += `\n`;
+    }
+
+    message += `Ou digite novamente:`;
+    return message;
+  },
+
+  /**
+   * Mensagem oferecendo repetir última cotação
+   */
+  REPEAT_LAST_QUOTE: (last: {
+    product: string;
+    quantity: string;
+    unit: string;
+    region: string;
+    deadline?: string;
+  }) => {
+    const deadlineText = last.deadline
+      ? `⏰ Prazo: ${new Date(last.deadline).toLocaleDateString('pt-BR')}`
+      : '';
+
+    return `💡 *Quer repetir sua última cotação?*
+
+📦 ${last.product}
+📊 ${last.quantity} ${last.unit}
+📍 ${last.region}
+${deadlineText}
+
+┌─────────────────────┐
+│ 1️⃣ Sim, repetir       │
+└─────────────────────┘
+
+┌─────────────────────┐
+│ 2️⃣ Nova cotação      │
+└─────────────────────┘`;
+  },
 };

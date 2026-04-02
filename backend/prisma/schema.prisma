@@ -14,16 +14,17 @@ datasource db {
 // ===================================
 
 model Producer {
-  id                String             @id @default(uuid())
-  name              String
-  cpfCnpj           String             @unique // CPF ou CNPJ (apenas números)
-  stateRegistration String?            // Inscrição estadual (opcional)
-  farm              String?            // nome da fazenda (opcional)
-  city              String             // município
-  phone             String             @unique // número WhatsApp com DDI, ex: +5564999999999
-  region            String
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                   String             @id @default(uuid())
+  name                 String
+  cpfCnpj              String             @unique // CPF ou CNPJ (apenas números)
+  stateRegistration    String?            // Inscrição estadual (opcional)
+  farm                 String?            // nome da fazenda (opcional)
+  city                 String             // município
+  phone                String             @unique // número WhatsApp com DDI, ex: +5564999999999
+  region               String
+  lastQuotePreferences Json?              // Última cotação para repetir (product, quantity, unit, region, deadline)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   subscription      Subscription?
   suppliers         ProducerSupplier[]

@@ -8,6 +8,7 @@ import { parseDeadline } from '../utils/validators';
 import { dispatchQuoteJob } from '../jobs/dispatch-quote.job';
 import { contactExtractorService } from '../services/contact-extractor.service';
 import { nluExtractorService } from '../services/nlu-extractor.service';
+import { openaiService } from '../services/openai.service';
 
 /**
  * Mapa de progresso para cada estado do fluxo
@@ -15,6 +16,7 @@ import { nluExtractorService } from '../services/nlu-extractor.service';
  */
 const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label: string; icon: string } | null> = {
   'IDLE': null,
+  'AWAITING_REPEAT_CHOICE': null,
   'AWAITING_PRODUCT': { step: 1, total: 4, label: 'Produto', icon: '📦' },
   'AWAITING_QUANTITY': { step: 2, total: 4, label: 'Quantidade', icon: '📊' },
   'AWAITING_REGION': { step: 3, total: 4, label: 'Região', icon: '📍' },
@@ -90,6 +92,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       switch (currentState) {
         case 'IDLE':
           await this.handleIdle(producerId, producer.phone, message, nluResult);
+          break;
+
+        case 'AWAITING_REPEAT_CHOICE':
+          await this.handleAwaitingRepeatChoice(producerId, producer.phone, message, context);
           break;
 
         case 'AWAITING_PRODUCT':
@@ -199,7 +205,23 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
         return;
       }
 
-      // Iniciar fluxo
+      // Verificar se tem última cotação salva para oferecer repetir
+      if (producer.lastQuotePreferences) {
+        const last = producer.lastQuotePreferences as any;
+
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.REPEAT_LAST_QUOTE(last),
+        });
+
+        // Aguardar resposta se quer repetir ou nova
+        await this.setState(producerId, 'producer', 'AWAITING_REPEAT_CHOICE', {
+          lastQuote: last,
+        });
+        return;
+      }
+
+      // Iniciar fluxo normal
       await whatsappService.sendMessage({
         to: phone,
         body: Messages.START_QUOTE,
@@ -251,6 +273,58 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
   }
 
   /**
+   * Estado AWAITING_REPEAT_CHOICE - Aguardando escolha se repete ou nova cotação
+   */
+  private async handleAwaitingRepeatChoice(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.toLowerCase().trim();
+
+    // Validação tolerante
+    if (normalized === '1' || normalized.includes('sim') || normalized.includes('repetir')) {
+      // Repetir última cotação - pré-preencher contexto
+      const last = context.lastQuote as any;
+
+      const updatedContext: ConversationContext = {
+        product: last.product,
+        quantity: last.quantity,
+        unit: last.unit,
+        region: last.region,
+        deadline: last.deadline,
+      };
+
+      // Ir direto para confirmação de fornecedores
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.ASK_SUPPLIER_SCOPE,
+      });
+
+      await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SCOPE', updatedContext);
+      return;
+    }
+
+    if (normalized === '2' || normalized.includes('nova') || normalized.includes('diferente')) {
+      // Nova cotação - iniciar fluxo normal
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.START_QUOTE,
+      });
+
+      await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', {});
+      return;
+    }
+
+    // Opção inválida
+    await whatsappService.sendMessage({
+      to: phone,
+      body: 'Por favor, digite *1* para repetir ou *2* para nova cotação.',
+    });
+  }
+
+  /**
    * Estado AWAITING_PRODUCT - Aguardando nome do produto
    * Usa NLU para extrair múltiplas entidades de uma vez
    */
@@ -280,10 +354,25 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     // Validação mínima
     if (!context.product || context.product.length < 2) {
-      await whatsappService.sendMessage({
-        to: phone,
-        body: 'Por favor, informe um produto válido (mínimo 2 caracteres).',
-      });
+      // Tentar sugerir correções usando OpenAI
+      const suggestions = await openaiService.suggestCorrections(
+        message,
+        'product',
+        'Insumos agrícolas comuns'
+      );
+
+      if (suggestions.length > 0) {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.ERROR_WITH_SUGGESTIONS(message, suggestions),
+        });
+      } else {
+        // Fallback se OpenAI falhar
+        await whatsappService.sendMessage({
+          to: phone,
+          body: 'Por favor, informe um produto válido (mínimo 2 caracteres).\n\nExemplos: ração, soja, milho, fertilizante',
+        });
+      }
       return;
     }
 
@@ -340,10 +429,24 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     const match = message.match(/(\d+)\s*(sacos?|kg|litros?|toneladas?|ton?|l|unidades?)?/i);
 
     if (!match) {
-      await whatsappService.sendMessage({
-        to: phone,
-        body: 'Por favor, informe a quantidade no formato: *100 sacos* ou *500 kg*',
-      });
+      // Tentar sugerir correções
+      const suggestions = await openaiService.suggestCorrections(
+        message,
+        'quantity',
+        'Formato: número + unidade (sacas, kg, litros)'
+      );
+
+      if (suggestions.length > 0) {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.ERROR_WITH_SUGGESTIONS(message, suggestions),
+        });
+      } else {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: 'Por favor, informe a quantidade no formato: *100 sacas* ou *500 kg*',
+        });
+      }
       return;
     }
 
@@ -372,10 +475,24 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     const region = message.trim();
 
     if (region.length < 2) {
-      await whatsappService.sendMessage({
-        to: phone,
-        body: 'Por favor, informe uma região válida (mínimo 2 caracteres).',
-      });
+      // Tentar sugerir correções
+      const suggestions = await openaiService.suggestCorrections(
+        message,
+        'region',
+        'Cidades ou regiões do Brasil'
+      );
+
+      if (suggestions.length > 0) {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.ERROR_WITH_SUGGESTIONS(message, suggestions),
+        });
+      } else {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: 'Por favor, informe uma região válida (mínimo 2 caracteres).\n\nExemplos: Goiânia, Rio Verde, Jataí',
+        });
+      }
       return;
     }
 
@@ -403,25 +520,43 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     const deadline = parseDeadline(message);
 
     if (!deadline) {
-      await whatsappService.sendMessage({
-        to: phone,
-        body: 'Prazo inválido. Use: *amanhã*, *em 5 dias* ou *30/03/2024*',
-      });
+      // Tentar sugerir correções
+      const suggestions = await openaiService.suggestCorrections(
+        message,
+        'deadline',
+        'Formato: amanhã, em X dias, ou data DD/MM/AAAA'
+      );
+
+      if (suggestions.length > 0) {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: Messages.ERROR_WITH_SUGGESTIONS(message, suggestions),
+        });
+      } else {
+        await whatsappService.sendMessage({
+          to: phone,
+          body: 'Prazo inválido. Use: *amanhã*, *em 5 dias* ou *30/03/2024*',
+        });
+      }
       return;
     }
 
     context.deadline = deadline.toISOString();
 
+    // Pular observações (agora opcional) e ir direto para escopo de fornecedores
+    // Se usuário quiser adicionar observações, pode digitar antes de confirmar
+    const deadlineFormatted = deadline.toLocaleDateString('pt-BR');
+
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.ASK_OBSERVATIONS,
+      body: Messages.ASK_OBSERVATIONS_OPTIONAL(deadlineFormatted),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_OBSERVATIONS', context);
   }
 
   /**
-   * Estado AWAITING_OBSERVATIONS - Aguardando observações
+   * Estado AWAITING_OBSERVATIONS - Aguardando observações (agora opcional)
    */
   private async handleAwaitingObservations(
     producerId: string,
@@ -431,7 +566,18 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
   ): Promise<void> {
     const normalized = message.toLowerCase().trim();
 
-    if (normalized !== 'não' && normalized !== 'nao') {
+    // Validação tolerante para "continuar sem observações"
+    const skipObservations =
+      normalized === 'continuar' ||
+      normalized === 'continuar sem observações' ||
+      normalized === 'continuar sem observacoes' ||
+      normalized === 'não' ||
+      normalized === 'nao' ||
+      normalized === 'sem observações' ||
+      normalized === 'sem observacoes';
+
+    if (!skipObservations) {
+      // Usuário digitou algo, considerar como observação
       context.observations = message.trim();
     }
 
@@ -795,6 +941,20 @@ Por favor, responda com:
       // Disparar normalmente
       suppliersCount = await dispatchQuoteJob(quote.id);
     }
+
+    // Salvar preferências para próxima cotação
+    await prisma.producer.update({
+      where: { id: producerId },
+      data: {
+        lastQuotePreferences: {
+          product: context.product,
+          quantity: context.quantity,
+          unit: context.unit,
+          region: context.region,
+          deadline: context.deadline,
+        },
+      },
+    });
 
     await whatsappService.sendMessage({
       to: phone,

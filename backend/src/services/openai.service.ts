@@ -21,6 +21,65 @@ export class OpenAIService {
   }
 
   /**
+   * Sugere correções para entrada inválida usando GPT-4
+   */
+  async suggestCorrections(
+    userInput: string,
+    expectedType: 'product' | 'quantity' | 'region' | 'deadline',
+    context?: string
+  ): Promise<string[]> {
+    // Se OpenAI não estiver configurada, retornar array vazio
+    if (!this.client) {
+      return [];
+    }
+
+    try {
+      const systemPrompt = `Você é um assistente que sugere correções para entradas de usuários em um sistema de cotação agrícola.
+O usuário digitou algo que não foi compreendido. Sugira até 3 correções plausíveis.
+
+Tipo de entrada esperada: ${expectedType}
+${context ? `Contexto: ${context}` : ''}
+
+Para produtos: sugira insumos agrícolas comuns (ração, soja, milho, fertilizante, defensivo)
+Para quantidade: sugira formatos corretos (100 sacas, 500 kg)
+Para região: sugira cidades/regiões do Brasil
+Para prazo: sugira formatos corretos (amanhã, em 5 dias, 30/03/2024)
+
+Retorne APENAS um array JSON com 3 sugestões de string, sem texto adicional.
+Exemplo: ["Ração para gado", "Ração para aves", "Fertilizante NPK"]`;
+
+      const response = await this.client.chat.completions.create(
+        {
+          model: 'gpt-4',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            {
+              role: 'user',
+              content: `O usuário digitou: "${userInput}". Sugira 3 correções.`,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 150,
+        },
+        {
+          timeout: 3000, // 3s timeout para não aumentar latência
+        }
+      );
+
+      const content = response.choices[0]?.message?.content || '[]';
+
+      // Parse do JSON
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const suggestions = JSON.parse(cleaned);
+
+      return Array.isArray(suggestions) ? suggestions.slice(0, 3) : [];
+    } catch (error) {
+      logger.error('Failed to suggest corrections', { error, userInput, expectedType });
+      return [];
+    }
+  }
+
+  /**
    * Interpreta mensagem do usuário e extrai intenção + entidades
    */
   async interpretMessage(message: string, context?: string): Promise<NLUResult> {

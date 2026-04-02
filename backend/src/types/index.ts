@@ -113,6 +113,7 @@ export interface ContactData {
 
 export type ProducerState =
   | 'IDLE'
+  | 'AWAITING_REPEAT_CHOICE'
   | 'AWAITING_PRODUCT'
   | 'AWAITING_QUANTITY'
   | 'AWAITING_REGION'
