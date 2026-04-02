@@ -255,6 +255,84 @@ O produtor receberá sua oferta junto com as demais propostas.
 
 Você será notificado se for selecionado. 🎯`,
 
+  /**
+   * Feedback pós-proposta com ranking
+   */
+  PROPOSAL_SENT_WITH_RANKING: (data: {
+    currentRanking: number;
+    totalProposals: number;
+    yourPrice: number;
+    lowestPrice: number;
+    expiresIn: string;
+  }) => {
+    const isLeading = data.currentRanking === 1;
+    const statusIcon = isLeading ? '🥇' : data.currentRanking === 2 ? '🥈' : data.currentRanking === 3 ? '🥉' : '📊';
+
+    let message = `✅ *Proposta enviada!*\n\n`;
+    message += `*Status em tempo real:*\n`;
+    message += `${statusIcon} Você está em *${data.currentRanking}º lugar*\n`;
+    message += `👥 ${data.totalProposals} proposta(s) recebida(s)\n`;
+    message += `💰 Sua proposta: R$ ${data.yourPrice.toFixed(2)}\n`;
+
+    if (data.lowestPrice < data.yourPrice) {
+      const diff = data.yourPrice - data.lowestPrice;
+      const diffPercent = ((diff / data.lowestPrice) * 100).toFixed(1);
+      message += `📊 Menor proposta: R$ ${data.lowestPrice.toFixed(2)} ⚠️\n`;
+      message += `💡 Você está R$ ${diff.toFixed(2)} (${diffPercent}%) acima\n`;
+    } else if (data.lowestPrice === data.yourPrice) {
+      message += `✅ Você tem a melhor proposta!\n`;
+    }
+
+    message += `\n⏱️ Expira em: ${data.expiresIn}`;
+
+    return message;
+  },
+
+  /**
+   * Feedback para fornecedor que perdeu
+   */
+  PROPOSAL_NOT_SELECTED: (data: {
+    winningPrice: number;
+    yourPrice: number;
+    producerName: string;
+  }) => {
+    const diff = data.yourPrice - data.winningPrice;
+    const diffPercent = ((diff / data.winningPrice) * 100).toFixed(1);
+
+    let message = `📊 *Resultado da Cotação*\n\n`;
+    message += `Infelizmente sua proposta não foi selecionada desta vez.\n\n`;
+    message += `*Feedback:*\n`;
+    message += `• Proposta vencedora: R$ ${data.winningPrice.toFixed(2)}\n`;
+    message += `• Sua proposta: R$ ${data.yourPrice.toFixed(2)}\n`;
+    message += `• Diferença: R$ ${diff.toFixed(2)} (${diffPercent}% mais cara)\n\n`;
+
+    message += `💡 *Dica para próxima:*\n`;
+    if (diff > data.winningPrice * 0.1) {
+      message += `Reduza pelo menos 10% para ser mais competitivo\n`;
+    } else if (diff > data.winningPrice * 0.05) {
+      message += `Reduza 5-10% para aumentar suas chances\n`;
+    } else {
+      message += `Você estava bem próximo! Continue assim.\n`;
+    }
+
+    message += `\nContinue participando! 🚀`;
+
+    return message;
+  },
+
+  /**
+   * Feedback para fornecedor que ganhou
+   */
+  PROPOSAL_SELECTED: (data: { producerName: string; producerPhone: string }) => `🎉 *Parabéns! Você foi selecionado!*
+
+O produtor *${data.producerName}* escolheu sua proposta.
+
+📞 *Próximos passos:*
+Entre em contato para finalizar os detalhes:
+Telefone: ${data.producerPhone}
+
+Boa negociação! 🤝`,
+
   PROPOSAL_DECLINED: `Sem problemas! 👍
 
 Obrigado pelo retorno.`,

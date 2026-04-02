@@ -5,6 +5,7 @@ import { prisma } from '../config/database';
 import { redis } from '../config/redis';
 import { SupplierState, ConversationContext } from '../types';
 import { logger, logWithContext } from '../utils/logger';
+import { supplierNotificationService } from '../services/supplier-notification.service';
 
 /**
  * FSM do Fornecedor - Gerencia fluxo de resposta a cotações
@@ -229,7 +230,7 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
       where: { id: context.quoteId! },
     });
 
-    await prisma.proposal.create({
+    const proposal = await prisma.proposal.create({
       data: {
         quoteId: context.quoteId!,
         supplierId,
@@ -242,6 +243,12 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
       },
     });
 
+    // Enviar feedback com ranking (assíncrono, não bloquear)
+    supplierNotificationService.sendProposalRankingFeedback(proposal.id).catch((err) => {
+      logger.error('Failed to send ranking feedback', { error: err, proposalId: proposal.id });
+    });
+
+    // Mensagem simples inicial (o ranking vem depois)
     await whatsappService.sendMessage({
       to: phone,
       body: Messages.PROPOSAL_SENT,

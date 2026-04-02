@@ -45,6 +45,9 @@ model Supplier {
   regions           String[]           // lista de regiões atendidas
   categories        String[]           // ex: ["sementes", "fertilizantes", "defensivos"]
   isNetworkSupplier Boolean            @default(false) // true = rede da plataforma, false = rede do produtor
+  rating            Float              @default(0.0) // rating médio (0-5), calculado baseado em propostas aceitas
+  totalProposals    Int                @default(0) // total de propostas enviadas
+  acceptedProposals Int                @default(0) // total de propostas aceitas
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -52,6 +55,7 @@ model Supplier {
   proposals         Proposal[]
 
   @@index([phone])
+  @@index([rating])
   @@map("suppliers")
 }
 

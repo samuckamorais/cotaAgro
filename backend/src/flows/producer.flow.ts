@@ -9,6 +9,7 @@ import { dispatchQuoteJob } from '../jobs/dispatch-quote.job';
 import { contactExtractorService } from '../services/contact-extractor.service';
 import { nluExtractorService } from '../services/nlu-extractor.service';
 import { openaiService } from '../services/openai.service';
+import { supplierNotificationService } from '../services/supplier-notification.service';
 
 /**
  * Mapa de progresso para cada estado do fluxo
@@ -642,7 +643,7 @@ Por favor, responda com:
     phone: string,
     context: ConversationContext
   ): Promise<void> {
-    // Buscar fornecedores do produtor que atendem a categoria do produto
+    // Buscar fornecedores do produtor com rating e última proposta
     const suppliers = await prisma.supplier.findMany({
       where: {
         isNetworkSupplier: false,
@@ -657,7 +658,29 @@ Por favor, responda com:
         name: true,
         phone: true,
         categories: true,
+        rating: true,
+        totalProposals: true,
+        acceptedProposals: true,
+        proposals: {
+          where: {
+            quote: {
+              producerId: producerId,
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+          select: {
+            price: true,
+            createdAt: true,
+          },
+        },
       },
+      orderBy: [
+        { rating: 'desc' }, // Ordenar por rating (melhores primeiro)
+        { name: 'asc' },
+      ],
     });
 
     if (suppliers.length === 0) {
@@ -678,18 +701,34 @@ Por favor, responda com:
     }));
     context.excludedSuppliers = [];
 
-    // Montar mensagem com lista numerada
-    let message = '📋 *Seus Fornecedores*\n\n';
-    message += 'Encontrei os seguintes fornecedores:\n\n';
+    // Montar mensagem com lista numerada e informações
+    let message = `📋 *Seus Fornecedores* (${suppliers.length} encontrados)\n\n`;
 
     suppliers.forEach((supplier: any, index: number) => {
-      message += `${index + 1}. ${supplier.name}\n`;
+      // Rating com estrelas
+      const stars = supplier.rating > 0 ? `⭐ ${supplier.rating.toFixed(1)}` : '🆕 Novo';
+
+      // Última cotação
+      let lastQuoteInfo = '';
+      if (supplier.proposals && supplier.proposals.length > 0) {
+        const lastProposal = supplier.proposals[0];
+        const lastDate = new Date(lastProposal.createdAt).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+        });
+        lastQuoteInfo = ` | Última: R$ ${lastProposal.price.toFixed(2)} (${lastDate})`;
+      }
+
+      message += `${index + 1}. *${supplier.name}* ${stars}${lastQuoteInfo}\n`;
     });
 
-    message += '\n❓ *Deseja excluir algum fornecedor desta lista?*\n\n';
-    message += '✅ Digite *não* para manter todos\n';
-    message += '❌ Digite os *números* dos fornecedores que deseja excluir (separados por vírgula)\n';
-    message += '   Exemplo: 1,3';
+    message += '\n❓ *Enviar para todos ou escolher?*\n\n';
+    message += '┌───────────────────────┐\n';
+    message += '│ 1️⃣ Enviar para todos   │\n';
+    message += '└───────────────────────┘\n\n';
+    message += '┌───────────────────────┐\n';
+    message += '│ 2️⃣ Escolher fornecedores │\n';
+    message += '└───────────────────────┘';
 
     await whatsappService.sendMessage({
       to: phone,
@@ -710,8 +749,26 @@ Por favor, responda com:
   ): Promise<void> {
     const normalized = message.toLowerCase().trim();
 
-    // Se não quer excluir ninguém
-    if (normalized === 'não' || normalized === 'nao') {
+    // Opção 1: Enviar para todos
+    if (normalized === '1' || normalized.includes('todos') || normalized.includes('enviar para todos')) {
+      // Não excluir ninguém, ir direto para confirmação
+      await this.showSupplierListForConfirmation(producerId, phone, context);
+      return;
+    }
+
+    // Opção 2: Escolher fornecedores
+    if (normalized === '2' || normalized.includes('escolher')) {
+      // Mostrar mensagem para digitar números a excluir
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `Digite os *números* dos fornecedores que deseja *REMOVER* (separados por vírgula):\n\nExemplo: 1,3\n\nOu digite *voltar* para enviar para todos.`,
+      });
+      // Continuar no mesmo estado aguardando os números
+      return;
+    }
+
+    // Se digitou números ou "voltar"
+    if (normalized === 'voltar' || normalized === 'não' || normalized === 'nao') {
       await this.showSupplierListForConfirmation(producerId, phone, context);
       return;
     }
@@ -1079,6 +1136,11 @@ Por favor, responda com:
         status: 'CLOSED',
         closedSupplierId: selectedProposal.supplierId,
       },
+    });
+
+    // Notificar todos os fornecedores sobre o resultado (assíncrono)
+    supplierNotificationService.notifyQuoteResult(context.quoteId!).catch((err) => {
+      logger.error('Failed to notify quote result', { error: err, quoteId: context.quoteId });
     });
 
     await whatsappService.sendMessage({
