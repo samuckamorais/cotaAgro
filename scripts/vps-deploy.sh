@@ -55,6 +55,8 @@ if [ ! -f "backend/.env" ]; then
 fi
 
 # Verificar variáveis obrigatórias
+# Normalizar line endings (CRLF -> LF) para compatibilidade com arquivos editados no Windows
+sed -i 's/\r//' .env
 source .env
 MISSING=()
 [ -z "$JWT_SECRET" ]          && MISSING+=("JWT_SECRET")
@@ -78,15 +80,26 @@ PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.o
 
 if [ -n "$PUBLIC_IP" ]; then
   WEBHOOK_URL="http://${PUBLIC_IP}:3000"
+  VITE_API_URL="http://${PUBLIC_IP}:3000"
+
   # Atualiza ou adiciona WEBHOOK_URL no .env
   if grep -q "^WEBHOOK_URL=" .env; then
     sed -i "s|^WEBHOOK_URL=.*|WEBHOOK_URL=${WEBHOOK_URL}|" .env
   else
     echo "WEBHOOK_URL=${WEBHOOK_URL}" >> .env
   fi
+
+  # Atualiza ou adiciona VITE_API_URL no .env (necessário para o build do frontend)
+  if grep -q "^VITE_API_URL=" .env; then
+    sed -i "s|^VITE_API_URL=.*|VITE_API_URL=${VITE_API_URL}|" .env
+  else
+    echo "VITE_API_URL=${VITE_API_URL}" >> .env
+  fi
+
   echo -e "${GREEN}✅ WEBHOOK_URL atualizado: ${WEBHOOK_URL}${NC}"
+  echo -e "${GREEN}✅ VITE_API_URL atualizado: ${VITE_API_URL}${NC}"
 else
-  echo -e "${YELLOW}⚠️  Não foi possível detectar o IP público. WEBHOOK_URL não atualizado.${NC}"
+  echo -e "${YELLOW}⚠️  Não foi possível detectar o IP público. WEBHOOK_URL e VITE_API_URL não atualizados.${NC}"
 fi
 
 # -----------------------------------------------------------
