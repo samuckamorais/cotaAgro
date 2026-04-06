@@ -174,7 +174,8 @@ export class SubscriptionsController {
       });
 
       if (!subscription) {
-        return res.status(404).json({ error: 'Assinatura não encontrada' });
+        res.status(404).json({ error: 'Assinatura não encontrada' });
+        return;
       }
 
       res.json(subscription);
@@ -195,7 +196,8 @@ export class SubscriptionsController {
       });
 
       if (!producer) {
-        return res.status(404).json({ error: 'Produtor não encontrado' });
+        res.status(404).json({ error: 'Produtor não encontrado' });
+        return;
       }
 
       // Check if producer already has subscription
@@ -204,7 +206,8 @@ export class SubscriptionsController {
       });
 
       if (existing) {
-        return res.status(400).json({ error: 'Produtor já possui assinatura' });
+        res.status(400).json({ error: 'Produtor já possui assinatura' });
+        return;
       }
 
       // Calculate quotes limit
@@ -253,16 +256,18 @@ export class SubscriptionsController {
       });
 
       if (!subscription) {
-        return res.status(404).json({ error: 'Assinatura não encontrada' });
+        res.status(404).json({ error: 'Assinatura não encontrada' });
+        return;
       }
 
       const newQuotesLimit = this.getQuotesLimit(newPlan);
 
       // Validate downgrade
       if (newQuotesLimit < subscription.quotesLimit && subscription.quotesUsed > newQuotesLimit) {
-        return res.status(400).json({
+        res.status(400).json({
           error: `Não é possível fazer downgrade. Produtor já usou ${subscription.quotesUsed} cotações, mas novo limite é ${newQuotesLimit}.`,
         });
+        return;
       }
 
       if (applyImmediately) {
@@ -309,7 +314,8 @@ export class SubscriptionsController {
       });
 
       if (!subscription) {
-        return res.status(404).json({ error: 'Assinatura não encontrada' });
+        res.status(404).json({ error: 'Assinatura não encontrada' });
+        return;
       }
 
       // Calculate new end date
@@ -348,7 +354,8 @@ export class SubscriptionsController {
       });
 
       if (!subscription) {
-        return res.status(404).json({ error: 'Assinatura não encontrada' });
+        res.status(404).json({ error: 'Assinatura não encontrada' });
+        return;
       }
 
       if (immediate) {
@@ -394,7 +401,8 @@ export class SubscriptionsController {
       });
 
       if (!subscription) {
-        return res.status(404).json({ error: 'Assinatura não encontrada' });
+        res.status(404).json({ error: 'Assinatura não encontrada' });
+        return;
       }
 
       const updated = await prisma.subscription.update({
