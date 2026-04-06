@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { SubscriptionsController } from './subscriptions.controller';
-import { authenticate } from '../../middleware/auth';
-import { requirePermission } from '../../middleware/permissions';
+import { authenticate } from '../../middleware/auth.middleware';
+import { requirePermission } from '../../middleware/permissions.middleware';
 
 const router = Router();
 const controller = new SubscriptionsController();

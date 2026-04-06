@@ -4,7 +4,7 @@ import { PlanType } from '@prisma/client';
 
 export class SubscriptionsController {
   // GET /api/subscriptions
-  async list(req: Request, res: Response) {
+  async list(req: Request, res: Response): Promise<void> {
     try {
       const {
         page = '1',
@@ -135,7 +135,7 @@ export class SubscriptionsController {
       const cancellationsThisMonth = await prisma.subscription.count({
         where: {
           active: false,
-          updatedAt: { gte: startOfMonth },
+          endDate: { gte: startOfMonth },
         },
       });
 
@@ -162,7 +162,7 @@ export class SubscriptionsController {
   }
 
   // GET /api/subscriptions/:id
-  async getOne(req: Request, res: Response) {
+  async getOne(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -185,7 +185,7 @@ export class SubscriptionsController {
   }
 
   // POST /api/subscriptions
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<void> {
     try {
       const { producerId, plan, duration, startDate, isTrial } = req.body;
 
@@ -243,7 +243,7 @@ export class SubscriptionsController {
   }
 
   // PATCH /api/subscriptions/:id/plan
-  async updatePlan(req: Request, res: Response) {
+  async updatePlan(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { newPlan, applyImmediately } = req.body;
@@ -299,10 +299,10 @@ export class SubscriptionsController {
   }
 
   // POST /api/subscriptions/:id/renew
-  async renew(req: Request, res: Response) {
+  async renew(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { duration, paymentMethod } = req.body;
+      const { duration } = req.body;
 
       const subscription = await prisma.subscription.findUnique({
         where: { id },
@@ -338,10 +338,10 @@ export class SubscriptionsController {
   }
 
   // POST /api/subscriptions/:id/cancel
-  async cancel(req: Request, res: Response) {
+  async cancel(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { immediate, reason } = req.body;
+      const { immediate } = req.body;
 
       const subscription = await prisma.subscription.findUnique({
         where: { id },
@@ -385,7 +385,7 @@ export class SubscriptionsController {
   }
 
   // POST /api/subscriptions/:id/reset-quota
-  async resetQuota(req: Request, res: Response) {
+  async resetQuota(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
