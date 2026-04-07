@@ -13,6 +13,77 @@ datasource db {
 // MODELS
 // ===================================
 
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String   // "Fazenda ABC"
+  slug      String   @unique // "fazenda-abc"
+  email     String?  // email principal do tenant
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  whatsappConfig WhatsAppConfig?
+  users          User[]
+
+  @@index([slug])
+  @@index([active])
+  @@map("tenants")
+}
+
+model WhatsAppConfig {
+  id        String   @id @default(uuid())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId  String   @unique
+
+  // Provider
+  provider String // "twilio" | "evolution" | "meta"
+
+  // Credenciais (CRIPTOGRAFADAS!)
+  credentials Json // { accountSid, authToken, ... } encrypted
+
+  // Status
+  isConnected     Boolean   @default(false)
+  lastHealthCheck DateTime?
+  connectionError String?
+
+  // Webhook
+  webhookUrl    String?
+  webhookSecret String? // Para validar webhooks
+
+  // Estatísticas (cache)
+  messagesSentToday     Int      @default(0)
+  messagesReceivedToday Int      @default(0)
+  lastMessageAt         DateTime?
+
+  // Auditoria
+  configuredBy String? // userId
+  configuredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([provider])
+  @@index([isConnected])
+  @@map("whatsapp_configs")
+}
+
+model WhatsAppConfigLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  action      String // "created" | "updated" | "deleted" | "reconnected" | "tested"
+  changes     Json // O que mudou
+  performedBy String // userId
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(true)
+  errorMsg    String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([performedBy])
+  @@map("whatsapp_config_logs")
+}
+
 model Producer {
   id                   String             @id @default(uuid())
   name                 String
@@ -200,12 +271,15 @@ model User {
   password  String   // hash bcrypt
   role      UserRole @default(USER)
   active    Boolean  @default(true)
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   permissions Permission[]
 
   @@index([email])
+  @@index([tenantId])
   @@map("users")
 }
 
