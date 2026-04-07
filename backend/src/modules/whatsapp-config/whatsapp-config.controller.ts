@@ -127,6 +127,10 @@ export class WhatsAppConfigController {
     try {
       const tenantId = req.user?.tenantId || 'default';
 
+      // QR code muda a cada chamada — não cachear
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.set('Pragma', 'no-cache');
+
       const result = await whatsappConfigService.getQRCode(tenantId);
 
       res.json({

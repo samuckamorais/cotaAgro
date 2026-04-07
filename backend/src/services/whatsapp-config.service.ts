@@ -235,29 +235,43 @@ export class WhatsAppConfigService {
         `${credentials.apiUrl}/instance/connect/${credentials.instanceName}`,
         {
           headers: { apikey: credentials.apiKey },
-          timeout: 10000,
+          timeout: 15000,
         }
       );
 
-      const qrCode = response.data?.base64 || response.data?.qrcode?.base64;
+      logger.info('Evolution QR code raw response', {
+        tenantId,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+        data: JSON.stringify(response.data).substring(0, 300),
+      });
+
+      // Suportar múltiplos formatos da Evolution API (v1, v2)
+      const qrCode =
+        response.data?.base64 ||
+        response.data?.qrcode?.base64 ||
+        response.data?.qr?.base64 ||
+        response.data?.code ||
+        response.data?.qrcode;
 
       if (qrCode) {
+        // Garantir prefixo data URI se necessário
+        const qrCodeData = qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`;
         return {
           success: true,
-          qrCode,
+          qrCode: qrCodeData,
           message: 'QR Code obtido com sucesso',
         };
       } else {
         return {
           success: false,
-          message: 'QR Code não disponível (já conectado?)',
+          message: 'QR Code não disponível. A instância pode já estar conectada ou foi deletada no Evolution API.',
         };
       }
     } catch (error: any) {
       logger.error('Failed to get QR code', { error, tenantId });
       return {
         success: false,
-        message: error.message || 'Erro ao obter QR Code',
+        message: error.response?.data?.message || error.message || 'Erro ao obter QR Code',
       };
     }
   }
