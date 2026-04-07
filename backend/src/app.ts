@@ -6,6 +6,7 @@ import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundHandler } from './utils/error-handler';
 import { globalRateLimit, rateLimitByPhone } from './middleware/rate-limit.middleware';
 import { authenticate } from './middleware/auth.middleware';
+import { requireTenant } from './middleware/tenant.middleware';
 import { requireWhatsAppConfigAccess } from './middleware/rbac.middleware';
 import { WhatsAppController } from './modules/whatsapp/whatsapp.controller';
 import { WhatsAppConfigController } from './modules/whatsapp-config/whatsapp-config.controller';
@@ -54,50 +55,50 @@ export function createApp(): Application {
   apiRouter.get('/whatsapp/webhook', WhatsAppController.verifyWebhook);
   apiRouter.post('/whatsapp/webhook', rateLimitByPhone, WhatsAppController.handleWebhook);
 
-  // Dashboard routes (protected)
-  apiRouter.get('/dashboard', authenticate, DashboardController.getDashboard);
-  apiRouter.get('/dashboard/stats', authenticate, DashboardController.getStats);
-  apiRouter.get('/dashboard/quotes-by-day', authenticate, DashboardController.getQuotesByDay);
-  apiRouter.get('/dashboard/top-products', authenticate, DashboardController.getTopProducts);
+  // Dashboard routes (protected + tenant isolation)
+  apiRouter.get('/dashboard', authenticate, requireTenant, DashboardController.getDashboard);
+  apiRouter.get('/dashboard/stats', authenticate, requireTenant, DashboardController.getStats);
+  apiRouter.get('/dashboard/quotes-by-day', authenticate, requireTenant, DashboardController.getQuotesByDay);
+  apiRouter.get('/dashboard/top-products', authenticate, requireTenant, DashboardController.getTopProducts);
 
-  // Producer routes (protected)
-  apiRouter.get('/producers', authenticate, ProducerController.list);
-  apiRouter.get('/producers/:id', authenticate, ProducerController.getById);
-  apiRouter.post('/producers', authenticate, ProducerController.create);
-  apiRouter.put('/producers/:id', authenticate, ProducerController.update);
-  apiRouter.delete('/producers/:id', authenticate, ProducerController.delete);
-  apiRouter.get('/producers/:id/suppliers', authenticate, ProducerController.getSuppliers);
-  apiRouter.post('/producers/:id/suppliers', authenticate, ProducerController.addSupplier);
-  apiRouter.delete('/producers/:id/suppliers/:supplierId', authenticate, ProducerController.removeSupplier);
+  // Producer routes (protected + tenant isolation)
+  apiRouter.get('/producers', authenticate, requireTenant, ProducerController.list);
+  apiRouter.get('/producers/:id', authenticate, requireTenant, ProducerController.getById);
+  apiRouter.post('/producers', authenticate, requireTenant, ProducerController.create);
+  apiRouter.put('/producers/:id', authenticate, requireTenant, ProducerController.update);
+  apiRouter.delete('/producers/:id', authenticate, requireTenant, ProducerController.delete);
+  apiRouter.get('/producers/:id/suppliers', authenticate, requireTenant, ProducerController.getSuppliers);
+  apiRouter.post('/producers/:id/suppliers', authenticate, requireTenant, ProducerController.addSupplier);
+  apiRouter.delete('/producers/:id/suppliers/:supplierId', authenticate, requireTenant, ProducerController.removeSupplier);
 
-  // Supplier routes (protected)
-  apiRouter.get('/suppliers', authenticate, SupplierController.list);
-  apiRouter.get('/suppliers/:id', authenticate, SupplierController.getById);
-  apiRouter.post('/suppliers', authenticate, SupplierController.create);
-  apiRouter.put('/suppliers/:id', authenticate, SupplierController.update);
-  apiRouter.delete('/suppliers/:id', authenticate, SupplierController.delete);
+  // Supplier routes (protected + tenant isolation)
+  apiRouter.get('/suppliers', authenticate, requireTenant, SupplierController.list);
+  apiRouter.get('/suppliers/:id', authenticate, requireTenant, SupplierController.getById);
+  apiRouter.post('/suppliers', authenticate, requireTenant, SupplierController.create);
+  apiRouter.put('/suppliers/:id', authenticate, requireTenant, SupplierController.update);
+  apiRouter.delete('/suppliers/:id', authenticate, requireTenant, SupplierController.delete);
 
-  // Quote routes (protected)
-  apiRouter.get('/quotes/stats', authenticate, QuoteController.getStats);
-  apiRouter.get('/quotes', authenticate, QuoteController.list);
-  apiRouter.get('/quotes/:id', authenticate, QuoteController.getById);
-  apiRouter.post('/quotes', authenticate, QuoteController.create);
-  apiRouter.post('/quotes/:id/dispatch', authenticate, QuoteController.dispatch);
-  apiRouter.put('/quotes/:id/close', authenticate, QuoteController.close);
+  // Quote routes (protected + tenant isolation)
+  apiRouter.get('/quotes/stats', authenticate, requireTenant, QuoteController.getStats);
+  apiRouter.get('/quotes', authenticate, requireTenant, QuoteController.list);
+  apiRouter.get('/quotes/:id', authenticate, requireTenant, QuoteController.getById);
+  apiRouter.post('/quotes', authenticate, requireTenant, QuoteController.create);
+  apiRouter.post('/quotes/:id/dispatch', authenticate, requireTenant, QuoteController.dispatch);
+  apiRouter.put('/quotes/:id/close', authenticate, requireTenant, QuoteController.close);
 
   // Subscription routes (protected)
   apiRouter.use('/subscriptions', subscriptionsRouter);
 
-  // WhatsApp Config routes (protected - admin or WHATSAPP_CONFIG permission)
+  // WhatsApp Config routes (protected + tenant isolation - admin or WHATSAPP_CONFIG permission)
   const whatsappConfigController = new WhatsAppConfigController();
-  apiRouter.get('/admin/whatsapp/config', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getConfig.bind(whatsappConfigController));
-  apiRouter.put('/admin/whatsapp/config', authenticate, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.updateConfig.bind(whatsappConfigController));
-  apiRouter.delete('/admin/whatsapp/config', authenticate, requireWhatsAppConfigAccess('canDelete'), whatsappConfigController.deleteConfig.bind(whatsappConfigController));
-  apiRouter.post('/admin/whatsapp/test', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.testConnection.bind(whatsappConfigController));
-  apiRouter.get('/admin/whatsapp/qrcode', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getQRCode.bind(whatsappConfigController));
-  apiRouter.post('/admin/whatsapp/reconnect', authenticate, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.reconnect.bind(whatsappConfigController));
-  apiRouter.get('/admin/whatsapp/stats', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getStats.bind(whatsappConfigController));
-  apiRouter.get('/admin/whatsapp/logs', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getLogs.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/config', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getConfig.bind(whatsappConfigController));
+  apiRouter.put('/admin/whatsapp/config', authenticate, requireTenant, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.updateConfig.bind(whatsappConfigController));
+  apiRouter.delete('/admin/whatsapp/config', authenticate, requireTenant, requireWhatsAppConfigAccess('canDelete'), whatsappConfigController.deleteConfig.bind(whatsappConfigController));
+  apiRouter.post('/admin/whatsapp/test', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.testConnection.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/qrcode', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getQRCode.bind(whatsappConfigController));
+  apiRouter.post('/admin/whatsapp/reconnect', authenticate, requireTenant, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.reconnect.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/stats', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getStats.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/logs', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getLogs.bind(whatsappConfigController));
 
   app.use('/api', apiRouter);
 

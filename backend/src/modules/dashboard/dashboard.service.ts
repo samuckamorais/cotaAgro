@@ -5,7 +5,7 @@ export class DashboardService {
   /**
    * KPIs principais do dashboard
    */
-  static async getStats(): Promise<DashboardStats> {
+  static async getStats(tenantId: string): Promise<DashboardStats> {
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
 
@@ -14,6 +14,7 @@ export class DashboardService {
         // Cotações criadas hoje
         prisma.quote.count({
           where: {
+            tenantId,
             createdAt: {
               gte: todayStart,
             },
@@ -21,19 +22,20 @@ export class DashboardService {
         }),
 
         // Propostas recebidas (total)
-        prisma.proposal.count(),
+        prisma.proposal.count({ where: { tenantId } }),
 
         // Cotações fechadas
         prisma.quote.count({
-          where: { status: 'CLOSED' },
+          where: { tenantId, status: 'CLOSED' },
         }),
 
         // Total de cotações
-        prisma.quote.count(),
+        prisma.quote.count({ where: { tenantId } }),
 
         // Produtores com assinatura ativa
         prisma.producer.count({
           where: {
+            tenantId,
             subscription: {
               active: true,
             },
@@ -55,12 +57,13 @@ export class DashboardService {
   /**
    * Gráfico de cotações por dia (últimos 30 dias)
    */
-  static async getQuotesByDay(days = 30): Promise<QuotesByDay[]> {
+  static async getQuotesByDay(tenantId: string, days = 30): Promise<QuotesByDay[]> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     const quotes = await prisma.quote.findMany({
       where: {
+        tenantId,
         createdAt: {
           gte: startDate,
         },
@@ -95,9 +98,10 @@ export class DashboardService {
   /**
    * Top 5 produtos mais cotados
    */
-  static async getTopProducts(limit = 5): Promise<TopProduct[]> {
+  static async getTopProducts(tenantId: string, limit = 5): Promise<TopProduct[]> {
     const quotes = await prisma.quote.groupBy({
       by: ['product'],
+      where: { tenantId },
       _count: {
         product: true,
       },
@@ -118,8 +122,9 @@ export class DashboardService {
   /**
    * Últimas cotações (10 mais recentes)
    */
-  static async getRecentQuotes(limit = 10) {
+  static async getRecentQuotes(tenantId: string, limit = 10) {
     return await prisma.quote.findMany({
+      where: { tenantId },
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -140,24 +145,27 @@ export class DashboardService {
   /**
    * Estatísticas de fornecedores
    */
-  static async getSupplierStats() {
+  static async getSupplierStats(tenantId: string) {
     const [totalSuppliers, networkSuppliers, producerSuppliers, topSuppliersByProposals] =
       await Promise.all([
-        // Total de fornecedores
-        prisma.supplier.count(),
+        // Total de fornecedores (do tenant + rede)
+        prisma.supplier.count({
+          where: { OR: [{ tenantId }, { tenantId: null }] },
+        }),
 
         // Fornecedores da rede
         prisma.supplier.count({
-          where: { isNetworkSupplier: true },
+          where: { tenantId: null, isNetworkSupplier: true },
         }),
 
-        // Fornecedores de produtores
+        // Fornecedores do tenant
         prisma.supplier.count({
-          where: { isNetworkSupplier: false },
+          where: { tenantId, isNetworkSupplier: false },
         }),
 
-        // Top fornecedores por propostas enviadas
+        // Top fornecedores por propostas enviadas (apenas do tenant)
         prisma.supplier.findMany({
+          where: { OR: [{ tenantId }, { tenantId: null }] },
           take: 5,
           select: {
             id: true,
@@ -190,7 +198,7 @@ export class DashboardService {
   /**
    * Estatísticas de produtores
    */
-  static async getProducerStats() {
+  static async getProducerStats(tenantId: string) {
     const [
       totalProducers,
       producersWithQuotes,
@@ -198,11 +206,12 @@ export class DashboardService {
       topProducersByQuotes,
     ] = await Promise.all([
       // Total de produtores
-      prisma.producer.count(),
+      prisma.producer.count({ where: { tenantId } }),
 
       // Produtores que já fizeram cotações
       prisma.producer.count({
         where: {
+          tenantId,
           quotes: {
             some: {},
           },
@@ -212,6 +221,7 @@ export class DashboardService {
       // Produtores com assinatura ativa
       prisma.producer.count({
         where: {
+          tenantId,
           subscription: {
             active: true,
           },
@@ -220,6 +230,7 @@ export class DashboardService {
 
       // Top produtores por cotações
       prisma.producer.findMany({
+        where: { tenantId },
         take: 5,
         select: {
           id: true,
@@ -252,8 +263,9 @@ export class DashboardService {
   /**
    * Estatísticas por categoria de fornecedor
    */
-  static async getStatsByCategory() {
+  static async getStatsByCategory(tenantId: string) {
     const suppliers = await prisma.supplier.findMany({
+      where: { OR: [{ tenantId }, { tenantId: null }] },
       select: {
         categories: true,
         _count: {
@@ -287,8 +299,9 @@ export class DashboardService {
   /**
    * Estatísticas de propostas e valores
    */
-  static async getProposalStats() {
+  static async getProposalStats(tenantId: string) {
     const proposals = await prisma.proposal.findMany({
+      where: { tenantId },
       select: {
         totalPrice: true,
         createdAt: true,
@@ -328,9 +341,10 @@ export class DashboardService {
   /**
    * Status de cotações
    */
-  static async getQuoteStatusStats() {
+  static async getQuoteStatusStats(tenantId: string) {
     const statusCounts = await prisma.quote.groupBy({
       by: ['status'],
+      where: { tenantId },
       _count: {
         status: true,
       },
@@ -345,7 +359,7 @@ export class DashboardService {
   /**
    * Dashboard completo (combina todos os dados)
    */
-  static async getDashboardData() {
+  static async getDashboardData(tenantId: string) {
     const [
       stats,
       quotesByDay,
@@ -357,15 +371,15 @@ export class DashboardService {
       proposalStats,
       quoteStatusStats,
     ] = await Promise.all([
-      this.getStats(),
-      this.getQuotesByDay(30),
-      this.getTopProducts(5),
-      this.getRecentQuotes(10),
-      this.getSupplierStats(),
-      this.getProducerStats(),
-      this.getStatsByCategory(),
-      this.getProposalStats(),
-      this.getQuoteStatusStats(),
+      this.getStats(tenantId),
+      this.getQuotesByDay(tenantId, 30),
+      this.getTopProducts(tenantId, 5),
+      this.getRecentQuotes(tenantId, 10),
+      this.getSupplierStats(tenantId),
+      this.getProducerStats(tenantId),
+      this.getStatsByCategory(tenantId),
+      this.getProposalStats(tenantId),
+      this.getQuoteStatusStats(tenantId),
     ]);
 
     return {

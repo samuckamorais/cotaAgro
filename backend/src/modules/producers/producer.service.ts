@@ -7,11 +7,12 @@ export class ProducerService {
   /**
    * Lista produtores com paginação
    */
-  static async list(page = 1, limit = 10): Promise<PaginatedResponse<any>> {
+  static async list(tenantId: string, page = 1, limit = 10): Promise<PaginatedResponse<any>> {
     const skip = (page - 1) * limit;
 
     const [producers, total] = await Promise.all([
       prisma.producer.findMany({
+        where: { tenantId },
         skip,
         take: limit,
         include: {
@@ -25,7 +26,7 @@ export class ProducerService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.producer.count(),
+      prisma.producer.count({ where: { tenantId } }),
     ]);
 
     return {
@@ -42,9 +43,9 @@ export class ProducerService {
   /**
    * Busca produtor por ID
    */
-  static async getById(id: string) {
-    const producer = await prisma.producer.findUnique({
-      where: { id },
+  static async getById(tenantId: string, id: string) {
+    const producer = await prisma.producer.findFirst({
+      where: { id, tenantId },
       include: {
         subscription: true,
         suppliers: {
@@ -74,19 +75,19 @@ export class ProducerService {
   /**
    * Cria novo produtor
    */
-  static async create(data: CreateProducerDTO) {
-    // Verificar se telefone já existe
-    const existingPhone = await prisma.producer.findUnique({
-      where: { phone: data.phone },
+  static async create(tenantId: string, data: CreateProducerDTO) {
+    // Verificar se telefone já existe NO MESMO TENANT
+    const existingPhone = await prisma.producer.findFirst({
+      where: { tenantId, phone: data.phone },
     });
 
     if (existingPhone) {
       throw createError.conflict('Telefone já cadastrado');
     }
 
-    // Verificar se CPF/CNPJ já existe
-    const existingCpfCnpj = await prisma.producer.findUnique({
-      where: { cpfCnpj: data.cpfCnpj },
+    // Verificar se CPF/CNPJ já existe NO MESMO TENANT
+    const existingCpfCnpj = await prisma.producer.findFirst({
+      where: { tenantId, cpfCnpj: data.cpfCnpj },
     });
 
     if (existingCpfCnpj) {
@@ -95,6 +96,7 @@ export class ProducerService {
 
     const producer = await prisma.producer.create({
       data: {
+        tenantId,
         name: data.name,
         cpfCnpj: data.cpfCnpj,
         stateRegistration: data.stateRegistration,
@@ -104,6 +106,7 @@ export class ProducerService {
         region: data.region,
         conversationState: {
           create: {
+            tenantId,
             step: 'IDLE',
             context: {},
           },
@@ -114,7 +117,7 @@ export class ProducerService {
       },
     });
 
-    logger.info('Producer created', { producerId: producer.id });
+    logger.info('Producer created', { producerId: producer.id, tenantId });
 
     return producer;
   }
@@ -122,14 +125,15 @@ export class ProducerService {
   /**
    * Atualiza produtor
    */
-  static async update(id: string, data: UpdateProducerDTO) {
-    // Verificar se produtor existe
-    await this.getById(id);
+  static async update(tenantId: string, id: string, data: UpdateProducerDTO) {
+    // Verificar se produtor existe e pertence ao tenant
+    await this.getById(tenantId, id);
 
-    // Se mudou telefone, verificar se novo telefone está disponível
+    // Se mudou telefone, verificar se novo telefone está disponível NO MESMO TENANT
     if (data.phone) {
       const existing = await prisma.producer.findFirst({
         where: {
+          tenantId,
           phone: data.phone,
           id: { not: id },
         },
@@ -140,10 +144,11 @@ export class ProducerService {
       }
     }
 
-    // Se mudou CPF/CNPJ, verificar se novo CPF/CNPJ está disponível
+    // Se mudou CPF/CNPJ, verificar se novo CPF/CNPJ está disponível NO MESMO TENANT
     if (data.cpfCnpj) {
       const existing = await prisma.producer.findFirst({
         where: {
+          tenantId,
           cpfCnpj: data.cpfCnpj,
           id: { not: id },
         },
@@ -162,7 +167,7 @@ export class ProducerService {
       },
     });
 
-    logger.info('Producer updated', { producerId: id });
+    logger.info('Producer updated', { producerId: id, tenantId });
 
     return producer;
   }
@@ -170,24 +175,24 @@ export class ProducerService {
   /**
    * Deleta produtor
    */
-  static async delete(id: string) {
-    await this.getById(id);
+  static async delete(tenantId: string, id: string) {
+    await this.getById(tenantId, id);
 
     await prisma.producer.delete({
       where: { id },
     });
 
-    logger.info('Producer deleted', { producerId: id });
+    logger.info('Producer deleted', { producerId: id, tenantId });
   }
 
   /**
    * Lista fornecedores do produtor
    */
-  static async getSuppliers(producerId: string) {
-    await this.getById(producerId);
+  static async getSuppliers(tenantId: string, producerId: string) {
+    await this.getById(tenantId, producerId);
 
     const suppliers = await prisma.producerSupplier.findMany({
-      where: { producerId },
+      where: { tenantId, producerId },
       include: {
         supplier: true,
       },
@@ -199,12 +204,16 @@ export class ProducerService {
   /**
    * Adiciona fornecedor ao produtor
    */
-  static async addSupplier(producerId: string, supplierId: string) {
-    // Verificar se produtor e fornecedor existem
-    await this.getById(producerId);
+  static async addSupplier(tenantId: string, producerId: string, supplierId: string) {
+    // Verificar se produtor existe e pertence ao tenant
+    await this.getById(tenantId, producerId);
 
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: supplierId },
+    // Verificar se fornecedor existe e pertence ao tenant ou é da rede
+    const supplier = await prisma.supplier.findFirst({
+      where: {
+        id: supplierId,
+        OR: [{ tenantId }, { tenantId: null }], // Tenant ou rede
+      },
     });
 
     if (!supplier) {
@@ -227,6 +236,7 @@ export class ProducerService {
 
     const link = await prisma.producerSupplier.create({
       data: {
+        tenantId,
         producerId,
         supplierId,
       },
@@ -235,7 +245,7 @@ export class ProducerService {
       },
     });
 
-    logger.info('Supplier added to producer', { producerId, supplierId });
+    logger.info('Supplier added to producer', { producerId, supplierId, tenantId });
 
     return link.supplier;
   }
@@ -243,15 +253,14 @@ export class ProducerService {
   /**
    * Remove fornecedor do produtor
    */
-  static async removeSupplier(producerId: string, supplierId: string) {
-    await this.getById(producerId);
+  static async removeSupplier(tenantId: string, producerId: string, supplierId: string) {
+    await this.getById(tenantId, producerId);
 
-    const link = await prisma.producerSupplier.findUnique({
+    const link = await prisma.producerSupplier.findFirst({
       where: {
-        producerId_supplierId: {
-          producerId,
-          supplierId,
-        },
+        tenantId,
+        producerId,
+        supplierId,
       },
     });
 
@@ -263,6 +272,6 @@ export class ProducerService {
       where: { id: link.id },
     });
 
-    logger.info('Supplier removed from producer', { producerId, supplierId });
+    logger.info('Supplier removed from producer', { producerId, supplierId, tenantId });
   }
 }

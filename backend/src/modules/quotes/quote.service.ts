@@ -9,6 +9,7 @@ export class QuoteService {
    * Lista cotações com paginação e filtros
    */
   static async list(
+    tenantId: string,
     page = 1,
     limit = 10,
     filters?: {
@@ -20,7 +21,7 @@ export class QuoteService {
   ): Promise<PaginatedResponse<any>> {
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { tenantId };
 
     if (filters?.status) {
       where.status = filters.status;
@@ -79,9 +80,9 @@ export class QuoteService {
   /**
    * Busca cotação por ID com propostas
    */
-  static async getById(id: string) {
-    const quote = await prisma.quote.findUnique({
-      where: { id },
+  static async getById(tenantId: string, id: string) {
+    const quote = await prisma.quote.findFirst({
+      where: { id, tenantId },
       include: {
         producer: true,
         proposals: {
@@ -103,10 +104,10 @@ export class QuoteService {
   /**
    * Cria nova cotação (usado pela API, não pela FSM)
    */
-  static async create(data: CreateQuoteDTO) {
-    // Verificar se produtor existe
-    const producer = await prisma.producer.findUnique({
-      where: { id: data.producerId },
+  static async create(tenantId: string, data: CreateQuoteDTO) {
+    // Verificar se produtor existe E pertence ao tenant
+    const producer = await prisma.producer.findFirst({
+      where: { id: data.producerId, tenantId },
       include: { subscription: true },
     });
 
@@ -128,6 +129,7 @@ export class QuoteService {
 
     const quote = await prisma.quote.create({
       data: {
+        tenantId,
         producerId: data.producerId,
         product: data.product,
         quantity: data.quantity,
@@ -152,7 +154,7 @@ export class QuoteService {
       });
     }
 
-    logger.info('Quote created', { quoteId: quote.id, producerId: data.producerId });
+    logger.info('Quote created', { quoteId: quote.id, producerId: data.producerId, tenantId });
 
     return quote;
   }
@@ -160,8 +162,8 @@ export class QuoteService {
   /**
    * Dispara cotação para fornecedores
    */
-  static async dispatch(id: string) {
-    const quote = await this.getById(id);
+  static async dispatch(tenantId: string, id: string) {
+    const quote = await this.getById(tenantId, id);
 
     if (quote.status !== 'PENDING') {
       throw createError.badRequest('Cotação já foi disparada');
@@ -169,7 +171,7 @@ export class QuoteService {
 
     const suppliersCount = await dispatchQuoteJob(id);
 
-    logger.info('Quote dispatch initiated', { quoteId: id, suppliersCount });
+    logger.info('Quote dispatch initiated', { quoteId: id, suppliersCount, tenantId });
 
     return { suppliersCount };
   }
@@ -177,8 +179,8 @@ export class QuoteService {
   /**
    * Fecha cotação com fornecedor escolhido
    */
-  static async close(id: string, supplierId: string) {
-    const quote = await this.getById(id);
+  static async close(tenantId: string, id: string, supplierId: string) {
+    const quote = await this.getById(tenantId, id);
 
     if (quote.status === 'CLOSED') {
       throw createError.badRequest('Cotação já está fechada');
@@ -191,6 +193,7 @@ export class QuoteService {
     // Verificar se fornecedor tem proposta nesta cotação
     const proposal = await prisma.proposal.findFirst({
       where: {
+        tenantId,
         quoteId: id,
         supplierId,
       },
@@ -223,6 +226,7 @@ export class QuoteService {
       quoteId: id,
       supplierId,
       supplierName: proposal.supplier.name,
+      tenantId,
     });
 
     return updatedQuote;
@@ -231,7 +235,7 @@ export class QuoteService {
   /**
    * Estatísticas de cotações
    */
-  static async getStats() {
+  static async getStats(tenantId: string) {
     const [
       totalQuotes,
       pendingQuotes,
@@ -240,13 +244,14 @@ export class QuoteService {
       expiredQuotes,
       quotesToday,
     ] = await Promise.all([
-      prisma.quote.count(),
-      prisma.quote.count({ where: { status: 'PENDING' } }),
-      prisma.quote.count({ where: { status: 'COLLECTING' } }),
-      prisma.quote.count({ where: { status: 'CLOSED' } }),
-      prisma.quote.count({ where: { status: 'EXPIRED' } }),
+      prisma.quote.count({ where: { tenantId } }),
+      prisma.quote.count({ where: { tenantId, status: 'PENDING' } }),
+      prisma.quote.count({ where: { tenantId, status: 'COLLECTING' } }),
+      prisma.quote.count({ where: { tenantId, status: 'CLOSED' } }),
+      prisma.quote.count({ where: { tenantId, status: 'EXPIRED' } }),
       prisma.quote.count({
         where: {
+          tenantId,
           createdAt: {
             gte: new Date(new Date().setHours(0, 0, 0, 0)),
           },

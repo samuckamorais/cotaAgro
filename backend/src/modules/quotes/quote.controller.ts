@@ -10,6 +10,7 @@ export class QuoteController {
    */
   static list = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { page, limit } = paginationSchema.parse(req.query);
+    const tenantId = (req as any).user?.tenantId!;
 
     const filterSchema = z.object({
       status: z.enum(['PENDING', 'COLLECTING', 'SUMMARIZED', 'CLOSED', 'EXPIRED']).optional(),
@@ -20,7 +21,7 @@ export class QuoteController {
 
     const filters = filterSchema.parse(req.query);
 
-    const result = await QuoteService.list(page, limit, filters);
+    const result = await QuoteService.list(tenantId, page, limit, filters);
 
     res.json({
       success: true,
@@ -33,8 +34,9 @@ export class QuoteController {
    */
   static getById = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
 
-    const quote = await QuoteService.getById(id);
+    const quote = await QuoteService.getById(tenantId, id);
 
     res.json({
       success: true,
@@ -47,8 +49,9 @@ export class QuoteController {
    */
   static create = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data = createQuoteSchema.parse(req.body);
+    const tenantId = (req as any).user?.tenantId!;
 
-    const quote = await QuoteService.create(data);
+    const quote = await QuoteService.create(tenantId, data);
 
     res.status(201).json({
       success: true,
@@ -61,8 +64,9 @@ export class QuoteController {
    */
   static dispatch = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
 
-    const result = await QuoteService.dispatch(id);
+    const result = await QuoteService.dispatch(tenantId, id);
 
     res.json({
       success: true,
@@ -77,12 +81,13 @@ export class QuoteController {
   static close = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { supplierId } = req.body;
+    const tenantId = (req as any).user?.tenantId!;
 
     if (!supplierId) {
       throw createError.badRequest('supplierId é obrigatório');
     }
 
-    const quote = await QuoteService.close(id, supplierId);
+    const quote = await QuoteService.close(tenantId, id, supplierId);
 
     res.json({
       success: true,
@@ -94,8 +99,9 @@ export class QuoteController {
   /**
    * GET /api/quotes/stats
    */
-  static getStats = ErrorHandler.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
-    const stats = await QuoteService.getStats();
+  static getStats = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const tenantId = (req as any).user?.tenantId!;
+    const stats = await QuoteService.getStats(tenantId);
 
     res.json({
       success: true,

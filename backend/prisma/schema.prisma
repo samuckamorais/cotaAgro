@@ -22,8 +22,18 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  whatsappConfig WhatsAppConfig?
-  users          User[]
+  whatsappConfig        WhatsAppConfig?
+  users                 User[]
+  producers             Producer[]
+  suppliers             Supplier[]
+  quotes                Quote[]
+  proposals             Proposal[]
+  subscriptions         Subscription[]
+  producerSuppliers     ProducerSupplier[]
+  conversationStates    ConversationState[]
+  conversationMetrics   ConversationMetric[]
+  experiments           Experiment[]
+  experimentAssignments ExperimentAssignment[]
 
   @@index([slug])
   @@index([active])
@@ -86,12 +96,14 @@ model WhatsAppConfigLog {
 
 model Producer {
   id                   String   @id @default(uuid())
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId             String
   name                 String
-  cpfCnpj              String   @unique // CPF ou CNPJ (apenas números)
+  cpfCnpj              String // CPF ou CNPJ (apenas números)
   stateRegistration    String? // Inscrição estadual (opcional)
   farm                 String? // nome da fazenda (opcional)
   city                 String // município
-  phone                String   @unique // número WhatsApp com DDI, ex: +5564999999999
+  phone                String // número WhatsApp com DDI, ex: +5564999999999
   region               String
   lastQuotePreferences Json? // Última cotação para repetir (product, quantity, unit, region, deadline)
   preferences          Json? // Preferências gerais do produtor (notificações, etc)
@@ -103,6 +115,9 @@ model Producer {
   quotes            Quote[]
   conversationState ConversationState?
 
+  @@unique([tenantId, cpfCnpj])
+  @@unique([tenantId, phone])
+  @@index([tenantId])
   @@index([phone])
   @@index([cpfCnpj])
   @@map("producers")
@@ -110,8 +125,10 @@ model Producer {
 
 model Supplier {
   id                String   @id @default(uuid())
+  tenant            Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId          String? // nullable para fornecedores da rede
   name              String
-  phone             String   @unique
+  phone             String
   company           String? // nome da empresa (opcional)
   email             String? // e-mail do fornecedor (opcional)
   regions           String[] // lista de regiões atendidas
@@ -126,24 +143,32 @@ model Supplier {
   producers ProducerSupplier[]
   proposals Proposal[]
 
+  @@unique([tenantId, phone])
+  @@index([tenantId])
   @@index([phone])
   @@index([rating])
+  @@index([isNetworkSupplier])
   @@map("suppliers")
 }
 
 model ProducerSupplier {
   id         String   @id @default(uuid())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId   String
   producer   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId String
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   supplierId String
 
   @@unique([producerId, supplierId])
+  @@index([tenantId])
   @@map("producer_suppliers")
 }
 
 model Quote {
   id               String        @id @default(uuid())
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId         String
   producer         Producer      @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId       String
   product          String
@@ -161,6 +186,8 @@ model Quote {
 
   proposals Proposal[]
 
+  @@index([tenantId])
+  @@index([tenantId, status])
   @@index([status])
   @@index([producerId])
   @@index([createdAt])
@@ -170,6 +197,8 @@ model Quote {
 
 model Proposal {
   id            String   @id @default(uuid())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String
   quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   quoteId       String
   supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
@@ -182,12 +211,15 @@ model Proposal {
   isOwnSupplier Boolean  @default(false)
   createdAt     DateTime @default(now())
 
+  @@index([tenantId])
   @@index([quoteId])
   @@map("proposals")
 }
 
 model Subscription {
   id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String
   producer    Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId  String   @unique
   plan        PlanType // BASIC | PRO | ENTERPRISE
@@ -197,22 +229,28 @@ model Subscription {
   endDate     DateTime
   active      Boolean  @default(true)
 
+  @@index([tenantId])
   @@map("subscriptions")
 }
 
 model ConversationState {
   id         String   @id @default(uuid())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId   String
   producer   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId String   @unique
   step       String // ex: AWAITING_PRODUCT, AWAITING_QUANTITY, etc.
   context    Json // dados parciais da cotação em andamento
   updatedAt  DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("conversation_states")
 }
 
 model ConversationMetric {
   id            String   @id @default(uuid())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String
   userId        String // producerId or supplierId
   userType      String // "producer" or "supplier"
   eventType     String // message_sent, message_received, state_changed, error, quote_completed, quote_abandoned
@@ -223,6 +261,7 @@ model ConversationMetric {
   durationMs    Int? // time spent in state (for state_changed events)
   timestamp     DateTime @default(now())
 
+  @@index([tenantId])
   @@index([userId])
   @@index([userType])
   @@index([eventType])
@@ -233,7 +272,9 @@ model ConversationMetric {
 
 model Experiment {
   id          String    @id @default(uuid())
-  name        String    @unique // feature flag name
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String
+  name        String // feature flag name
   description String?
   variants    Json // array of variant configs: [{ name: "control", weight: 50 }, { name: "treatment", weight: 50 }]
   active      Boolean   @default(true)
@@ -244,6 +285,8 @@ model Experiment {
 
   assignments ExperimentAssignment[]
 
+  @@unique([tenantId, name])
+  @@index([tenantId])
   @@index([name])
   @@index([active])
   @@map("experiments")
@@ -251,6 +294,8 @@ model Experiment {
 
 model ExperimentAssignment {
   id           String     @id @default(uuid())
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId     String
   experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
   experimentId String
   userId       String // producerId or supplierId
@@ -259,6 +304,7 @@ model ExperimentAssignment {
   assignedAt   DateTime   @default(now())
 
   @@unique([experimentId, userId, userType])
+  @@index([tenantId])
   @@index([userId])
   @@index([experimentId])
   @@map("experiment_assignments")

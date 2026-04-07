@@ -10,8 +10,9 @@ export class ProducerController {
    */
   static list = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { page, limit } = paginationSchema.parse(req.query);
+    const tenantId = (req as any).user?.tenantId!;
 
-    const result = await ProducerService.list(page, limit);
+    const result = await ProducerService.list(tenantId, page, limit);
 
     res.json({
       success: true,
@@ -25,8 +26,9 @@ export class ProducerController {
    */
   static getById = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
 
-    const producer = await ProducerService.getById(id);
+    const producer = await ProducerService.getById(tenantId, id);
 
     res.json({
       success: true,
@@ -40,8 +42,9 @@ export class ProducerController {
    */
   static create = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data = createProducerSchema.parse(req.body);
+    const tenantId = (req as any).user?.tenantId!;
 
-    const producer = await ProducerService.create(data);
+    const producer = await ProducerService.create(tenantId, data);
 
     res.status(201).json({
       success: true,
@@ -56,8 +59,9 @@ export class ProducerController {
   static update = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const data = updateProducerSchema.parse(req.body);
+    const tenantId = (req as any).user?.tenantId!;
 
-    const producer = await ProducerService.update(id, data);
+    const producer = await ProducerService.update(tenantId, id, data);
 
     res.json({
       success: true,
@@ -71,8 +75,9 @@ export class ProducerController {
    */
   static delete = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
 
-    await ProducerService.delete(id);
+    await ProducerService.delete(tenantId, id);
 
     res.json({
       success: true,
@@ -86,8 +91,9 @@ export class ProducerController {
    */
   static getSuppliers = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
 
-    const suppliers = await ProducerService.getSuppliers(id);
+    const suppliers = await ProducerService.getSuppliers(tenantId, id);
 
     res.json({
       success: true,
@@ -102,12 +108,13 @@ export class ProducerController {
   static addSupplier = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { supplierId } = req.body;
+    const tenantId = (req as any).user?.tenantId!;
 
     if (!supplierId) {
       throw ErrorHandler.asyncHandler;
     }
 
-    const supplier = await ProducerService.addSupplier(id, supplierId);
+    const supplier = await ProducerService.addSupplier(tenantId, id, supplierId);
 
     res.status(201).json({
       success: true,
@@ -121,8 +128,9 @@ export class ProducerController {
    */
   static removeSupplier = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { id, supplierId } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
 
-    await ProducerService.removeSupplier(id, supplierId);
+    await ProducerService.removeSupplier(tenantId, id, supplierId);
 
     res.json({
       success: true,
