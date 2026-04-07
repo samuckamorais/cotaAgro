@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { LogOut, User as UserIcon, ShieldCheck, Sun, Moon, Monitor } from 'lucide-react';
+import { LogOut, User as UserIcon, ShieldCheck, Sun, Moon, Monitor, Search } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 
-export function Header() {
+interface HeaderProps {
+  onOpenCommandPalette?: () => void;
+}
+
+export function Header({ onOpenCommandPalette }: HeaderProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -38,6 +42,23 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Command Palette Button */}
+        {onOpenCommandPalette && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenCommandPalette}
+            className="gap-2 text-muted-foreground hover:text-foreground hidden md:flex"
+          >
+            <Search className="w-4 h-4" />
+            <span className="text-xs">Buscar...</span>
+            <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-muted rounded border border-border">
+              <span>⌘</span>
+              <span>K</span>
+            </kbd>
+          </Button>
+        )}
+
         {/* User Info */}
         <div className="flex items-center gap-2 px-2.5 py-1.5 bg-secondary/50 rounded-md border-0.5 border-border">
           <div className="flex items-center gap-1.5">

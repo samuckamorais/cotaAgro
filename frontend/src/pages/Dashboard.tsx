@@ -4,6 +4,8 @@ import { Breadcrumb } from '../components/ui/breadcrumb';
 import { EmptyState } from '../components/ui/empty-state';
 import { SkeletonCard } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
+import { OnboardingChecklist } from '../components/onboarding/OnboardingChecklist';
+import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
 import { useDashboard } from '../hooks/useDashboard';
 import {
   FileText,
@@ -17,6 +19,7 @@ import {
   BarChart3,
   Calendar,
   Plus,
+  MessageSquare,
 } from 'lucide-react';
 import { formatDate } from '../lib/utils';
 import { getCategoryLabel } from '../types/supplier';
@@ -25,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 export function Dashboard() {
   const { data, isLoading, error } = useDashboard();
   const navigate = useNavigate();
+  const { steps, markStepComplete, isComplete } = useOnboardingProgress();
 
   if (isLoading) {
     return (
@@ -101,12 +105,51 @@ export function Dashboard() {
           <p className="text-sm text-muted-foreground mt-1">Visão geral completa do sistema</p>
         </div>
 
-        {/* Empty State - Primeira utilização */}
-        {hasNoData && (
+        {/* Onboarding Checklist - Show if not complete */}
+        {!isComplete && (
+          <OnboardingChecklist
+            items={[
+              {
+                id: 'login',
+                label: 'Fazer login no sistema',
+                description: 'Acesse com suas credenciais',
+                completed: steps[0]?.completed || false,
+              },
+              {
+                id: 'whatsapp',
+                label: 'Configurar WhatsApp',
+                description: 'Configure a integração para envio e recebimento de mensagens',
+                completed: steps[1]?.completed || false,
+                link: '/whatsapp',
+                action: () => markStepComplete('whatsapp'),
+              },
+              {
+                id: 'producers',
+                label: 'Adicionar produtores',
+                description: 'Cadastre os produtores que farão cotações',
+                completed: steps[2]?.completed || false,
+                link: '/producers',
+                action: () => markStepComplete('producers'),
+              },
+              {
+                id: 'quote',
+                label: 'Criar primeira cotação',
+                description: 'Teste o sistema criando uma cotação',
+                completed: steps[3]?.completed || false,
+                link: '/quotes',
+                action: () => markStepComplete('quote'),
+              },
+            ]}
+            onComplete={() => navigate('/quotes')}
+          />
+        )}
+
+        {/* Empty State - Primeira utilização sem dados */}
+        {hasNoData && isComplete && (
           <EmptyState
             icon={<FileText className="w-16 h-16" />}
-            title="Bem-vindo ao CotaAgro!"
-            description="Comece criando sua primeira cotação ou configure o WhatsApp para receber solicitações automáticas."
+            title="Pronto para começar!"
+            description="Comece criando sua primeira cotação ou aguarde solicitações via WhatsApp."
             action={
               <div className="flex gap-2">
                 <Button onClick={() => navigate('/quotes')} size="sm">
@@ -114,7 +157,8 @@ export function Dashboard() {
                   Criar Cotação
                 </Button>
                 <Button onClick={() => navigate('/whatsapp')} variant="outline" size="sm">
-                  Configurar WhatsApp
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Ver WhatsApp
                 </Button>
               </div>
             }

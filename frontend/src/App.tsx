@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './hooks/use-toast';
+import { CommandPalette, useCommandPalette } from './components/command/CommandPalette';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { Dashboard } from './pages/Dashboard';
@@ -34,6 +35,7 @@ function App() {
 
 function ProtectedLayout() {
   const { user, loading } = useAuth();
+  const commandPalette = useCommandPalette();
 
   if (loading) {
     return (
@@ -51,8 +53,8 @@ function ProtectedLayout() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+        <Header onOpenCommandPalette={commandPalette.open} />
+        <main className="flex-1 overflow-y-auto custom-scrollbar">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/quotes" element={<Quotes />} />
@@ -65,6 +67,9 @@ function ProtectedLayout() {
           </Routes>
         </main>
       </div>
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette isOpen={commandPalette.isOpen} onClose={commandPalette.close} />
     </div>
   );
 }
