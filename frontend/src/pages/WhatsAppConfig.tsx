@@ -5,6 +5,7 @@ import { StatusCard } from '../components/whatsapp/StatusCard';
 import { ProviderSelector } from '../components/whatsapp/ProviderSelector';
 import { ConfigForm } from '../components/whatsapp/ConfigForm';
 import { QRCodeModal } from '../components/whatsapp/QRCodeModal';
+import { SetupGuide } from '../components/whatsapp/SetupGuide';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Breadcrumb } from '../components/ui/breadcrumb';
@@ -244,6 +245,9 @@ export default function WhatsAppConfig() {
 
         {/* Coluna Direita: Configuração */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Manual de Configuração */}
+          <SetupGuide provider={provider} />
+
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Settings className="w-5 h-5 text-primary" />
