@@ -160,15 +160,15 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
-          <h2 className="text-2xl font-bold">
+        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-background z-10">
+          <h2 className="text-2xl font-bold text-foreground">
             {user ? 'Editar Usuário' : 'Novo Usuário'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
+            className="text-muted-foreground hover:text-foreground transition"
           >
             <X className="w-6 h-6" />
           </button>
@@ -178,12 +178,12 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Informações Básicas */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Informações Básicas</h3>
+            <h3 className="text-lg font-semibold text-foreground">Informações Básicas</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Nome */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Nome <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -191,14 +191,14 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Ex: João Silva"
                 />
               </div>
 
               {/* E-mail */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   E-mail <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -206,14 +206,14 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="usuario@exemplo.com"
                 />
               </div>
 
               {/* Senha */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Senha {!user && <span className="text-red-500">*</span>}
                 </label>
                 <input
@@ -221,11 +221,11 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                   required={!user}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder={user ? 'Deixe em branco para manter' : 'Mínimo 6 caracteres'}
                 />
                 {user && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Deixe em branco para não alterar a senha
                   </p>
                 )}
@@ -233,7 +233,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
 
               {/* Perfil */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Perfil <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -241,7 +241,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                   onChange={(e) =>
                     setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'USER' })
                   }
-                  className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="USER">Usuário</option>
                   <option value="ADMIN">Administrador</option>
@@ -261,7 +261,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                 onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
               />
-              <label htmlFor="active" className="text-sm font-medium text-gray-700">
+              <label htmlFor="active" className="text-sm font-medium text-foreground">
                 Usuário ativo
               </label>
             </div>
@@ -271,8 +271,8 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
           {formData.role === 'USER' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Permissões</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-lg font-semibold text-foreground">Permissões</h3>
+                <p className="text-sm text-muted-foreground">
                   Selecione as permissões para cada módulo
                 </p>
               </div>
@@ -281,22 +281,22 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                         Módulo
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                         Visualizar
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                         Criar
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                         Editar
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                         Excluir
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                         Todas
                       </th>
                     </tr>
@@ -314,7 +314,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
 
                       return (
                         <tr key={resource.value} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          <td className="px-4 py-3 text-sm font-medium text-foreground">
                             {resource.label}
                           </td>
                           <td className="px-4 py-3 text-center">
@@ -377,7 +377,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
           )}
 
           {/* Ações */}
-          <div className="flex gap-3 pt-4 border-t sticky bottom-0 bg-white">
+          <div className="flex gap-3 pt-4 border-t border-border sticky bottom-0 bg-background">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancelar
             </Button>

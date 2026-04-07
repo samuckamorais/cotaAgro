@@ -88,15 +88,15 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-2xl font-bold text-foreground">
             {supplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
+            className="text-muted-foreground hover:text-foreground transition"
           >
             <X className="w-6 h-6" />
           </button>
@@ -106,7 +106,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Nome */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Nome do Fornecedor <span className="text-red-500">*</span>
             </label>
             <input
@@ -114,14 +114,14 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Ex: João Silva"
             />
           </div>
 
           {/* Telefone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Telefone (com DDD) <span className="text-red-500">*</span>
             </label>
             <input
@@ -129,45 +129,45 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Ex: 64999999999 ou +5564999999999"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Digite apenas números, com ou sem o +55
             </p>
           </div>
 
           {/* Empresa (opcional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Empresa (opcional)
             </label>
             <input
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Ex: AgroSupply Ltda"
             />
           </div>
 
           {/* Email (opcional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               E-mail (opcional)
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Ex: contato@empresa.com.br"
             />
           </div>
 
           {/* Regiões */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Regiões Atendidas <span className="text-red-500">*</span>
             </label>
             <input
@@ -175,35 +175,35 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.regions}
               onChange={(e) => setFormData({ ...formData, regions: e.target.value })}
-              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Ex: Goiânia, Rio Verde, Jataí"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Separe múltiplas regiões com vírgula
             </p>
           </div>
 
           {/* Categorias */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Áreas de Atuação <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-muted-foreground mb-3">
               Selecione todas as áreas em que o fornecedor atua
             </p>
-            <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-3 bg-muted/30 p-4 rounded-lg">
               {SUPPLIER_CATEGORIES.map((category) => (
                 <label
                   key={category.value}
-                  className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded transition"
+                  className="flex items-center gap-2 cursor-pointer hover:bg-background p-2 rounded transition"
                 >
                   <input
                     type="checkbox"
                     checked={formData.categories.includes(category.value)}
                     onChange={() => handleToggleCategory(category.value)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-4 h-4 text-primary rounded focus:ring-2 focus:ring-ring"
                   />
-                  <span className="text-sm text-gray-700">{category.label}</span>
+                  <span className="text-sm text-foreground">{category.label}</span>
                 </label>
               ))}
             </div>
@@ -215,7 +215,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
           </div>
 
           {/* Tipo de fornecedor */}
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="bg-muted/30 p-4 rounded-lg">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -223,11 +223,11 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
                 onChange={(e) =>
                   setFormData({ ...formData, isNetworkSupplier: e.target.checked })
                 }
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-ring"
               />
               <div>
-                <span className="font-medium text-gray-900">Fornecedor da Rede CotaAgro</span>
-                <p className="text-sm text-gray-600">
+                <span className="font-medium text-foreground">Fornecedor da Rede CotaAgro</span>
+                <p className="text-sm text-muted-foreground">
                   Marque esta opção se o fornecedor faz parte da rede da plataforma. Caso
                   contrário, será considerado como seu fornecedor pessoal.
                 </p>
@@ -236,8 +236,8 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
           </div>
 
           {/* Explicação sobre importação via WhatsApp */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <p className="text-sm text-foreground">
               <strong>💡 Dica:</strong> Você também pode cadastrar fornecedores diretamente pelo
               WhatsApp! Basta compartilhar o contato do fornecedor e ele será automaticamente
               cadastrado como seu fornecedor pessoal.
