@@ -148,7 +148,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: João Silva"
             />
           </div>
@@ -163,7 +163,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               required
               value={formData.cpfCnpj}
               onChange={(e) => handleCpfCnpjChange(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              className={`w-full px-3 py-2 text-foreground border rounded-md focus:outline-none focus:ring-2 ${
                 errors.cpfCnpj
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
@@ -187,7 +187,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               onChange={(e) =>
                 setFormData({ ...formData, stateRegistration: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: 123456789"
             />
           </div>
@@ -201,7 +201,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               type="text"
               value={formData.farm}
               onChange={(e) => setFormData({ ...formData, farm: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: Fazenda São João"
             />
           </div>
@@ -216,7 +216,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               required
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: Goiânia"
             />
           </div>
@@ -231,7 +231,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               required
               value={formData.region}
               onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: GO, Centro-Oeste"
             />
           </div>
@@ -246,7 +246,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
               required
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: 64999999999 ou +5564999999999"
             />
             <p className="text-xs text-gray-500 mt-1">

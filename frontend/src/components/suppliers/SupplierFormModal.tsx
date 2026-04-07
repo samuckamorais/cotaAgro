@@ -114,7 +114,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: João Silva"
             />
           </div>
@@ -129,7 +129,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: 64999999999 ou +5564999999999"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -146,7 +146,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: AgroSupply Ltda"
             />
           </div>
@@ -160,7 +160,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: contato@empresa.com.br"
             />
           </div>
@@ -175,7 +175,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.regions}
               onChange={(e) => setFormData({ ...formData, regions: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: Goiânia, Rio Verde, Jataí"
             />
             <p className="text-xs text-gray-500 mt-1">
