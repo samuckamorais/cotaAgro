@@ -5,6 +5,8 @@ import { ToastProvider } from './hooks/use-toast';
 import { CommandPalette, useCommandPalette } from './components/command/CommandPalette';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
+import { MobileHeader } from './components/layout/MobileHeader';
+import { BottomNav } from './components/layout/BottomNav';
 import { Dashboard } from './pages/Dashboard';
 import { Quotes } from './pages/Quotes';
 import { QuoteDetail } from './pages/QuoteDetail';
@@ -50,11 +52,31 @@ function ProtectedLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onOpenCommandPalette={commandPalette.open} />
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-screen bg-background">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header onOpenCommandPalette={commandPalette.open} />
+          <main className="flex-1 overflow-y-auto custom-scrollbar">
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/quotes" element={<Quotes />} />
+              <Route path="/quotes/:id" element={<QuoteDetail />} />
+              <Route path="/producers" element={<Producers />} />
+              <Route path="/suppliers" element={<Suppliers />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/subscriptions" element={<Subscriptions />} />
+              <Route path="/whatsapp" element={<WhatsAppConfig />} />
+            </Routes>
+          </main>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden flex flex-col h-screen bg-background">
+        <MobileHeader onOpenCommandPalette={commandPalette.open} />
+        <main className="flex-1 overflow-y-auto pb-16 custom-scrollbar">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/quotes" element={<Quotes />} />
@@ -66,11 +88,12 @@ function ProtectedLayout() {
             <Route path="/whatsapp" element={<WhatsAppConfig />} />
           </Routes>
         </main>
+        <BottomNav />
       </div>
 
-      {/* Command Palette (Cmd+K) */}
+      {/* Command Palette (Cmd+K) - Works on both */}
       <CommandPalette isOpen={commandPalette.isOpen} onClose={commandPalette.close} />
-    </div>
+    </>
   );
 }
 
