@@ -7,6 +7,8 @@ import { ConfigForm } from '../components/whatsapp/ConfigForm';
 import { QRCodeModal } from '../components/whatsapp/QRCodeModal';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Breadcrumb } from '../components/ui/breadcrumb';
+import { Skeleton } from '../components/ui/skeleton';
 import { useToast } from '../hooks/use-toast';
 import { Settings, MessageSquare, BarChart3, AlertCircle } from 'lucide-react';
 
@@ -39,15 +41,18 @@ export default function WhatsAppConfig() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] });
       toast({
-        title: 'Sucesso!',
-        description: 'Configuração salva com sucesso',
+        variant: 'success',
+        title: 'Configuração salva!',
+        description: 'As configurações do WhatsApp foram salvas com sucesso',
+        duration: 3000,
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro ao salvar',
-        description: error.response?.data?.message || error.message,
         variant: 'destructive',
+        title: 'Erro ao salvar configuração',
+        description: error.response?.data?.message || error.message,
+        duration: 5000,
       });
     },
   });
@@ -58,16 +63,18 @@ export default function WhatsAppConfig() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] });
       toast({
-        title: result.success ? 'Conexão OK!' : 'Falha na conexão',
+        variant: result.success ? 'success' : 'destructive',
+        title: result.success ? 'Conexão estabelecida!' : 'Falha ao conectar',
         description: result.message,
-        variant: result.success ? 'default' : 'destructive',
+        duration: result.success ? 3000 : 5000,
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro ao testar',
-        description: error.message,
         variant: 'destructive',
+        title: 'Erro ao testar conexão',
+        description: error.message,
+        duration: 5000,
       });
     },
   });
@@ -78,9 +85,10 @@ export default function WhatsAppConfig() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-config'] });
       toast({
-        title: result.success ? 'Reconectado!' : 'Falha ao reconectar',
+        variant: result.success ? 'success' : 'warning',
+        title: result.success ? 'Reconectado com sucesso!' : 'Tentativa de reconexão',
         description: result.message,
-        variant: result.success ? 'default' : 'destructive',
+        duration: 4000,
       });
     },
   });
@@ -102,16 +110,18 @@ export default function WhatsAppConfig() {
 
       if (!result.success) {
         toast({
-          title: 'Aviso',
+          variant: 'warning',
+          title: 'WhatsApp já conectado',
           description: result.message,
-          variant: 'default',
+          duration: 3000,
         });
       }
     } catch (error: any) {
       toast({
-        title: 'Erro ao obter QR Code',
-        description: error.message,
         variant: 'destructive',
+        title: 'Erro ao gerar QR Code',
+        description: error.message,
+        duration: 5000,
       });
     }
   };
@@ -127,16 +137,33 @@ export default function WhatsAppConfig() {
 
   if (isLoadingConfig) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Carregando configuração...</p>
+      <>
+        <Breadcrumb items={[{ label: 'WhatsApp', icon: <MessageSquare className="w-3 h-3" /> }]} />
+        <div className="p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-medium text-foreground mb-1">Configuração do WhatsApp</h1>
+            <p className="text-sm text-muted-foreground">
+              Configure a integração com WhatsApp para envio e recebimento de mensagens
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
+              <Skeleton className="h-64 w-full rounded-md" />
+            </div>
+            <div className="lg:col-span-2 space-y-4">
+              <Skeleton className="h-32 w-full rounded-md" />
+              <Skeleton className="h-96 w-full rounded-md" />
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <>
+      <Breadcrumb items={[{ label: 'WhatsApp', icon: <MessageSquare className="w-3 h-3" /> }]} />
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
@@ -248,6 +275,7 @@ export default function WhatsAppConfig() {
         qrCode={qrCode}
         onRefresh={handleRefreshQRCode}
       />
-    </div>
+      </div>
+    </>
   );
 }
