@@ -241,7 +241,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                   onChange={(e) =>
                     setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'USER' })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-foreground border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="USER">Usuário</option>
                   <option value="ADMIN">Administrador</option>

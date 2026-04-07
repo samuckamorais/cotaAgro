@@ -125,7 +125,7 @@ export function SubscriptionFormModal({ isOpen, onClose, subscription }: Subscri
                   value={producerId}
                   onChange={(e) => setProducerId(e.target.value)}
                   required
-                  className="w-full px-3 py-2 text-sm bg-background border-0.5 border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 text-sm text-foreground bg-background border-0.5 border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="">Selecione um produtor</option>
                   {producers.map((producer: any) => (
