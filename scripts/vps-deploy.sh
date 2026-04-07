@@ -76,7 +76,7 @@ fi
 # 0. Atualizar WEBHOOK_URL com IP público da VPS
 # -----------------------------------------------------------
 echo -e "${YELLOW}[0/5] Detectando IP público da VPS...${NC}"
-PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "")
+PUBLIC_IP=$(curl -4 -s --max-time 5 ifconfig.me || curl -4 -s --max-time 5 api.ipify.org || echo "")
 
 if [ -n "$PUBLIC_IP" ]; then
   WEBHOOK_URL="http://${PUBLIC_IP}:3000"
@@ -292,7 +292,7 @@ echo "  Email: admin@cotaagro.com"
 echo "  Senha: Farmflow0147*"
 echo ""
 echo "URLs:"
-PUBLIC_IP=$(curl -s --max-time 3 ifconfig.me || echo "seu-ip")
+PUBLIC_IP=$(curl -4 -s --max-time 3 ifconfig.me || echo "seu-ip")
 echo "  Frontend:  http://${PUBLIC_IP}:5173"
 echo "  Backend:   http://${PUBLIC_IP}:3000"
 echo "  Health:    http://${PUBLIC_IP}:3000/health"
