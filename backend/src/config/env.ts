@@ -27,12 +27,12 @@ const envSchema = z.object({
   TWILIO_WHATSAPP_NUMBER: z.string().optional(),
 
   // Evolution API (optional if using Twilio)
-  EVOLUTION_API_URL: z.preprocess(val => (typeof val === 'string' && val.trim() === '') ? undefined : val, z.string().url().optional()),
+  EVOLUTION_API_URL: z.preprocess(val => { if (typeof val !== 'string') return val; const t = val.trim(); return t === '' ? undefined : t; }, z.string().url().optional()),
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE_NAME: z.string().optional(),
 
   // Webhook
-  WEBHOOK_URL: z.preprocess(val => (typeof val === 'string' && val.trim() === '') ? undefined : val, z.string().url().optional()),
+  WEBHOOK_URL: z.preprocess(val => { if (typeof val !== 'string') return val; const t = val.trim(); return t === '' ? undefined : t; }, z.string().url().optional()),
 
   // OpenAI
   OPENAI_API_KEY: z.string().optional(), // optional para permitir mock
