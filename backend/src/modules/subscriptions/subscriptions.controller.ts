@@ -226,6 +226,7 @@ export class SubscriptionsController {
       const subscription = await prisma.subscription.create({
         data: {
           producerId,
+          tenantId: producer.tenantId,
           plan: plan as PlanType,
           quotesLimit,
           quotesUsed: 0,

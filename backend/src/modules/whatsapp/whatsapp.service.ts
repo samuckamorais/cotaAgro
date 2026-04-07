@@ -84,7 +84,7 @@ export class WhatsAppService {
 
     try {
       // Verificar se é produtor
-      const producer = await prisma.producer.findUnique({
+      const producer = await prisma.producer.findFirst({
         where: { phone: from },
         include: { conversationState: true },
       });
@@ -96,7 +96,7 @@ export class WhatsAppService {
       }
 
       // Verificar se é fornecedor
-      const supplier = await prisma.supplier.findUnique({
+      const supplier = await prisma.supplier.findFirst({
         where: { phone: from },
       });
 

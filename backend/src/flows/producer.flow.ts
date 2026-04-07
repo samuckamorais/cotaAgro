@@ -966,10 +966,15 @@ Por favor, responda com:
     phone: string,
     context: ConversationContext
   ): Promise<void> {
+    const producer = await prisma.producer.findUniqueOrThrow({
+      where: { id: producerId },
+      select: { tenantId: true },
+    });
     // Criar cotação no banco
     const quote = await prisma.quote.create({
       data: {
         producerId,
+        tenantId: producer.tenantId,
         product: context.product!,
         quantity: context.quantity!,
         unit: context.unit!,
@@ -1037,10 +1042,15 @@ Por favor, responda com:
     const normalized = message.toLowerCase().trim();
 
     if (normalized === 'sim') {
+      const producer = await prisma.producer.findUniqueOrThrow({
+        where: { id: producerId },
+        select: { tenantId: true },
+      });
       // Criar cotação no banco
       const quote = await prisma.quote.create({
         data: {
           producerId,
+          tenantId: producer.tenantId,
           product: context.product!,
           quantity: context.quantity!,
           unit: context.unit!,
@@ -1234,9 +1244,14 @@ Por favor, responda com:
     contactData: ContactData
   ): Promise<void> {
     try {
-      // Verificar se fornecedor já existe
-      const existingSupplier = await prisma.supplier.findUnique({
-        where: { phone: contactData.phone },
+      // Buscar produtor para obter tenantId e região
+      const producer = await prisma.producer.findUniqueOrThrow({
+        where: { id: producerId },
+      });
+
+      // Verificar se fornecedor já existe no mesmo tenant
+      const existingSupplier = await prisma.supplier.findFirst({
+        where: { phone: contactData.phone, tenantId: producer.tenantId },
       });
 
       if (existingSupplier) {
@@ -1254,6 +1269,7 @@ Por favor, responda com:
             data: {
               producerId,
               supplierId: existingSupplier.id,
+              tenantId: producer.tenantId,
             },
           });
         }
@@ -1266,11 +1282,6 @@ Por favor, responda com:
         return;
       }
 
-      // Buscar região do produtor para usar como padrão
-      const producer = await prisma.producer.findUniqueOrThrow({
-        where: { id: producerId },
-      });
-
       // Criar novo fornecedor
       const supplier = await prisma.supplier.create({
         data: {
@@ -1278,6 +1289,7 @@ Por favor, responda com:
           phone: contactData.phone,
           company: contactData.company,
           email: contactData.email,
+          tenantId: producer.tenantId,
           regions: [producer.region], // região do produtor como padrão
           categories: [], // será preenchido posteriormente
           isNetworkSupplier: false, // fornecedor da rede do produtor
@@ -1289,6 +1301,7 @@ Por favor, responda com:
         data: {
           producerId,
           supplierId: supplier.id,
+          tenantId: producer.tenantId,
         },
       });
 

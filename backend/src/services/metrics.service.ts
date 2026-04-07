@@ -34,8 +34,25 @@ export class MetricsService {
     durationMs?: number;
   }): Promise<void> {
     try {
+      let tenantId: string | null = null;
+      if (params.userType === 'producer') {
+        const entity = await prisma.producer.findUnique({
+          where: { id: params.userId },
+          select: { tenantId: true },
+        });
+        tenantId = entity?.tenantId ?? null;
+      } else {
+        const entity = await prisma.supplier.findUnique({
+          where: { id: params.userId },
+          select: { tenantId: true },
+        });
+        tenantId = entity?.tenantId ?? null;
+      }
+      if (!tenantId) return;
+
       await prisma.conversationMetric.create({
         data: {
+          tenantId,
           userId: params.userId,
           userType: params.userType,
           eventType: params.eventType,
