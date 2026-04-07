@@ -19,7 +19,7 @@ echo ""
 echo "============================================="
 echo " CotaAgro - Deploy"
 echo " Diretório: $REPO_DIR"
-echo " Versão: 1.2 (WhatsApp Config + RBAC)"
+echo " Versão: 2.0 (Multi-Tenant + Isolamento)"
 echo "============================================="
 echo ""
 
@@ -182,32 +182,30 @@ echo "  → Gerando Prisma Client..."
 docker compose exec -T backend npx prisma generate
 echo -e "${GREEN}✅ Prisma Client gerado${NC}"
 
-# 5.3 - Seed: Verificar e popular dados iniciais
-echo "  → Verificando dados iniciais..."
-USER_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
-  "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='User';" 2>/dev/null || echo "0")
+# 5.3 - Seed: Verificar e popular dados iniciais (Multi-Tenant)
+echo "  → Verificando dados iniciais (Multi-Tenant)..."
+TENANT_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+  "SELECT COUNT(*) FROM tenants;" 2>/dev/null || echo "0")
 
-if [ "$USER_COUNT" = "1" ]; then
-  # Tabela User existe, verificar se está vazia
-  DATA_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
-    "SELECT COUNT(*) FROM \"User\";" 2>/dev/null || echo "0")
-
-  if [ "$(echo $DATA_COUNT | tr -d ' ')" = "0" ]; then
-    echo -e "${YELLOW}  → Populando banco com dados iniciais (Admin user)...${NC}"
-    docker compose exec -T backend npm run prisma:seed
-    echo -e "${GREEN}✅ Seed executado - Usuário Admin criado${NC}"
-    echo -e "${GREEN}   Email: admin@cotaagro.com${NC}"
-    echo -e "${GREEN}   Senha: Farmflow0147*${NC}"
-  else
-    echo "  ℹ️  Banco já possui dados, seed ignorado."
-  fi
-else
-  # Tabela não existe, executar seed
-  echo -e "${YELLOW}  → Populando banco com dados iniciais (Admin user)...${NC}"
+if [ "$(echo $TENANT_COUNT | tr -d ' ')" = "0" ]; then
+  echo -e "${YELLOW}  → Populando banco com dados multi-tenant...${NC}"
   docker compose exec -T backend npm run prisma:seed
-  echo -e "${GREEN}✅ Seed executado - Usuário Admin criado${NC}"
-  echo -e "${GREEN}   Email: admin@cotaagro.com${NC}"
-  echo -e "${GREEN}   Senha: Farmflow0147*${NC}"
+  echo -e "${GREEN}✅ Seed executado - Multi-Tenant configurado${NC}"
+  echo ""
+  echo -e "${GREEN}🏢 TENANTS CRIADOS:${NC}"
+  echo -e "${GREEN}   Tenant 1: Fazenda Modelo${NC}"
+  echo -e "${GREEN}     Email: admin@fazendamodelo.com${NC}"
+  echo -e "${GREEN}     Senha: Farmflow0147*${NC}"
+  echo ""
+  echo -e "${GREEN}   Tenant 2: Cooperativa ABC${NC}"
+  echo -e "${GREEN}     Email: admin@cooperativaabc.com${NC}"
+  echo -e "${GREEN}     Senha: Farmflow0147*${NC}"
+  echo ""
+else
+  echo "  ℹ️  Banco já possui tenants configurados, seed ignorado."
+  echo "  → Listando tenants existentes..."
+  docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+    "SELECT name, slug, active FROM tenants;" 2>/dev/null || echo "  ⚠️  Não foi possível listar tenants"
 fi
 
 # 5.4 - Validar tabelas críticas criadas
@@ -232,6 +230,28 @@ if [ ${#MISSING_TABLES[@]} -gt 0 ]; then
   echo -e "${YELLOW}⚠️  Execute: docker compose exec backend npx prisma migrate reset${NC}"
 else
   echo -e "${GREEN}✅ Todas as tabelas críticas estão presentes${NC}"
+fi
+
+# 5.4.1 - Validar coluna tenantId (Multi-Tenant)
+echo "  → Validando isolamento multi-tenant..."
+PRODUCER_HAS_TENANT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='producers' AND column_name='tenantId';" 2>/dev/null || echo "0")
+
+if [ "$(echo $PRODUCER_HAS_TENANT | tr -d ' ')" = "0" ]; then
+  echo -e "${RED}❌ Coluna tenantId não encontrada! Migration multi-tenant não aplicada.${NC}"
+  echo -e "${YELLOW}⚠️  Execute: docker compose exec backend npx prisma migrate deploy${NC}"
+  echo -e "${YELLOW}   Ou consulte: COMANDOS_MIGRATION.md${NC}"
+else
+  echo -e "${GREEN}✅ Isolamento multi-tenant configurado corretamente${NC}"
+
+  # Verificar se há produtores sem tenant (dados antigos)
+  ORPHAN_PRODUCERS=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+    "SELECT COUNT(*) FROM producers WHERE \"tenantId\" IS NULL;" 2>/dev/null || echo "0")
+
+  if [ "$(echo $ORPHAN_PRODUCERS | tr -d ' ')" != "0" ]; then
+    echo -e "${YELLOW}⚠️  Encontrados $ORPHAN_PRODUCERS produtores sem tenant${NC}"
+    echo -e "${YELLOW}   Execute o seed para associá-los a um tenant${NC}"
+  fi
 fi
 
 # 5.5 - Conceder permissões WhatsApp para admins
@@ -293,9 +313,17 @@ echo "============================================="
 echo -e "${GREEN}✅ Deploy concluído!${NC}"
 echo "============================================="
 echo ""
-echo -e "${GREEN}Credenciais padrão:${NC}"
-echo "  Email: admin@cotaagro.com"
+echo -e "${GREEN}🔐 Credenciais Multi-Tenant:${NC}"
+echo ""
+echo -e "${GREEN}Tenant 1 - Fazenda Modelo:${NC}"
+echo "  Email: admin@fazendamodelo.com"
 echo "  Senha: Farmflow0147*"
+echo ""
+echo -e "${GREEN}Tenant 2 - Cooperativa ABC:${NC}"
+echo "  Email: admin@cooperativaabc.com"
+echo "  Senha: Farmflow0147*"
+echo ""
+echo -e "${YELLOW}ℹ️  Cada tenant possui dados isolados${NC}"
 echo ""
 echo "URLs:"
 PUBLIC_IP=$(curl -4 -s --max-time 3 ifconfig.me || echo "seu-ip")
@@ -310,8 +338,10 @@ echo "  ✅ Gestão de Produtores"
 echo "  ✅ Gestão de Fornecedores"
 echo "  ✅ Gestão de Usuários (permissões)"
 echo "  ✅ Gestão de Assinaturas (planos: BASIC, PRO, ENTERPRISE)"
-echo "  ✅ Configuração WhatsApp (Twilio, Evolution API) - NOVO"
+echo "  ✅ Configuração WhatsApp (Twilio, Evolution API)"
 echo "  ✅ RBAC (Controle de Acesso Baseado em Funções)"
+echo "  ✅ Multi-Tenant (Isolamento completo de dados) - NOVO"
+echo "  ✅ Fornecedores da Rede (compartilhados entre tenants)"
 echo "  ✅ Design System: Clean Minimal Utility"
 echo ""
 echo "Comandos úteis:"
@@ -328,4 +358,15 @@ echo "  Se frontend não carrega: docker compose logs frontend"
 echo "  Se backend dá erro:      docker compose logs backend | tail -50"
 echo "  Se banco não conecta:    docker compose logs postgres"
 echo "  Resetar banco:           docker compose exec backend npx prisma migrate reset"
+echo ""
+echo -e "${GREEN}📚 Documentação Multi-Tenant:${NC}"
+echo "  Análise:        docs/MULTI_TENANT_ANALYSIS.md"
+echo "  Implementação:  docs/IMPLEMENTACAO_MULTI_TENANT.md"
+echo "  Comandos:       COMANDOS_MIGRATION.md"
+echo ""
+echo -e "${YELLOW}🔒 Segurança Multi-Tenant:${NC}"
+echo "  ✅ Isolamento completo de dados entre tenants"
+echo "  ✅ Fornecedores da rede compartilhados (tenantId null)"
+echo "  ✅ CPF/CNPJ pode repetir entre tenants diferentes"
+echo "  ✅ Middleware de validação em todas as rotas protegidas"
 echo ""
