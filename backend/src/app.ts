@@ -6,7 +6,9 @@ import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundHandler } from './utils/error-handler';
 import { globalRateLimit, rateLimitByPhone } from './middleware/rate-limit.middleware';
 import { authenticate } from './middleware/auth.middleware';
+import { requireWhatsAppConfigAccess } from './middleware/rbac.middleware';
 import { WhatsAppController } from './modules/whatsapp/whatsapp.controller';
+import { WhatsAppConfigController } from './modules/whatsapp-config/whatsapp-config.controller';
 import { AuthController } from './modules/auth/auth.controller';
 import { ProducerController } from './modules/producers/producer.controller';
 import { SupplierController } from './modules/suppliers/supplier.controller';
@@ -85,6 +87,17 @@ export function createApp(): Application {
 
   // Subscription routes (protected)
   apiRouter.use('/subscriptions', subscriptionsRouter);
+
+  // WhatsApp Config routes (protected - admin or WHATSAPP_CONFIG permission)
+  const whatsappConfigController = new WhatsAppConfigController();
+  apiRouter.get('/admin/whatsapp/config', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getConfig.bind(whatsappConfigController));
+  apiRouter.put('/admin/whatsapp/config', authenticate, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.updateConfig.bind(whatsappConfigController));
+  apiRouter.delete('/admin/whatsapp/config', authenticate, requireWhatsAppConfigAccess('canDelete'), whatsappConfigController.deleteConfig.bind(whatsappConfigController));
+  apiRouter.post('/admin/whatsapp/test', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.testConnection.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/qrcode', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getQRCode.bind(whatsappConfigController));
+  apiRouter.post('/admin/whatsapp/reconnect', authenticate, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.reconnect.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/stats', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getStats.bind(whatsappConfigController));
+  apiRouter.get('/admin/whatsapp/logs', authenticate, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getLogs.bind(whatsappConfigController));
 
   app.use('/api', apiRouter);
 

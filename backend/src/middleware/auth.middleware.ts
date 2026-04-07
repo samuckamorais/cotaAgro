@@ -53,6 +53,13 @@ export const authenticate = async (
     // Verificar se usuário ainda existe (tabela User para painel admin)
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        active: true,
+        tenantId: true,
+      },
     });
 
     if (!user) {
@@ -66,6 +73,12 @@ export const authenticate = async (
     // Adicionar informações ao request
     req.userId = decoded.userId;
     req.userPhone = decoded.phone;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId || undefined,
+    };
 
     next();
   } catch (error) {

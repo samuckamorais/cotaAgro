@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './hooks/use-toast';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { Dashboard } from './pages/Dashboard';
@@ -10,19 +11,22 @@ import { Suppliers } from './pages/Suppliers';
 import { Producers } from './pages/Producers';
 import { Users } from './pages/Users';
 import { Subscriptions } from './pages/Subscriptions';
+import WhatsAppConfig from './pages/WhatsAppConfig';
 import { Login } from './pages/Login';
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/*" element={<ProtectedLayout />} />
-          </Routes>
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/*" element={<ProtectedLayout />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );
@@ -57,6 +61,7 @@ function ProtectedLayout() {
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/users" element={<Users />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/whatsapp" element={<WhatsAppConfig />} />
           </Routes>
         </main>
       </div>

@@ -1,15 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Users, Building2, CreditCard, Shield } from 'lucide-react';
+import { Home, FileText, Users, Building2, CreditCard, Shield, MessageSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
 const menuItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: Home },
-  { name: 'Cotações', path: '/quotes', icon: FileText },
-  { name: 'Produtores', path: '/producers', icon: Users },
-  { name: 'Fornecedores', path: '/suppliers', icon: Building2 },
-  { name: 'Assinaturas', path: '/subscriptions', icon: CreditCard },
-  { name: 'Usuários', path: '/users', icon: Shield },
+  { name: 'Dashboard', path: '/dashboard', icon: Home, resource: 'DASHBOARD' },
+  { name: 'Cotações', path: '/quotes', icon: FileText, resource: 'QUOTES' },
+  { name: 'Produtores', path: '/producers', icon: Users, resource: 'PRODUCERS' },
+  { name: 'Fornecedores', path: '/suppliers', icon: Building2, resource: 'SUPPLIERS' },
+  { name: 'Assinaturas', path: '/subscriptions', icon: CreditCard, resource: 'SUBSCRIPTIONS' },
+  { name: 'WhatsApp', path: '/whatsapp', icon: MessageSquare, resource: 'WHATSAPP_CONFIG' },
+  { name: 'Usuários', path: '/users', icon: Shield, resource: 'USERS' },
 ];
 
 export function Sidebar() {
@@ -37,9 +38,8 @@ export function Sidebar() {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
 
-          // Extrair recurso do path
-          const resource = item.path.replace('/', '').toUpperCase();
-          const canView = hasPermission(resource, 'view');
+          // Verificar permissão usando o recurso definido
+          const canView = hasPermission(item.resource, 'view');
 
           if (!canView) {
             return null;

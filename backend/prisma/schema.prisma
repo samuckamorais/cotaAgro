@@ -15,9 +15,9 @@ datasource db {
 
 model Tenant {
   id        String   @id @default(uuid())
-  name      String   // "Fazenda ABC"
+  name      String // "Fazenda ABC"
   slug      String   @unique // "fazenda-abc"
-  email     String?  // email principal do tenant
+  email     String? // email principal do tenant
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -31,9 +31,9 @@ model Tenant {
 }
 
 model WhatsAppConfig {
-  id        String   @id @default(uuid())
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tenantId  String   @unique
+  id       String @id @default(uuid())
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String @unique
 
   // Provider
   provider String // "twilio" | "evolution" | "meta"
@@ -51,8 +51,8 @@ model WhatsAppConfig {
   webhookSecret String? // Para validar webhooks
 
   // Estatísticas (cache)
-  messagesSentToday     Int      @default(0)
-  messagesReceivedToday Int      @default(0)
+  messagesSentToday     Int       @default(0)
+  messagesReceivedToday Int       @default(0)
   lastMessageAt         DateTime?
 
   // Auditoria
@@ -85,18 +85,18 @@ model WhatsAppConfigLog {
 }
 
 model Producer {
-  id                   String             @id @default(uuid())
+  id                   String   @id @default(uuid())
   name                 String
-  cpfCnpj              String             @unique // CPF ou CNPJ (apenas números)
-  stateRegistration    String?            // Inscrição estadual (opcional)
-  farm                 String?            // nome da fazenda (opcional)
-  city                 String             // município
-  phone                String             @unique // número WhatsApp com DDI, ex: +5564999999999
+  cpfCnpj              String   @unique // CPF ou CNPJ (apenas números)
+  stateRegistration    String? // Inscrição estadual (opcional)
+  farm                 String? // nome da fazenda (opcional)
+  city                 String // município
+  phone                String   @unique // número WhatsApp com DDI, ex: +5564999999999
   region               String
-  lastQuotePreferences Json?              // Última cotação para repetir (product, quantity, unit, region, deadline)
-  preferences          Json?              // Preferências gerais do produtor (notificações, etc)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  lastQuotePreferences Json? // Última cotação para repetir (product, quantity, unit, region, deadline)
+  preferences          Json? // Preferências gerais do produtor (notificações, etc)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   subscription      Subscription?
   suppliers         ProducerSupplier[]
@@ -109,22 +109,22 @@ model Producer {
 }
 
 model Supplier {
-  id                String             @id @default(uuid())
+  id                String   @id @default(uuid())
   name              String
-  phone             String             @unique
-  company           String?            // nome da empresa (opcional)
-  email             String?            // e-mail do fornecedor (opcional)
-  regions           String[]           // lista de regiões atendidas
-  categories        String[]           // ex: ["sementes", "fertilizantes", "defensivos"]
-  isNetworkSupplier Boolean            @default(false) // true = rede da plataforma, false = rede do produtor
-  rating            Float              @default(0.0) // rating médio (0-5), calculado baseado em propostas aceitas
-  totalProposals    Int                @default(0) // total de propostas enviadas
-  acceptedProposals Int                @default(0) // total de propostas aceitas
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  phone             String   @unique
+  company           String? // nome da empresa (opcional)
+  email             String? // e-mail do fornecedor (opcional)
+  regions           String[] // lista de regiões atendidas
+  categories        String[] // ex: ["sementes", "fertilizantes", "defensivos"]
+  isNetworkSupplier Boolean  @default(false) // true = rede da plataforma, false = rede do produtor
+  rating            Float    @default(0.0) // rating médio (0-5), calculado baseado em propostas aceitas
+  totalProposals    Int      @default(0) // total de propostas enviadas
+  acceptedProposals Int      @default(0) // total de propostas aceitas
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  producers         ProducerSupplier[]
-  proposals         Proposal[]
+  producers ProducerSupplier[]
+  proposals Proposal[]
 
   @@index([phone])
   @@index([rating])
@@ -143,23 +143,23 @@ model ProducerSupplier {
 }
 
 model Quote {
-  id               String         @id @default(uuid())
-  producer         Producer       @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  id               String        @id @default(uuid())
+  producer         Producer      @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId       String
   product          String
   quantity         String
-  unit             String         // ex: sacos, litros, kg
+  unit             String // ex: sacos, litros, kg
   region           String
   deadline         DateTime
   observations     String?
-  supplierScope    SupplierScope  // MINE | NETWORK | ALL
-  status           QuoteStatus    // PENDING | COLLECTING | SUMMARIZED | CLOSED | EXPIRED
-  expiresAt        DateTime       // quando parar de aceitar propostas
+  supplierScope    SupplierScope // MINE | NETWORK | ALL
+  status           QuoteStatus // PENDING | COLLECTING | SUMMARIZED | CLOSED | EXPIRED
+  expiresAt        DateTime // quando parar de aceitar propostas
   closedSupplierId String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  proposals        Proposal[]
+  proposals Proposal[]
 
   @@index([status])
   @@index([producerId])
@@ -191,7 +191,7 @@ model Subscription {
   producer    Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId  String   @unique
   plan        PlanType // BASIC | PRO | ENTERPRISE
-  quotesLimit Int      // cotações permitidas/mês
+  quotesLimit Int // cotações permitidas/mês
   quotesUsed  Int      @default(0)
   startDate   DateTime
   endDate     DateTime
@@ -204,24 +204,24 @@ model ConversationState {
   id         String   @id @default(uuid())
   producer   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId String   @unique
-  step       String   // ex: AWAITING_PRODUCT, AWAITING_QUANTITY, etc.
-  context    Json     // dados parciais da cotação em andamento
+  step       String // ex: AWAITING_PRODUCT, AWAITING_QUANTITY, etc.
+  context    Json // dados parciais da cotação em andamento
   updatedAt  DateTime @updatedAt
 
   @@map("conversation_states")
 }
 
 model ConversationMetric {
-  id           String   @id @default(uuid())
-  userId       String   // producerId or supplierId
-  userType     String   // "producer" or "supplier"
-  eventType    String   // message_sent, message_received, state_changed, error, quote_completed, quote_abandoned
-  state        String?  // current FSM state
+  id            String   @id @default(uuid())
+  userId        String // producerId or supplierId
+  userType      String // "producer" or "supplier"
+  eventType     String // message_sent, message_received, state_changed, error, quote_completed, quote_abandoned
+  state         String? // current FSM state
   previousState String? // previous FSM state (for transitions)
-  errorType    String?  // error category if eventType = error
-  metadata     Json?    // additional event data
-  durationMs   Int?     // time spent in state (for state_changed events)
-  timestamp    DateTime @default(now())
+  errorType     String? // error category if eventType = error
+  metadata      Json? // additional event data
+  durationMs    Int? // time spent in state (for state_changed events)
+  timestamp     DateTime @default(now())
 
   @@index([userId])
   @@index([userType])
@@ -232,15 +232,15 @@ model ConversationMetric {
 }
 
 model Experiment {
-  id          String   @id @default(uuid())
-  name        String   @unique // feature flag name
+  id          String    @id @default(uuid())
+  name        String    @unique // feature flag name
   description String?
-  variants    Json     // array of variant configs: [{ name: "control", weight: 50 }, { name: "treatment", weight: 50 }]
-  active      Boolean  @default(true)
-  startDate   DateTime @default(now())
+  variants    Json // array of variant configs: [{ name: "control", weight: 50 }, { name: "treatment", weight: 50 }]
+  active      Boolean   @default(true)
+  startDate   DateTime  @default(now())
   endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   assignments ExperimentAssignment[]
 
@@ -253,9 +253,9 @@ model ExperimentAssignment {
   id           String     @id @default(uuid())
   experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
   experimentId String
-  userId       String     // producerId or supplierId
-  userType     String     // "producer" or "supplier"
-  variant      String     // which variant this user is assigned to
+  userId       String // producerId or supplierId
+  userType     String // "producer" or "supplier"
+  variant      String // which variant this user is assigned to
   assignedAt   DateTime   @default(now())
 
   @@unique([experimentId, userId, userType])
@@ -268,7 +268,7 @@ model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
-  password  String   // hash bcrypt
+  password  String // hash bcrypt
   role      UserRole @default(USER)
   active    Boolean  @default(true)
   tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
@@ -284,14 +284,14 @@ model User {
 }
 
 model Permission {
-  id       String   @id @default(uuid())
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String
-  resource Resource // quotes, suppliers, producers, users, dashboard
-  canView  Boolean  @default(false)
-  canCreate Boolean @default(false)
-  canEdit  Boolean  @default(false)
-  canDelete Boolean @default(false)
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  resource  Resource // quotes, suppliers, producers, users, dashboard
+  canView   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
 
   @@unique([userId, resource])
   @@map("permissions")
@@ -302,28 +302,28 @@ model Permission {
 // ===================================
 
 enum SupplierScope {
-  MINE    // apenas fornecedores do produtor
+  MINE // apenas fornecedores do produtor
   NETWORK // apenas fornecedores da rede
-  ALL     // todos (próprios + rede)
+  ALL // todos (próprios + rede)
 }
 
 enum QuoteStatus {
-  PENDING    // cotação criada, ainda não disparada
+  PENDING // cotação criada, ainda não disparada
   COLLECTING // cotação disparada, aguardando propostas
   SUMMARIZED // propostas consolidadas, aguardando escolha
-  CLOSED     // cotação fechada com fornecedor
-  EXPIRED    // prazo expirado
+  CLOSED // cotação fechada com fornecedor
+  EXPIRED // prazo expirado
 }
 
 enum PlanType {
-  BASIC      // plano básico
-  PRO        // plano profissional
+  BASIC // plano básico
+  PRO // plano profissional
   ENTERPRISE // plano empresarial
 }
 
 enum UserRole {
   ADMIN // acesso total
-  USER  // acesso baseado em permissões
+  USER // acesso baseado em permissões
 }
 
 enum Resource {
@@ -333,4 +333,5 @@ enum Resource {
   PRODUCERS
   SUBSCRIPTIONS
   USERS
+  WHATSAPP_CONFIG
 }

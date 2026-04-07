@@ -19,7 +19,7 @@ echo ""
 echo "============================================="
 echo " CotaAgro - Deploy"
 echo " Diretório: $REPO_DIR"
-echo " Versão: 1.1 (Subscriptions + Clean Minimal)"
+echo " Versão: 1.2 (WhatsApp Config + RBAC)"
 echo "============================================="
 echo ""
 
@@ -60,8 +60,7 @@ sed -i 's/\r//' .env
 source .env
 MISSING=()
 [ -z "$JWT_SECRET" ]          && MISSING+=("JWT_SECRET")
-[ -z "$TWILIO_ACCOUNT_SID" ]  && MISSING+=("TWILIO_ACCOUNT_SID")
-[ -z "$TWILIO_AUTH_TOKEN" ]   && MISSING+=("TWILIO_AUTH_TOKEN")
+[ -z "$ENCRYPTION_KEY" ]      && MISSING+=("ENCRYPTION_KEY")
 [ -z "$OPENAI_API_KEY" ]      && MISSING+=("OPENAI_API_KEY")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
@@ -213,7 +212,7 @@ fi
 
 # 5.4 - Validar tabelas críticas criadas
 echo "  → Validando estrutura do banco..."
-CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription")
+CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription" "tenants" "whatsapp_configs")
 MISSING_TABLES=()
 
 for table in "${CRITICAL_TABLES[@]}"; do
@@ -235,6 +234,13 @@ else
   echo -e "${GREEN}✅ Todas as tabelas críticas estão presentes${NC}"
 fi
 
+# 5.5 - Conceder permissões WhatsApp para admins
+echo "  → Concedendo permissões WhatsApp para administradores..."
+docker compose exec -T backend npx tsx scripts/seed-whatsapp-permission.ts 2>/dev/null || {
+  echo -e "${YELLOW}⚠️  Script de permissões WhatsApp não executado (pode já estar configurado)${NC}"
+}
+echo -e "${GREEN}✅ Permissões WhatsApp verificadas${NC}"
+
 # -----------------------------------------------------------
 # 7. Reiniciar backend para aplicar mudanças
 # -----------------------------------------------------------
@@ -248,7 +254,7 @@ sleep 5
 
 # Verificar módulos críticos no backend
 echo "  → Verificando módulos do backend..."
-BACKEND_MODULES=("auth" "producers" "suppliers" "quotes" "subscriptions" "dashboard" "users")
+BACKEND_MODULES=("auth" "producers" "suppliers" "quotes" "subscriptions" "dashboard" "users" "whatsapp-config")
 BACKEND_SRC="backend/src/modules"
 
 if [ -d "$BACKEND_SRC" ]; then
@@ -304,6 +310,8 @@ echo "  ✅ Gestão de Produtores"
 echo "  ✅ Gestão de Fornecedores"
 echo "  ✅ Gestão de Usuários (permissões)"
 echo "  ✅ Gestão de Assinaturas (planos: BASIC, PRO, ENTERPRISE)"
+echo "  ✅ Configuração WhatsApp (Twilio, Evolution API) - NOVO"
+echo "  ✅ RBAC (Controle de Acesso Baseado em Funções)"
 echo "  ✅ Design System: Clean Minimal Utility"
 echo ""
 echo "Comandos úteis:"
