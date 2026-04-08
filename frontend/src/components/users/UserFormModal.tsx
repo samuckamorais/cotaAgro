@@ -159,7 +159,14 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
       }
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao salvar usuário');
+      const details = error.response?.data?.error?.details;
+      const message = error.response?.data?.error?.message || error.response?.data?.message || 'Erro ao salvar usuário';
+      if (details?.length) {
+        const fieldErrors = details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
+        alert(`${message}\n\n${fieldErrors}`);
+      } else {
+        alert(message);
+      }
     }
   };
 
