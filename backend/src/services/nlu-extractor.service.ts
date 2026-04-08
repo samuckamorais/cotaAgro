@@ -47,7 +47,9 @@ export class NLUExtractorService {
     if (!context.region) return 'AWAITING_REGION';
     if (!context.deadline) return 'AWAITING_DEADLINE';
 
-    // Pular observações (opcional) e ir direto para escopo de fornecedores
+    // Frete é obrigatório — sempre perguntar antes do escopo de fornecedores
+    if (!context.freight) return 'AWAITING_FREIGHT';
+
     return 'AWAITING_SUPPLIER_SCOPE';
   }
 

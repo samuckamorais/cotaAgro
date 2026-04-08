@@ -22,11 +22,27 @@ Vou te ajudar a encontrar os melhores preços de forma rápida e automática!
 • *ajuda* - Ver como funciona`;
   },
 
-  START_QUOTE: `Ótimo! Vamos criar sua cotação. 📋
+  START_QUOTE: `Ótimo! Vamos criar sua cotação. 📋`,
 
-*Qual produto você deseja cotar?*
+  ASK_CATEGORY: (categories: string[]) => {
+    if (categories.length === 0) {
+      return `Qual a *categoria* do produto que deseja cotar?\n\nDigite a categoria (ex: sementes, fertilizantes, defensivos, rações)`;
+    }
 
-Exemplos: soja, milho, fertilizante, defensivo, semente`,
+    let message = `*Qual categoria você deseja cotar?*\n\n`;
+    categories.forEach((cat, i) => {
+      message += `${i + 1}️⃣ ${cat}\n`;
+    });
+    message += `\nResponda com o *número* da categoria ou digite outra.`;
+    return message;
+  },
+
+  ASK_FREIGHT: `*O frete é CIF ou FOB?*
+
+🚚 *1 - CIF* — O fornecedor entrega na sua propriedade (frete incluso no preço)
+📦 *2 - FOB* — Você retira no fornecedor (frete por sua conta)
+
+Responda com *1* ou *2*.`,
 
   ASK_QUANTITY: (product: string) => `✅ *Produto:* ${product}
 
@@ -81,21 +97,22 @@ Ou digite sua observação e pressione Enter.`,
 *Responda com o número:* 1, 2 ou 3`,
 
   CONFIRM_QUOTE: (summary: {
+    category?: string;
     product: string;
     quantity: string;
     unit: string;
     region: string;
     deadline: string;
     observations?: string;
+    freight?: string;
     scope: string;
   }) => `✅ *Confirme os dados da sua cotação:*
 
-📦 *Produto:* ${summary.product}
+${summary.category ? `🏷️ *Categoria:* ${summary.category}\n` : ''}📦 *Produto:* ${summary.product}
 📊 *Quantidade:* ${summary.quantity} ${summary.unit}
 📍 *Região:* ${summary.region}
 ⏰ *Prazo:* ${summary.deadline}
-${summary.observations ? `📝 *Obs:* ${summary.observations}` : ''}
-🎯 *Fornecedores:* ${summary.scope}
+${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.freight ? `🚚 *Frete:* ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}🎯 *Fornecedores:* ${summary.scope}
 
 ┌──────────────────┐
 │ ✅ Sim, enviar    │
@@ -206,20 +223,22 @@ Digite *cancelar* para voltar ao menu.`,
 
   NEW_QUOTE_NOTIFICATION: (quote: {
     id: string;
+    category?: string;
     product: string;
     quantity: string;
     unit: string;
     region: string;
     deadline: string;
     observations?: string;
+    freight?: string;
   }) => `🔔 *Nova Cotação Disponível*
 
 *ID:* ${quote.id.substring(0, 8)}
-📦 *Produto:* ${quote.product}
+${quote.category ? `🏷️ *Categoria:* ${quote.category}\n` : ''}📦 *Produto:* ${quote.product}
 📊 *Quantidade:* ${quote.quantity} ${quote.unit}
 📍 *Região:* ${quote.region}
 ⏰ *Prazo:* ${quote.deadline}
-${quote.observations ? `📝 *Obs:* ${quote.observations}` : ''}
+${quote.observations ? `📝 *Obs:* ${quote.observations}\n` : ''}${quote.freight ? `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}` : ''}
 
 Deseja responder?
 *1* - Sim, quero enviar proposta

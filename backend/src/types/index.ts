@@ -47,12 +47,14 @@ export interface UpdateSupplierDTO {
 
 export interface CreateQuoteDTO {
   producerId: string;
+  category?: string;
   product: string;
   quantity: string;
   unit: string;
   region: string;
   deadline: Date;
   observations?: string;
+  freight?: string;
   supplierScope: 'MINE' | 'NETWORK' | 'ALL';
 }
 
@@ -119,11 +121,13 @@ export type ProducerState =
   | 'AWAITING_REPEAT_CHOICE'
   | 'AWAITING_IMAGE_CHOICE'
   | 'AWAITING_PROACTIVE_CHOICE'
+  | 'AWAITING_CATEGORY'
   | 'AWAITING_PRODUCT'
   | 'AWAITING_QUANTITY'
   | 'AWAITING_REGION'
   | 'AWAITING_DEADLINE'
   | 'AWAITING_OBSERVATIONS'
+  | 'AWAITING_FREIGHT'
   | 'AWAITING_SUPPLIER_SCOPE'
   | 'AWAITING_SUPPLIER_SELECTION'
   | 'AWAITING_SUPPLIER_EXCLUSION'
@@ -144,12 +148,15 @@ export type SupplierState =
   | 'SUPPLIER_PROPOSAL_SENT';
 
 export interface ConversationContext {
+  category?: string;
+  availableCategories?: string[];
   product?: string;
   quantity?: string;
   unit?: string;
   region?: string;
   deadline?: string;
   observations?: string;
+  freight?: 'CIF' | 'FOB';
   supplierScope?: 'MINE' | 'NETWORK' | 'ALL';
   quoteId?: string;
 

@@ -20,11 +20,13 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
   'AWAITING_REPEAT_CHOICE': null,
   'AWAITING_IMAGE_CHOICE': null,
   'AWAITING_PROACTIVE_CHOICE': null,
-  'AWAITING_PRODUCT': { step: 1, total: 4, label: 'Produto', icon: '📦' },
-  'AWAITING_QUANTITY': { step: 2, total: 4, label: 'Quantidade', icon: '📊' },
-  'AWAITING_REGION': { step: 3, total: 4, label: 'Região', icon: '📍' },
-  'AWAITING_DEADLINE': { step: 4, total: 4, label: 'Prazo', icon: '⏰' },
+  'AWAITING_CATEGORY': { step: 1, total: 6, label: 'Categoria', icon: '🏷️' },
+  'AWAITING_PRODUCT': { step: 2, total: 6, label: 'Produto', icon: '📦' },
+  'AWAITING_QUANTITY': { step: 3, total: 6, label: 'Quantidade', icon: '📊' },
+  'AWAITING_REGION': { step: 4, total: 6, label: 'Região', icon: '📍' },
+  'AWAITING_DEADLINE': { step: 5, total: 6, label: 'Prazo', icon: '⏰' },
   'AWAITING_OBSERVATIONS': null,
+  'AWAITING_FREIGHT': { step: 6, total: 6, label: 'Frete', icon: '🚚' },
   'AWAITING_SUPPLIER_SCOPE': null,
   'AWAITING_SUPPLIER_SELECTION': null,
   'AWAITING_SUPPLIER_EXCLUSION': null,
@@ -101,6 +103,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
           await this.handleAwaitingRepeatChoice(producerId, producer.phone, message, context);
           break;
 
+        case 'AWAITING_CATEGORY':
+          await this.handleAwaitingCategory(producerId, producer.phone, message, context);
+          break;
+
         case 'AWAITING_PRODUCT':
           await this.handleAwaitingProduct(producerId, producer.phone, message, context);
           break;
@@ -119,6 +125,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
         case 'AWAITING_OBSERVATIONS':
           await this.handleAwaitingObservations(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_FREIGHT':
+          await this.handleAwaitingFreight(producerId, producer.phone, message, context);
           break;
 
         case 'AWAITING_SUPPLIER_SCOPE':
@@ -224,47 +234,22 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
         return;
       }
 
-      // Iniciar fluxo normal
-      await whatsappService.sendMessage({
-        to: phone,
-        body: Messages.START_QUOTE,
-      });
-
-      await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', {});
+      // Iniciar fluxo normal: perguntar categoria primeiro
+      await this.startCategorySelection(producerId, phone, producer.tenantId);
       return;
     }
 
-    // Se NLU detectou intenção de nova cotação, pré-preencher contexto
+    // Se NLU detectou intenção de nova cotação, pré-preencher produto no contexto
+    // mas ainda iniciar pelo passo de categoria
     if (nluResult?.intent === 'nova_cotacao' && nluResult.entities.product) {
-      const context: ConversationContext = {
+      const prefilledContext: ConversationContext = {
         product: nluResult.entities.product,
         quantity: nluResult.entities.quantity,
         unit: nluResult.entities.unit,
         region: nluResult.entities.region,
         deadline: nluResult.entities.deadline,
       };
-
-      // Determinar próximo estado baseado no que foi extraído
-      if (!context.quantity) {
-        await whatsappService.sendMessage({
-          to: phone,
-          body: Messages.ASK_QUANTITY(context.product!),
-        });
-        await this.setState(producerId, 'producer', 'AWAITING_QUANTITY', context);
-      } else if (!context.region) {
-        await whatsappService.sendMessage({
-          to: phone,
-          body: Messages.ASK_REGION(context.quantity, context.unit),
-        });
-        await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
-      } else {
-        // Pular para confirmação
-        await whatsappService.sendMessage({
-          to: phone,
-          body: Messages.ASK_DEADLINE(context.region),
-        });
-        await this.setState(producerId, 'producer', 'AWAITING_DEADLINE', context);
-      }
+      await this.startCategorySelection(producerId, phone, producer.tenantId, prefilledContext);
       return;
     }
 
@@ -310,13 +295,12 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     }
 
     if (normalized === '2' || normalized.includes('nova') || normalized.includes('diferente')) {
-      // Nova cotação - iniciar fluxo normal
-      await whatsappService.sendMessage({
-        to: phone,
-        body: Messages.START_QUOTE,
+      // Nova cotação - iniciar pelo passo de categoria
+      const producer = await prisma.producer.findUniqueOrThrow({
+        where: { id: producerId },
+        select: { tenantId: true },
       });
-
-      await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', {});
+      await this.startCategorySelection(producerId, phone, producer.tenantId);
       return;
     }
 
@@ -325,6 +309,127 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       to: phone,
       body: 'Por favor, digite *1* para repetir ou *2* para nova cotação.',
     });
+  }
+
+  /**
+   * Busca categorias únicas dos fornecedores do tenant e inicia seleção de categoria
+   */
+  private async startCategorySelection(
+    producerId: string,
+    phone: string,
+    tenantId: string,
+    prefilledContext: ConversationContext = {}
+  ): Promise<void> {
+    // Buscar categorias únicas de todos os fornecedores do tenant
+    const suppliers = await prisma.supplier.findMany({
+      where: {
+        OR: [
+          {
+            isNetworkSupplier: false,
+            producers: { some: { producerId } },
+          },
+          {
+            isNetworkSupplier: true,
+            tenantId,
+          },
+        ],
+      },
+      select: { categories: true },
+    });
+
+    const categories = [...new Set(suppliers.flatMap((s: any) => s.categories))]
+      .filter((c: string) => c && c.trim().length > 0)
+      .sort();
+
+    const progressHeader = this.getProgressHeader('AWAITING_CATEGORY');
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: progressHeader + Messages.START_QUOTE + '\n\n' + Messages.ASK_CATEGORY(categories),
+    });
+
+    await this.setState(producerId, 'producer', 'AWAITING_CATEGORY', {
+      ...prefilledContext,
+      availableCategories: categories,
+    });
+  }
+
+  /**
+   * Estado AWAITING_CATEGORY - Aguardando escolha da categoria
+   */
+  private async handleAwaitingCategory(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.trim();
+    const categories = context.availableCategories || [];
+
+    let selectedCategory: string;
+
+    // Verificar se é um número válido
+    const num = parseInt(normalized);
+    if (!isNaN(num) && num >= 1 && num <= categories.length) {
+      selectedCategory = categories[num - 1];
+    } else if (normalized.length >= 2) {
+      // Aceitar texto livre como categoria
+      selectedCategory = normalized;
+    } else {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: categories.length > 0
+          ? `Responda com o *número* da categoria (1 a ${categories.length}) ou digite o nome.`
+          : 'Por favor, informe a categoria (mínimo 2 caracteres).',
+      });
+      return;
+    }
+
+    context.category = selectedCategory;
+
+    const progressHeader = this.getProgressHeader('AWAITING_PRODUCT');
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: `${progressHeader}✅ *Categoria:* ${selectedCategory}\n\n*Qual produto você deseja cotar?*\n\nExemplos: soja, milho, fertilizante, defensivo, semente`,
+    });
+
+    await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', context);
+  }
+
+  /**
+   * Estado AWAITING_FREIGHT - Aguardando escolha do tipo de frete (CIF/FOB)
+   */
+  private async handleAwaitingFreight(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.toLowerCase().trim();
+
+    let freight: 'CIF' | 'FOB';
+
+    if (normalized === '1' || normalized === 'cif' || normalized.includes('entrega') || normalized.includes('incluso')) {
+      freight = 'CIF';
+    } else if (normalized === '2' || normalized === 'fob' || normalized.includes('retira') || normalized.includes('busca')) {
+      freight = 'FOB';
+    } else {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `❌ Não entendi "${message}".\n\nDigite *1* para CIF (entrega inclusa) ou *2* para FOB (retira no fornecedor).`,
+      });
+      return;
+    }
+
+    context.freight = freight;
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: Messages.ASK_SUPPLIER_SCOPE,
+    });
+
+    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SCOPE', context);
   }
 
   /**
@@ -382,20 +487,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     // Determinar próximo estado baseado no que foi extraído
     const nextState = nluExtractorService.determineNextState(context);
 
-    // Se extraiu tudo, mostrar resumo e pedir confirmação
-    if (nextState === 'AWAITING_SUPPLIER_SCOPE') {
-      const confirmationMessage = nluExtractorService.buildConfirmationMessage(context, nextState);
-
-      await whatsappService.sendMessage({
-        to: phone,
-        body: confirmationMessage,
-      });
-
-      await this.setState(producerId, 'producer', nextState, context);
-      return;
-    }
-
-    // Caso contrário, continuar fluxo normal com progress header
+    // Continuar fluxo com progress header
     const progressHeader = this.getProgressHeader(nextState);
     let askMessage = '';
 
@@ -409,6 +501,13 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       case 'AWAITING_DEADLINE':
         askMessage = Messages.ASK_DEADLINE(context.region);
         break;
+      case 'AWAITING_FREIGHT':
+        askMessage = Messages.ASK_FREIGHT;
+        break;
+      default:
+        // Se tudo foi extraído (AWAITING_SUPPLIER_SCOPE), ir para confirmação
+        await this.showQuoteConfirmation(producerId, phone, context);
+        return;
     }
 
     await whatsappService.sendMessage({
@@ -584,12 +683,14 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       context.observations = message.trim();
     }
 
+    const progressHeader = this.getProgressHeader('AWAITING_FREIGHT');
+
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.ASK_SUPPLIER_SCOPE,
+      body: progressHeader + Messages.ASK_FREIGHT,
     });
 
-    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SCOPE', context);
+    await this.setState(producerId, 'producer', 'AWAITING_FREIGHT', context);
   }
 
   /**
@@ -909,12 +1010,14 @@ Por favor, responda com:
     }
 
     const summary = {
+      category: context.category,
       product: context.product!,
       quantity: context.quantity!,
       unit: context.unit!,
       region: context.region!,
       deadline: new Date(context.deadline!).toLocaleDateString('pt-BR'),
       observations: context.observations,
+      freight: context.freight,
       scope: scopeLabel,
     };
 
@@ -975,12 +1078,14 @@ Por favor, responda com:
       data: {
         producerId,
         tenantId: producer.tenantId,
+        category: context.category,
         product: context.product!,
         quantity: context.quantity!,
         unit: context.unit!,
         region: context.region!,
         deadline: new Date(context.deadline!),
         observations: context.observations,
+        freight: context.freight,
         supplierScope: context.supplierScope!,
         status: 'PENDING',
         expiresAt: new Date(Date.now() + 120 * 60 * 1000), // 2 horas
@@ -1051,12 +1156,14 @@ Por favor, responda com:
         data: {
           producerId,
           tenantId: producer.tenantId,
+          category: context.category,
           product: context.product!,
           quantity: context.quantity!,
           unit: context.unit!,
           region: context.region!,
           deadline: new Date(context.deadline!),
           observations: context.observations,
+          freight: context.freight,
           supplierScope: context.supplierScope!,
           status: 'PENDING',
           expiresAt: new Date(Date.now() + 120 * 60 * 1000), // 2 horas

@@ -171,12 +171,14 @@ model Quote {
   tenantId         String
   producer         Producer      @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId       String
+  category         String? // categoria do produto (ex: sementes, fertilizantes)
   product          String
   quantity         String
   unit             String // ex: sacos, litros, kg
   region           String
   deadline         DateTime
   observations     String?
+  freight          String? // CIF (fornecedor entrega) | FOB (produtor busca)
   supplierScope    SupplierScope // MINE | NETWORK | ALL
   status           QuoteStatus // PENDING | COLLECTING | SUMMARIZED | CLOSED | EXPIRED
   expiresAt        DateTime // quando parar de aceitar propostas
