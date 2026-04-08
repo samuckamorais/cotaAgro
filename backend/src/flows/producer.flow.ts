@@ -34,6 +34,7 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
   'AWAITING_CONFIRMATION': null,
   'AWAITING_CHOICE': null,
   'AWAITING_SUPPLIER_CONTACT': null,
+  'AWAITING_SUPPLIER_CATEGORY': null,
   'QUOTE_ACTIVE': null,
   'CLOSED': null,
 };
@@ -157,6 +158,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
         case 'AWAITING_SUPPLIER_CONTACT':
           await this.handleAwaitingSupplierContact(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_SUPPLIER_CATEGORY':
+          await this.handleAwaitingSupplierCategory(producerId, producer.phone, message, context);
           break;
 
         default:
@@ -1313,6 +1318,74 @@ Por favor, responda com:
   }
 
   /**
+   * Estado AWAITING_SUPPLIER_CATEGORY - Aguardando categoria do fornecedor recém-cadastrado
+   */
+  private async handleAwaitingSupplierCategory(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.trim();
+    const categories = (context.availableCategories as string[]) || [];
+    const supplierId = context.supplierId as string;
+    const supplierName = context.supplierName as string;
+
+    if (!supplierId) {
+      await this.resetState(producerId, 'producer');
+      return;
+    }
+
+    // Resolver seleção: números separados por vírgula e/ou texto livre
+    const selectedCategories: string[] = [];
+
+    const parts = normalized.split(',').map((p) => p.trim()).filter(Boolean);
+
+    for (const part of parts) {
+      const num = parseInt(part);
+      if (!isNaN(num) && num >= 1 && num <= categories.length) {
+        // Número válido → mapear para nome da categoria
+        selectedCategories.push(categories[num - 1]);
+      } else if (part.length >= 2) {
+        // Texto livre → nova categoria ou nome digitado
+        selectedCategories.push(part.toLowerCase());
+      }
+    }
+
+    if (selectedCategories.length === 0) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: categories.length > 0
+          ? `Informe o(s) número(s) da(s) categoria(s) (ex: *1* ou *1,3*) ou digite o nome.`
+          : `Por favor, informe a categoria do fornecedor (mínimo 2 caracteres).`,
+      });
+      return;
+    }
+
+    // Remover duplicatas
+    const uniqueCategories = [...new Set(selectedCategories)];
+
+    // Atualizar o fornecedor com as categorias
+    await prisma.supplier.update({
+      where: { id: supplierId },
+      data: { categories: uniqueCategories },
+    });
+
+    logWithContext('info', 'Supplier categories saved', {
+      producerId,
+      supplierId,
+      categories: uniqueCategories,
+    });
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: Messages.SUPPLIER_CATEGORY_SAVED(supplierName, uniqueCategories),
+    });
+
+    await this.resetState(producerId, 'producer');
+  }
+
+  /**
    * Processa contato compartilhado (vCard ou estruturado)
    */
   private async handleContactShared(
@@ -1418,12 +1491,25 @@ Por favor, responda com:
         supplierName: supplier.name,
       });
 
+      // Buscar categorias existentes no tenant para exibir como opções
+      const tenantSuppliers = await prisma.supplier.findMany({
+        where: { tenantId: producer.tenantId },
+        select: { categories: true },
+      });
+      const availableCategories = [...new Set(
+        tenantSuppliers.flatMap((s: any) => s.categories as string[])
+      )].filter((c: string) => c && c.trim().length > 0).sort();
+
       await whatsappService.sendMessage({
         to: phone,
-        body: Messages.SUPPLIER_ADDED_SUCCESS(supplier.name),
+        body: Messages.ASK_SUPPLIER_CATEGORY(supplier.name, availableCategories),
       });
 
-      await this.resetState(producerId, 'producer');
+      await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_CATEGORY', {
+        supplierId: supplier.id,
+        supplierName: supplier.name,
+        availableCategories,
+      });
     } catch (error) {
       logger.error('Failed to create supplier from contact', { error, producerId, contactData });
       await whatsappService.sendMessage({

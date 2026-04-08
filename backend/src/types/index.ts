@@ -136,6 +136,7 @@ export type ProducerState =
   | 'QUOTE_ACTIVE'
   | 'AWAITING_CHOICE'
   | 'AWAITING_SUPPLIER_CONTACT'
+  | 'AWAITING_SUPPLIER_CATEGORY'
   | 'CLOSED';
 
 export type SupplierState =
@@ -164,6 +165,10 @@ export interface ConversationContext {
   availableSuppliers?: Array<{ id: string; name: string; phone: string }>;
   excludedSuppliers?: string[]; // IDs dos fornecedores excluídos
   selectedSuppliers?: Array<{ id: string; name: string; phone: string }>;
+
+  // Supplier registration context
+  supplierId?: string;
+  supplierName?: string;
 
   // Supplier context
   price?: number;

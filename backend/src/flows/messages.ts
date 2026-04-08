@@ -201,6 +201,25 @@ O fornecedor foi adicionado à sua rede pessoal e já pode receber cotações.
 
 Digite *1* para fazer uma nova cotação ou *ajuda* para ver mais opções.`,
 
+  ASK_SUPPLIER_CATEGORY: (supplierName: string, categories: string[]) => {
+    let message = `✅ *Fornecedor cadastrado:* ${supplierName}\n\n`;
+    message += `📂 *Qual é a categoria deste fornecedor?*\n\n`;
+
+    if (categories.length > 0) {
+      categories.forEach((cat, i) => {
+        message += `${i + 1}️⃣ ${cat}\n`;
+      });
+      message += `\nResponda com o(s) *número(s)* (ex: *1* ou *1,3*) ou digite uma nova categoria.`;
+    } else {
+      message += `Digite a categoria do fornecedor.\n\nExemplos: sementes, fertilizantes, defensivos, rações`;
+    }
+
+    return message;
+  },
+
+  SUPPLIER_CATEGORY_SAVED: (supplierName: string, categories: string[]) =>
+    `✅ *Fornecedor atualizado!*\n\n*Nome:* ${supplierName}\n📂 *Categorias:* ${categories.join(', ')}\n\nO fornecedor já pode receber cotações.\n\nDigite *1* para fazer uma nova cotação ou *2* para adicionar outro fornecedor.`,
+
   SUPPLIER_ALREADY_EXISTS: (supplierName: string) => `⚠️ Este fornecedor já está cadastrado!
 
 *Nome:* ${supplierName}
