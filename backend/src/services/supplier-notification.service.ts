@@ -20,19 +20,10 @@ export class SupplierNotificationService {
         },
       });
 
-      // Buscar todas as propostas da cotação para calcular ranking
-      const allProposals = await prisma.proposal.findMany({
+      // Buscar total de propostas da cotação (sem revelar posição)
+      const totalProposals = await prisma.proposal.count({
         where: { quoteId: proposal.quoteId },
-        orderBy: { price: 'asc' },
-        select: {
-          id: true,
-          price: true,
-        },
       });
-
-      // Calcular ranking
-      const currentRanking = allProposals.findIndex((p) => p.id === proposalId) + 1;
-      const lowestPrice = allProposals[0]?.price || proposal.price;
 
       // Calcular tempo de expiração
       const expiresAt = proposal.quote.expiresAt;
@@ -47,21 +38,18 @@ export class SupplierNotificationService {
       await whatsappService.sendMessage({
         to: proposal.supplier.phone,
         body: Messages.PROPOSAL_SENT_WITH_RANKING({
-          currentRanking,
-          totalProposals: allProposals.length,
+          totalProposals,
           yourPrice: proposal.price,
-          lowestPrice,
           expiresIn,
         }),
       });
 
-      logger.info('Sent ranking feedback to supplier', {
+      logger.info('Sent proposal confirmation to supplier', {
         supplierId: proposal.supplierId,
         proposalId,
-        ranking: currentRanking,
       });
     } catch (error) {
-      logger.error('Failed to send ranking feedback', { error, proposalId });
+      logger.error('Failed to send proposal confirmation', { error, proposalId });
     }
   }
 

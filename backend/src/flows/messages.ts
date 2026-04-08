@@ -233,13 +233,11 @@ Digite *cancelar* para voltar ao menu.`,
     freight?: string;
   }) => `🔔 *Nova Cotação Disponível*
 
-*ID:* ${quote.id.substring(0, 8)}
 ${quote.category ? `🏷️ *Categoria:* ${quote.category}\n` : ''}📦 *Produto:* ${quote.product}
 📊 *Quantidade:* ${quote.quantity} ${quote.unit}
 📍 *Região:* ${quote.region}
-⏰ *Prazo:* ${quote.deadline}
-${quote.observations ? `📝 *Obs:* ${quote.observations}\n` : ''}${quote.freight ? `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}` : ''}
-
+📅 *Dt. Entrega:* ${quote.deadline}
+${quote.freight ? `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}${quote.observations ? `📝 *Obs:* ${quote.observations}\n` : ''}
 Deseja responder?
 *1* - Sim, quero enviar proposta
 *2* - Não tenho interesse`,
@@ -275,34 +273,18 @@ O produtor receberá sua oferta junto com as demais propostas.
 Você será notificado se for selecionado. 🎯`,
 
   /**
-   * Feedback pós-proposta com ranking
+   * Confirmação de envio de proposta (sem revelar posição/ranking)
    */
   PROPOSAL_SENT_WITH_RANKING: (data: {
-    currentRanking: number;
     totalProposals: number;
     yourPrice: number;
-    lowestPrice: number;
     expiresIn: string;
   }) => {
-    const isLeading = data.currentRanking === 1;
-    const statusIcon = isLeading ? '🥇' : data.currentRanking === 2 ? '🥈' : data.currentRanking === 3 ? '🥉' : '📊';
-
-    let message = `✅ *Proposta enviada!*\n\n`;
-    message += `*Status em tempo real:*\n`;
-    message += `${statusIcon} Você está em *${data.currentRanking}º lugar*\n`;
-    message += `👥 ${data.totalProposals} proposta(s) recebida(s)\n`;
+    let message = `✅ *Proposta enviada com sucesso!*\n\n`;
     message += `💰 Sua proposta: R$ ${data.yourPrice.toFixed(2)}\n`;
-
-    if (data.lowestPrice < data.yourPrice) {
-      const diff = data.yourPrice - data.lowestPrice;
-      const diffPercent = ((diff / data.lowestPrice) * 100).toFixed(1);
-      message += `📊 Menor proposta: R$ ${data.lowestPrice.toFixed(2)} ⚠️\n`;
-      message += `💡 Você está R$ ${diff.toFixed(2)} (${diffPercent}%) acima\n`;
-    } else if (data.lowestPrice === data.yourPrice) {
-      message += `✅ Você tem a melhor proposta!\n`;
-    }
-
-    message += `\n⏱️ Expira em: ${data.expiresIn}`;
+    message += `👥 ${data.totalProposals} proposta(s) recebida(s) até agora\n`;
+    message += `⏱️ Cotação expira em: ${data.expiresIn}\n\n`;
+    message += `Você será notificado quando o produtor tomar uma decisão. 🎯`;
 
     return message;
   },

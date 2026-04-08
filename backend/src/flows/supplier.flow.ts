@@ -297,12 +297,14 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
 
     const quoteData = {
       id: quote.id,
+      category: (quote as any).category || undefined,
       product: quote.product,
       quantity: quote.quantity,
       unit: quote.unit,
       region: quote.region,
       deadline: quote.deadline.toLocaleDateString('pt-BR'),
       observations: quote.observations || undefined,
+      freight: (quote as any).freight || undefined,
     };
 
     await whatsappService.sendMessage({
