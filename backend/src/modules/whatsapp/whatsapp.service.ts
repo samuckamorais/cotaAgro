@@ -82,10 +82,13 @@ export class WhatsAppService {
 
     logger.info('Processing incoming message', { from, body: processedMessage, type });
 
+    // Normalizar número: gerar variantes com/sem 9º dígito (problema BR)
+    const phoneVariants = this.normalizePhoneVariants(from);
+
     try {
       // Verificar se é produtor
       const producer = await prisma.producer.findFirst({
-        where: { phone: from },
+        where: { phone: { in: phoneVariants } },
         include: { conversationState: true },
       });
 
@@ -97,7 +100,7 @@ export class WhatsAppService {
 
       // Verificar se é fornecedor
       const supplier = await prisma.supplier.findFirst({
-        where: { phone: from },
+        where: { phone: { in: phoneVariants } },
       });
 
       if (supplier) {
@@ -107,7 +110,7 @@ export class WhatsAppService {
       }
 
       // Usuário não cadastrado
-      logger.warn('Message from unknown number', { from });
+      logger.warn('Message from unknown number', { from, phoneVariants });
       await this.sendMessage({
         to: from,
         body: `Olá! Seu número não está cadastrado no CotaAgro.\n\nPara começar a usar, entre em contato com nosso suporte.`,
@@ -257,6 +260,31 @@ export class WhatsAppService {
    */
   private async handleSupplierMessage(supplierId: string, message: string): Promise<void> {
     await this.supplierFSM.handleMessage(supplierId, message);
+  }
+
+  /**
+   * Gera variantes do número para lidar com o 9º dígito brasileiro
+   * Evolution API remove o 9 extra: +556499696787 → busca +5564999696787 também
+   */
+  private normalizePhoneVariants(phone: string): string[] {
+    const variants = new Set<string>([phone]);
+
+    // Formato: +55XXXXXXXXXXX
+    const match = phone.match(/^\+55(\d{2})(\d+)$/);
+    if (match) {
+      const ddd = match[1];
+      const number = match[2];
+
+      if (number.length === 8) {
+        // Número com 8 dígitos → adicionar 9 no início
+        variants.add(`+55${ddd}9${number}`);
+      } else if (number.length === 9 && number.startsWith('9')) {
+        // Número com 9 dígitos começando com 9 → adicionar versão sem o 9
+        variants.add(`+55${ddd}${number.substring(1)}`);
+      }
+    }
+
+    return Array.from(variants);
   }
 
   /**
