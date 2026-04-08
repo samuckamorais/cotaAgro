@@ -42,7 +42,18 @@ export class ProducerController {
    */
   static create = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data = createProducerSchema.parse(req.body);
-    const tenantId = (req as any).user?.tenantId!;
+    const tenantId = (req as any).user?.tenantId;
+
+    if (!tenantId) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'TENANT_REQUIRED',
+          message: 'Seu usuário não está vinculado a nenhum tenant. Solicite ao suporte que associe seu usuário a um tenant antes de cadastrar produtores.',
+        },
+      });
+      return;
+    }
 
     const producer = await ProducerService.create(tenantId, data);
 
