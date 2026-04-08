@@ -11,7 +11,7 @@ import { Badge } from '../components/ui/badge';
 import { Breadcrumb } from '../components/ui/breadcrumb';
 import { Skeleton } from '../components/ui/skeleton';
 import { useToast } from '../hooks/use-toast';
-import { Settings, MessageSquare, BarChart3, AlertCircle, Webhook } from 'lucide-react';
+import { Settings, MessageSquare, BarChart3, AlertCircle } from 'lucide-react';
 
 export default function WhatsAppConfig() {
   const { toast } = useToast();
