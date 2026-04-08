@@ -242,6 +242,8 @@ Digite *cancelar* para voltar ao menu.`,
 
   NEW_QUOTE_NOTIFICATION: (quote: {
     id: string;
+    producerName: string;
+    producerCity: string;
     category?: string;
     product: string;
     quantity: string;
@@ -250,16 +252,25 @@ Digite *cancelar* para voltar ao menu.`,
     deadline: string;
     observations?: string;
     freight?: string;
-  }) => `🔔 *Nova Cotação Disponível*
+  }) => {
+    let message = `Olá! 👋 Sou o *CotaAgro*, assistente de cotações do produtor *${quote.producerName}* (${quote.producerCity}).\n\n`;
+    message += `Ele está buscando proposta para:\n\n`;
 
-${quote.category ? `🏷️ *Categoria:* ${quote.category}\n` : ''}📦 *Produto:* ${quote.product}
-📊 *Quantidade:* ${quote.quantity} ${quote.unit}
-📍 *Região:* ${quote.region}
-📅 *Dt. Entrega:* ${quote.deadline}
-${quote.freight ? `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}${quote.observations ? `📝 *Obs:* ${quote.observations}\n` : ''}
-Deseja responder?
-*1* - Sim, quero enviar proposta
-*2* - Não tenho interesse`,
+    if (quote.category) message += `🏷️ ${quote.category}\n`;
+    message += `📦 *${quote.product}* — ${quote.quantity} ${quote.unit}\n`;
+    message += `📅 *Dt. Entrega:* ${quote.deadline}\n`;
+    message += `📍 ${quote.region}\n`;
+    if (quote.freight) {
+      message += `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n`;
+    }
+    if (quote.observations) message += `📝 *Obs:* ${quote.observations}\n`;
+
+    message += `\nVocê tem interesse em enviar uma proposta?\n`;
+    message += `*1* — Sim, quero participar\n`;
+    message += `*2* — Não, desta vez não`;
+
+    return message;
+  },
 
   ASK_PRICE: `Ótimo! Vamos registrar sua proposta. 💰
 

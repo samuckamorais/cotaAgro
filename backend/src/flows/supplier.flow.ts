@@ -293,10 +293,13 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
 
     const quote = await prisma.quote.findUniqueOrThrow({
       where: { id: quoteId },
+      include: { producer: { select: { name: true, city: true } } },
     });
 
     const quoteData = {
       id: quote.id,
+      producerName: quote.producer.name,
+      producerCity: quote.producer.city,
       category: (quote as any).category || undefined,
       product: quote.product,
       quantity: quote.quantity,
