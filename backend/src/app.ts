@@ -15,6 +15,7 @@ import { ProducerController } from './modules/producers/producer.controller';
 import { SupplierController } from './modules/suppliers/supplier.controller';
 import { QuoteController } from './modules/quotes/quote.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
+import { UserController } from './modules/users/user.controller';
 import subscriptionsRouter from './modules/subscriptions/subscriptions.routes';
 
 /**
@@ -88,6 +89,14 @@ export function createApp(): Application {
 
   // Subscription routes (protected)
   apiRouter.use('/subscriptions', subscriptionsRouter);
+
+  // User routes (protected + tenant isolation)
+  apiRouter.get('/users', authenticate, requireTenant, UserController.list);
+  apiRouter.get('/users/:id', authenticate, requireTenant, UserController.getById);
+  apiRouter.post('/users', authenticate, requireTenant, UserController.create);
+  apiRouter.put('/users/:id', authenticate, requireTenant, UserController.update);
+  apiRouter.delete('/users/:id', authenticate, requireTenant, UserController.delete);
+  apiRouter.patch('/users/:id/status', authenticate, requireTenant, UserController.toggleStatus);
 
   // WhatsApp Config routes (protected + tenant isolation - admin or WHATSAPP_CONFIG permission)
   const whatsappConfigController = new WhatsAppConfigController();

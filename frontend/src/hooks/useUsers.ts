@@ -105,3 +105,20 @@ export function useDeleteUser() {
     },
   });
 }
+
+export function useToggleUserStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch<{ success: boolean; data: User; message: string }>(
+        `/users/${id}/status`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+  });
+}

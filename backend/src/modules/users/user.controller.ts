@@ -100,4 +100,29 @@ export class UserController {
       message: 'Usuário deletado com sucesso',
     });
   });
+
+  /**
+   * PATCH /api/users/:id/status
+   * Pausa ou reativa um usuário
+   */
+  static toggleStatus = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const requestingUserId = (req as any).user?.id;
+
+    if (!requestingUserId) {
+      res.status(401).json({
+        success: false,
+        message: 'Usuário não autenticado',
+      });
+      return;
+    }
+
+    const user = await UserService.toggleStatus(id, requestingUserId);
+
+    res.json({
+      success: true,
+      data: user,
+      message: user.active ? 'Usuário reativado com sucesso' : 'Usuário pausado com sucesso',
+    });
+  });
 }

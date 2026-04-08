@@ -231,4 +231,65 @@ export class UserService {
 
     logger.info('User deleted', { userId: id });
   }
+
+  /**
+   * Pausa ou reativa usuário
+   */
+  static async toggleStatus(userId: string, requestingUserId: string) {
+    // 1. Verificar se usuário existe
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, active: true, role: true, tenantId: true },
+    });
+
+    if (!user) {
+      throw createError.notFound('Usuário não encontrado');
+    }
+
+    // 2. Validação: Impedir auto-desativação
+    if (userId === requestingUserId) {
+      throw createError.forbidden('Você não pode desativar sua própria conta');
+    }
+
+    // 3. Validação: Impedir desativação do último admin ativo do tenant
+    if (user.active && user.role === 'ADMIN') {
+      const activeAdminsCount = await prisma.user.count({
+        where: {
+          tenantId: user.tenantId,
+          role: 'ADMIN',
+          active: true,
+        },
+      });
+
+      if (activeAdminsCount <= 1) {
+        throw createError.forbidden(
+          'Não é possível desativar o último administrador ativo'
+        );
+      }
+    }
+
+    // 4. Alternar status
+    const newStatus = !user.active;
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { active: newStatus },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        active: true,
+        updatedAt: true,
+        permissions: true,
+      },
+    });
+
+    logger.info('User status toggled', {
+      userId,
+      newStatus,
+      requestingUserId,
+    });
+
+    return updatedUser;
+  }
 }

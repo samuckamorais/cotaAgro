@@ -19,6 +19,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { UserFormModal } from '../components/users/UserFormModal';
+import { UserStatusToggle } from '../components/users/UserStatusToggle';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Users() {
@@ -242,6 +243,17 @@ export function Users() {
                   <div className="text-xs text-muted-foreground pt-2 border-t border-border">
                     Cadastrado em {formatDate(user.createdAt)}
                   </div>
+
+                  {/* Toggle de Status */}
+                  {isAdmin() && (
+                    <div className="pt-3 border-t border-border flex justify-center">
+                      <UserStatusToggle
+                        userId={user.id}
+                        currentStatus={user.active}
+                        userName={user.name}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
