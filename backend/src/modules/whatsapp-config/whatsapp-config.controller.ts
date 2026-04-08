@@ -148,6 +148,38 @@ export class WhatsAppConfigController {
   }
 
   /**
+   * POST /api/admin/whatsapp/webhook/register
+   * Registra webhook no Evolution API manualmente
+   */
+  async registerWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      const tenantId = req.user?.tenantId || 'default';
+      const config = await whatsappConfigService.getConfig(tenantId);
+
+      if (!config || config.provider !== 'evolution') {
+        res.status(400).json({
+          success: false,
+          message: 'Registro de webhook disponível apenas para Evolution API',
+        });
+        return;
+      }
+
+      await whatsappConfigService.registerEvolutionWebhook(config.credentials as any);
+
+      res.json({
+        success: true,
+        message: 'Webhook registrado com sucesso no Evolution API',
+      });
+    } catch (error: any) {
+      logger.error('Failed to register webhook', { error });
+      res.status(500).json({
+        success: false,
+        message: error.response?.data?.message || error.message || 'Erro ao registrar webhook',
+      });
+    }
+  }
+
+  /**
    * POST /api/admin/whatsapp/reconnect
    * Força reconexão
    */

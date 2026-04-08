@@ -133,6 +133,14 @@ export const whatsappConfigApi = {
   },
 
   /**
+   * Registra webhook no Evolution API
+   */
+  async registerWebhook(): Promise<{ success: boolean; message: string }> {
+    const response = await api.post(`/admin/whatsapp/webhook/register`);
+    return response.data;
+  },
+
+  /**
    * Deleta configuração
    */
   async deleteConfig(): Promise<void> {

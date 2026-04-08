@@ -84,6 +84,13 @@ export class WhatsAppConfigService {
       },
     });
 
+    // Configurar webhook automaticamente para Evolution API
+    if (provider === 'evolution') {
+      await this.registerEvolutionWebhook(credentials as EvolutionCredentials).catch((err) => {
+        logger.warn('Failed to register Evolution webhook (non-fatal)', { error: err.message });
+      });
+    }
+
     // Log de auditoria
     await this.logAction({
       tenantId,
@@ -98,6 +105,51 @@ export class WhatsAppConfigService {
     logger.info('WhatsApp config updated', { tenantId, provider });
 
     return config;
+  }
+
+  /**
+   * Registra webhook no Evolution API automaticamente
+   */
+  async registerEvolutionWebhook(credentials: EvolutionCredentials): Promise<void> {
+    const { apiUrl, apiKey, instanceName } = credentials;
+
+    // Determinar URL pública do backend
+    const webhookUrl = process.env.WEBHOOK_URL
+      ? `${process.env.WEBHOOK_URL}/api/whatsapp/webhook`
+      : null;
+
+    if (!webhookUrl) {
+      logger.warn('WEBHOOK_URL not set — skipping Evolution webhook registration');
+      return;
+    }
+
+    const payload = {
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        headers: {},
+        byEvents: true,
+        base64: false,
+        events: [
+          'MESSAGES_UPSERT',
+          'MESSAGES_UPDATE',
+          'CONNECTION_UPDATE',
+        ],
+      },
+    };
+
+    logger.info('Registering Evolution webhook', { instanceName, webhookUrl });
+
+    await axios.post(
+      `${apiUrl}/webhook/set/${instanceName}`,
+      payload,
+      {
+        headers: { apikey: apiKey },
+        timeout: 10000,
+      }
+    );
+
+    logger.info('Evolution webhook registered successfully', { instanceName, webhookUrl });
   }
 
   /**

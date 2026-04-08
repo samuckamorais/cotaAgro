@@ -11,7 +11,7 @@ import { Badge } from '../components/ui/badge';
 import { Breadcrumb } from '../components/ui/breadcrumb';
 import { Skeleton } from '../components/ui/skeleton';
 import { useToast } from '../hooks/use-toast';
-import { Settings, MessageSquare, BarChart3, AlertCircle } from 'lucide-react';
+import { Settings, MessageSquare, BarChart3, AlertCircle, Webhook } from 'lucide-react';
 
 export default function WhatsAppConfig() {
   const { toast } = useToast();
@@ -90,6 +90,27 @@ export default function WhatsAppConfig() {
         title: result.success ? 'Reconectado com sucesso!' : 'Tentativa de reconexão',
         description: result.message,
         duration: 4000,
+      });
+    },
+  });
+
+  // Mutation: Registrar webhook
+  const registerWebhookMutation = useMutation({
+    mutationFn: whatsappConfigApi.registerWebhook,
+    onSuccess: (result) => {
+      toast({
+        variant: result.success ? 'success' : 'destructive',
+        title: result.success ? 'Webhook registrado!' : 'Erro ao registrar webhook',
+        description: result.message,
+        duration: 4000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao registrar webhook',
+        description: error.response?.data?.message || error.message,
+        duration: 5000,
       });
     },
   });
@@ -207,7 +228,8 @@ export default function WhatsAppConfig() {
               connectionError={config.connectionError}
               onTest={() => testMutation.mutate()}
               onReconnect={() => reconnectMutation.mutate()}
-              isLoading={testMutation.isPending || reconnectMutation.isPending}
+              onRegisterWebhook={config.provider === 'evolution' ? () => registerWebhookMutation.mutate() : undefined}
+              isLoading={testMutation.isPending || reconnectMutation.isPending || registerWebhookMutation.isPending}
             />
           )}
 

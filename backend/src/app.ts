@@ -99,6 +99,7 @@ export function createApp(): Application {
   apiRouter.post('/admin/whatsapp/reconnect', authenticate, requireTenant, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.reconnect.bind(whatsappConfigController));
   apiRouter.get('/admin/whatsapp/stats', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getStats.bind(whatsappConfigController));
   apiRouter.get('/admin/whatsapp/logs', authenticate, requireTenant, requireWhatsAppConfigAccess('canView'), whatsappConfigController.getLogs.bind(whatsappConfigController));
+  apiRouter.post('/admin/whatsapp/webhook/register', authenticate, requireTenant, requireWhatsAppConfigAccess('canEdit'), whatsappConfigController.registerWebhook.bind(whatsappConfigController));
 
   app.use('/api', apiRouter);
 

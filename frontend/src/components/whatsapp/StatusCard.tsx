@@ -1,7 +1,7 @@
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { RefreshCw, Activity, MessageCircle, AlertCircle } from 'lucide-react';
+import { RefreshCw, Activity, MessageCircle, AlertCircle, Webhook } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -14,6 +14,7 @@ interface StatusCardProps {
   connectionError?: string;
   onTest: () => void;
   onReconnect: () => void;
+  onRegisterWebhook?: () => void;
   isLoading?: boolean;
 }
 
@@ -26,6 +27,7 @@ export function StatusCard({
   connectionError,
   onTest,
   onReconnect,
+  onRegisterWebhook,
   isLoading,
 }: StatusCardProps) {
   const providerNames = {
@@ -84,21 +86,35 @@ export function StatusCard({
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={onTest} variant="outline" size="sm" disabled={isLoading} className="flex-1">
-          <Activity className="w-4 h-4 mr-2" />
-          Testar Conexão
-        </Button>
-        {!isConnected && (
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <Button onClick={onTest} variant="outline" size="sm" disabled={isLoading} className="flex-1">
+            <Activity className="w-4 h-4 mr-2" />
+            Testar Conexão
+          </Button>
+          {!isConnected && (
+            <Button
+              onClick={onReconnect}
+              variant="default"
+              size="sm"
+              disabled={isLoading}
+              className="flex-1"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reconectar
+            </Button>
+          )}
+        </div>
+        {onRegisterWebhook && (
           <Button
-            onClick={onReconnect}
-            variant="default"
+            onClick={onRegisterWebhook}
+            variant="outline"
             size="sm"
             disabled={isLoading}
-            className="flex-1"
+            className="w-full"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Reconectar
+            <Webhook className="w-4 h-4 mr-2" />
+            Registrar Webhook
           </Button>
         )}
       </div>
