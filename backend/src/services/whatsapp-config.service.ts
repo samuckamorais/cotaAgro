@@ -128,7 +128,7 @@ export class WhatsAppConfigService {
         enabled: true,
         url: webhookUrl,
         headers: {},
-        byEvents: true,
+        byEvents: false,
         base64: false,
         events: [
           'MESSAGES_UPSERT',
