@@ -14,7 +14,13 @@ export const requireTenant = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const tenantId = (req as any).user?.tenantId;
+    const user = (req as any).user;
+    const tenantId = user?.tenantId;
+
+    // ADMIN sem tenant associado: permissão de super-admin, passa sem validar tenant
+    if (!tenantId && user?.role === 'ADMIN') {
+      return next();
+    }
 
     if (!tenantId) {
       throw createError.forbidden('Usuário não possui tenant associado');
