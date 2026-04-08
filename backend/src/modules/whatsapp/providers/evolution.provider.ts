@@ -71,25 +71,43 @@ export class EvolutionProvider implements IWhatsAppProvider {
   parseIncomingMessage(payload: unknown): IncomingMessage {
     const body = payload as Record<string, unknown>;
 
-    // Formato do webhook Evolution API:
-    // {
-    //   event: "messages.upsert",
-    //   data: {
-    //     key: { remoteJid: "5564999999999@s.whatsapp.net" },
-    //     message: { conversation: "mensagem do usuário" },
-    //     messageTimestamp: 1234567890
-    //   }
-    // }
+    logger.debug('Evolution webhook raw payload', {
+      event: body.event,
+      dataKeys: body.data ? Object.keys(body.data as object) : [],
+    });
+
+    // Ignorar eventos que não são mensagens recebidas
+    const event = body.event as string;
+    if (event && event !== 'messages.upsert') {
+      throw createError.badRequest(`Evento ignorado: ${event}`);
+    }
 
     const data = body.data as Record<string, unknown>;
     const key = data?.key as Record<string, unknown>;
-    const message = data?.message as Record<string, unknown>;
+    const msgObj = data?.message as Record<string, unknown>;
 
+    // Ignorar mensagens enviadas pelo próprio bot (fromMe = true)
+    if (key?.fromMe === true) {
+      throw createError.badRequest('Mensagem própria ignorada');
+    }
+
+    // Ignorar mensagens de grupos
     const remoteJid = key?.remoteJid as string;
-    const conversation = message?.conversation as string;
+    if (!remoteJid || remoteJid.includes('@g.us')) {
+      throw createError.badRequest('Mensagem de grupo ignorada');
+    }
 
-    if (!remoteJid || !conversation) {
-      throw createError.badRequest('Invalid Evolution API webhook payload');
+    // Extrair texto da mensagem (suporta vários formatos)
+    const conversation =
+      (msgObj?.conversation as string) ||
+      (msgObj?.extendedTextMessage as any)?.text ||
+      (msgObj?.buttonsResponseMessage as any)?.selectedDisplayText ||
+      (msgObj?.listResponseMessage as any)?.title ||
+      (msgObj?.imageMessage as any)?.caption ||
+      '';
+
+    if (!conversation) {
+      throw createError.badRequest('Mensagem sem texto — tipo de mídia não suportado');
     }
 
     // Extrair número do remoteJid (formato: 5564999999999@s.whatsapp.net)
