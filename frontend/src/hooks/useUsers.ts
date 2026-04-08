@@ -16,6 +16,8 @@ interface User {
   role: 'ADMIN' | 'USER';
   active: boolean;
   createdAt: string;
+  producerId?: string | null;
+  producer?: { id: string; name: string; city: string } | null;
   permissions: Permission[];
 }
 
@@ -24,6 +26,7 @@ interface CreateUserDTO {
   email: string;
   password: string;
   role?: 'ADMIN' | 'USER';
+  producerId?: string | null;
   permissions?: Permission[];
 }
 
@@ -33,6 +36,7 @@ interface UpdateUserDTO {
   password?: string;
   role?: 'ADMIN' | 'USER';
   active?: boolean;
+  producerId?: string | null;
   permissions?: Permission[];
 }
 

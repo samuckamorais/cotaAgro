@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { useCreateUser, useUpdateUser } from '../../hooks/useUsers';
+import { useProducers } from '../../hooks/useProducers';
 import { X } from 'lucide-react';
 
 interface UserFormModalProps {
@@ -25,7 +26,10 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
     password: '',
     role: 'USER' as 'ADMIN' | 'USER',
     active: true,
+    producerId: '' as string,
   });
+
+  const { data: producersData } = useProducers(1, 100);
 
   const [permissions, setPermissions] = useState<
     Record<
@@ -45,6 +49,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
         password: '',
         role: user.role || 'USER',
         active: user.active !== undefined ? user.active : true,
+        producerId: user.producerId || '',
       });
 
       // Carregar permissões
@@ -66,6 +71,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
         password: '',
         role: 'USER',
         active: true,
+        producerId: '',
       });
 
       // Inicializar permissões vazias
@@ -126,6 +132,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
       email: formData.email,
       role: formData.role,
       active: formData.active,
+      producerId: formData.role === 'USER' && formData.producerId ? formData.producerId : null,
     };
 
     // Adicionar senha apenas se fornecida
@@ -239,7 +246,11 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                 <select
                   value={formData.role}
                   onChange={(e) =>
-                    setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'USER' })
+                    setFormData({
+                      ...formData,
+                      role: e.target.value as 'ADMIN' | 'USER',
+                      producerId: '',
+                    })
                   }
                   className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                 >
@@ -250,6 +261,30 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
                   Administradores têm acesso total ao sistema
                 </p>
               </div>
+
+              {/* Produtor vinculado — apenas para USER */}
+              {formData.role === 'USER' && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Produtor responsável
+                  </label>
+                  <select
+                    value={formData.producerId}
+                    onChange={(e) => setFormData({ ...formData, producerId: e.target.value })}
+                    className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Sem vínculo (acesso geral) —</option>
+                    {producersData?.data?.map((p: any) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.city}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Cada produtor pode ser vinculado a no máximo um usuário
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Status */}

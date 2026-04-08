@@ -114,6 +114,7 @@ model Producer {
   suppliers         ProducerSupplier[]
   quotes            Quote[]
   conversationState ConversationState?
+  user              User?
 
   @@unique([tenantId, cpfCnpj])
   @@unique([tenantId, phone])
@@ -313,21 +314,24 @@ model ExperimentAssignment {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String // hash bcrypt
-  role      UserRole @default(USER)
-  active    Boolean  @default(true)
-  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  tenantId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(uuid())
+  name       String
+  email      String    @unique
+  password   String // hash bcrypt
+  role       UserRole  @default(USER)
+  active     Boolean   @default(true)
+  tenant     Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId   String?
+  producer   Producer? @relation(fields: [producerId], references: [id], onDelete: SetNull)
+  producerId String?   @unique // um producer → no máximo um user
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   permissions Permission[]
 
   @@index([email])
   @@index([tenantId])
+  @@index([producerId])
   @@map("users")
 }
 

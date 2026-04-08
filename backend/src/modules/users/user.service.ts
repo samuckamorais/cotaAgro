@@ -9,6 +9,7 @@ interface CreateUserDTO {
   email: string;
   password: string;
   role?: 'ADMIN' | 'USER';
+  producerId?: string | null;
   permissions?: Array<{
     resource: string;
     canView: boolean;
@@ -24,6 +25,7 @@ interface UpdateUserDTO {
   password?: string;
   role?: 'ADMIN' | 'USER';
   active?: boolean;
+  producerId?: string | null;
   permissions?: Array<{
     resource: string;
     canView: boolean;
@@ -54,6 +56,8 @@ export class UserService {
           active: true,
           createdAt: true,
           updatedAt: true,
+          producerId: true,
+          producer: { select: { id: true, name: true, city: true } },
           permissions: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -86,6 +90,8 @@ export class UserService {
         active: true,
         createdAt: true,
         updatedAt: true,
+        producerId: true,
+        producer: { select: { id: true, name: true, city: true } },
         permissions: true,
       },
     });
@@ -110,6 +116,27 @@ export class UserService {
       throw createError.conflict('E-mail já cadastrado');
     }
 
+    // Validar producer se informado
+    if (data.producerId) {
+      // Verificar se producer existe
+      const producer = await (prisma as any).producer.findUnique({
+        where: { id: data.producerId },
+        select: { id: true },
+      });
+      if (!producer) {
+        throw createError.notFound('Produtor não encontrado');
+      }
+
+      // Verificar se producer já está vinculado a outro user
+      const alreadyLinked = await prisma.user.findUnique({
+        where: { producerId: data.producerId } as any,
+        select: { id: true },
+      });
+      if (alreadyLinked) {
+        throw createError.conflict('Este produtor já está vinculado a outro usuário');
+      }
+    }
+
     // Hash da senha
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
@@ -120,6 +147,7 @@ export class UserService {
         password: hashedPassword,
         role: data.role || 'USER',
         tenantId: tenantId || null,
+        producerId: data.producerId || null,
         permissions: data.permissions
           ? {
               create: data.permissions.map((p) => ({
@@ -139,6 +167,8 @@ export class UserService {
         role: true,
         active: true,
         createdAt: true,
+        producerId: true,
+        producer: { select: { id: true, name: true, city: true } },
         permissions: true,
       },
     });
@@ -169,12 +199,33 @@ export class UserService {
       }
     }
 
+    // Validar producer se informado
+    if (data.producerId) {
+      const producer = await (prisma as any).producer.findUnique({
+        where: { id: data.producerId },
+        select: { id: true },
+      });
+      if (!producer) {
+        throw createError.notFound('Produtor não encontrado');
+      }
+
+      // Verificar se producer já está vinculado a outro user (ignorar o próprio)
+      const alreadyLinked = await prisma.user.findFirst({
+        where: { producerId: data.producerId, id: { not: id } } as any,
+        select: { id: true },
+      });
+      if (alreadyLinked) {
+        throw createError.conflict('Este produtor já está vinculado a outro usuário');
+      }
+    }
+
     // Preparar dados para atualização
     const updateData: any = {
       name: data.name,
       email: data.email?.toLowerCase(),
       role: data.role,
       active: data.active,
+      producerId: data.producerId !== undefined ? (data.producerId || null) : undefined,
     };
 
     // Se forneceu nova senha, fazer hash
@@ -193,6 +244,8 @@ export class UserService {
         role: true,
         active: true,
         updatedAt: true,
+        producerId: true,
+        producer: { select: { id: true, name: true, city: true } },
         permissions: true,
       },
     });

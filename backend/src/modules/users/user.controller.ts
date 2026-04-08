@@ -17,6 +17,7 @@ const createUserSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
   role: z.enum(['ADMIN', 'USER']).optional(),
+  producerId: z.string().uuid().optional().nullable(),
   permissions: z.array(permissionSchema).optional(),
 });
 
@@ -26,6 +27,7 @@ const updateUserSchema = z.object({
   password: z.string().min(6).optional(),
   role: z.enum(['ADMIN', 'USER']).optional(),
   active: z.boolean().optional(),
+  producerId: z.string().uuid().optional().nullable(),
   permissions: z.array(permissionSchema).optional(),
 });
 
