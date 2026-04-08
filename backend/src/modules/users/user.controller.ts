@@ -35,8 +35,9 @@ export class UserController {
    */
   static list = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { page, limit } = paginationSchema.parse(req.query);
+    const tenantId = (req as any).user?.tenantId;
 
-    const result = await UserService.list(page, limit);
+    const result = await UserService.list(page, limit, tenantId);
 
     res.json({
       success: true,
@@ -63,8 +64,9 @@ export class UserController {
    */
   static create = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const data = createUserSchema.parse(req.body);
+    const tenantId = (req as any).user?.tenantId;
 
-    const user = await UserService.create(data);
+    const user = await UserService.create(data, tenantId);
 
     res.status(201).json({
       success: true,

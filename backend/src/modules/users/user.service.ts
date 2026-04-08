@@ -37,11 +37,13 @@ export class UserService {
   /**
    * Lista usuários com paginação
    */
-  static async list(page = 1, limit = 10): Promise<PaginatedResponse<any>> {
+  static async list(page = 1, limit = 10, tenantId?: string): Promise<PaginatedResponse<any>> {
     const skip = (page - 1) * limit;
+    const where = tenantId ? { tenantId } : {};
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
+        where,
         skip,
         take: limit,
         select: {
@@ -56,7 +58,7 @@ export class UserService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.user.count(),
+      prisma.user.count({ where }),
     ]);
 
     return {
@@ -98,7 +100,7 @@ export class UserService {
   /**
    * Cria novo usuário
    */
-  static async create(data: CreateUserDTO) {
+  static async create(data: CreateUserDTO, tenantId?: string) {
     // Verificar se email já existe
     const existing = await prisma.user.findUnique({
       where: { email: data.email.toLowerCase() },
@@ -117,6 +119,7 @@ export class UserService {
         email: data.email.toLowerCase(),
         password: hashedPassword,
         role: data.role || 'USER',
+        tenantId: tenantId || null,
         permissions: data.permissions
           ? {
               create: data.permissions.map((p) => ({
