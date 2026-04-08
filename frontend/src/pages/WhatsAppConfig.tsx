@@ -94,6 +94,27 @@ export default function WhatsAppConfig() {
     },
   });
 
+  // Mutation: Registrar webhook
+  const registerWebhookMutation = useMutation({
+    mutationFn: whatsappConfigApi.registerWebhook,
+    onSuccess: (result) => {
+      toast({
+        variant: result.success ? 'success' : 'destructive',
+        title: result.success ? 'Webhook registrado!' : 'Erro ao registrar webhook',
+        description: result.message,
+        duration: 4000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao registrar webhook',
+        description: error.response?.data?.message || error.message,
+        duration: 5000,
+      });
+    },
+  });
+
   // Carregar config existente
   useEffect(() => {
     if (config) {
@@ -207,7 +228,8 @@ export default function WhatsAppConfig() {
               connectionError={config.connectionError}
               onTest={() => testMutation.mutate()}
               onReconnect={() => reconnectMutation.mutate()}
-              isLoading={testMutation.isPending || reconnectMutation.isPending}
+              onRegisterWebhook={config.provider === 'evolution' ? () => registerWebhookMutation.mutate() : undefined}
+              isLoading={testMutation.isPending || reconnectMutation.isPending || registerWebhookMutation.isPending}
             />
           )}
 

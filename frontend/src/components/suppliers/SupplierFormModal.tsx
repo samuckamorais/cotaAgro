@@ -60,9 +60,15 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Normalizar telefone: garantir formato +55XXXXXXXXXXX
+    const rawPhone = formData.phone.replace(/\D/g, ''); // apenas dígitos
+    const phone = rawPhone.startsWith('55')
+      ? `+${rawPhone}`
+      : `+55${rawPhone}`;
+
     const payload = {
       name: formData.name,
-      phone: formData.phone.replace(/\D/g, ''), // remove não-numéricos
+      phone,
       company: formData.company || undefined,
       email: formData.email || undefined,
       regions: formData.regions.split(',').map((r) => r.trim()).filter(Boolean),

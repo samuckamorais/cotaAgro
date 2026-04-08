@@ -61,10 +61,15 @@ export class FSMEngine<TState extends string> {
     this.stateTimestamps.set(newKey, Date.now());
 
     if (entityType === 'producer') {
+      const producer = await prisma.producer.findUniqueOrThrow({
+        where: { id: entityId },
+        select: { tenantId: true },
+      });
       await prisma.conversationState.upsert({
         where: { producerId: entityId },
         create: {
           producerId: entityId,
+          tenantId: producer.tenantId,
           step,
           context: context as object,
         },

@@ -127,6 +127,10 @@ export class WhatsAppConfigController {
     try {
       const tenantId = req.user?.tenantId || 'default';
 
+      // QR code muda a cada chamada — não cachear
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.set('Pragma', 'no-cache');
+
       const result = await whatsappConfigService.getQRCode(tenantId);
 
       res.json({
@@ -139,6 +143,38 @@ export class WhatsAppConfigController {
       res.status(500).json({
         success: false,
         message: 'Erro ao obter QR Code',
+      });
+    }
+  }
+
+  /**
+   * POST /api/admin/whatsapp/webhook/register
+   * Registra webhook no Evolution API manualmente
+   */
+  async registerWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      const tenantId = req.user?.tenantId || 'default';
+      const config = await whatsappConfigService.getConfig(tenantId);
+
+      if (!config || config.provider !== 'evolution') {
+        res.status(400).json({
+          success: false,
+          message: 'Registro de webhook disponível apenas para Evolution API',
+        });
+        return;
+      }
+
+      await whatsappConfigService.registerEvolutionWebhook(config.credentials as any);
+
+      res.json({
+        success: true,
+        message: 'Webhook registrado com sucesso no Evolution API',
+      });
+    } catch (error: any) {
+      logger.error('Failed to register webhook', { error });
+      res.status(500).json({
+        success: false,
+        message: error.response?.data?.message || error.message || 'Erro ao registrar webhook',
       });
     }
   }

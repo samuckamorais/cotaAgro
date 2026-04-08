@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { api } from './client';
 
 export interface WhatsAppConfig {
   id: string;
@@ -63,7 +61,7 @@ export const whatsappConfigApi = {
    */
   async getConfig(): Promise<WhatsAppConfig | null> {
     try {
-      const response = await axios.get(`${API_URL}/api/admin/whatsapp/config`);
+      const response = await api.get(`/admin/whatsapp/config`);
       return response.data.success ? response.data.data : null;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -80,7 +78,7 @@ export const whatsappConfigApi = {
     provider: 'twilio' | 'evolution' | 'meta';
     credentials: TwilioCredentials | EvolutionCredentials;
   }): Promise<void> {
-    const response = await axios.put(`${API_URL}/api/admin/whatsapp/config`, data);
+    const response = await api.put(`/admin/whatsapp/config`, data);
     if (!response.data.success) {
       throw new Error(response.data.message || 'Erro ao salvar configuração');
     }
@@ -90,7 +88,7 @@ export const whatsappConfigApi = {
    * Testa conexão
    */
   async testConnection(): Promise<ConnectionTestResult> {
-    const response = await axios.post(`${API_URL}/api/admin/whatsapp/test`);
+    const response = await api.post(`/admin/whatsapp/test`);
     return {
       success: response.data.success,
       message: response.data.message,
@@ -102,7 +100,7 @@ export const whatsappConfigApi = {
    * Obtém QR Code (Evolution API)
    */
   async getQRCode(): Promise<{ success: boolean; qrCode?: string; message: string }> {
-    const response = await axios.get(`${API_URL}/api/admin/whatsapp/qrcode`);
+    const response = await api.get(`/admin/whatsapp/qrcode`);
     return response.data;
   },
 
@@ -110,7 +108,7 @@ export const whatsappConfigApi = {
    * Reconecta
    */
   async reconnect(): Promise<{ success: boolean; message: string }> {
-    const response = await axios.post(`${API_URL}/api/admin/whatsapp/reconnect`);
+    const response = await api.post(`/admin/whatsapp/reconnect`);
     return response.data;
   },
 
@@ -118,7 +116,7 @@ export const whatsappConfigApi = {
    * Obtém estatísticas
    */
   async getStats(period: '24h' | '7d' | '30d' = '24h'): Promise<WhatsAppStats> {
-    const response = await axios.get(`${API_URL}/api/admin/whatsapp/stats`, {
+    const response = await api.get(`/admin/whatsapp/stats`, {
       params: { period },
     });
     return response.data.data;
@@ -128,17 +126,25 @@ export const whatsappConfigApi = {
    * Obtém logs de auditoria
    */
   async getLogs(limit = 50): Promise<AuditLog[]> {
-    const response = await axios.get(`${API_URL}/api/admin/whatsapp/logs`, {
+    const response = await api.get(`/admin/whatsapp/logs`, {
       params: { limit },
     });
     return response.data.data;
   },
 
   /**
+   * Registra webhook no Evolution API
+   */
+  async registerWebhook(): Promise<{ success: boolean; message: string }> {
+    const response = await api.post(`/admin/whatsapp/webhook/register`);
+    return response.data;
+  },
+
+  /**
    * Deleta configuração
    */
   async deleteConfig(): Promise<void> {
-    const response = await axios.delete(`${API_URL}/api/admin/whatsapp/config`);
+    const response = await api.delete(`/admin/whatsapp/config`);
     if (!response.data.success) {
       throw new Error(response.data.message || 'Erro ao deletar configuração');
     }

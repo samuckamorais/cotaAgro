@@ -20,6 +20,7 @@ export class FeatureFlagsService {
    * Cria ou atualiza um experimento
    */
   async createExperiment(params: {
+    tenantId: string;
     name: string;
     description?: string;
     variants: ExperimentVariant[];
@@ -33,8 +34,9 @@ export class FeatureFlagsService {
     }
 
     await prisma.experiment.upsert({
-      where: { name: params.name },
+      where: { tenantId_name: { tenantId: params.tenantId, name: params.name } },
       create: {
+        tenantId: params.tenantId,
         name: params.name,
         description: params.description,
         variants: params.variants as any,
@@ -65,7 +67,7 @@ export class FeatureFlagsService {
     userType: 'producer' | 'supplier';
   }): Promise<string> {
     // Verificar se experimento existe e está ativo
-    const experiment = await prisma.experiment.findUnique({
+    const experiment = await prisma.experiment.findFirst({
       where: { name: params.experimentName },
     });
 
@@ -101,6 +103,7 @@ export class FeatureFlagsService {
     await prisma.experimentAssignment.create({
       data: {
         experimentId: experiment.id,
+        tenantId: experiment.tenantId,
         userId: params.userId,
         userType: params.userType,
         variant,
@@ -173,7 +176,7 @@ export class FeatureFlagsService {
   }): Promise<Record<string, any> | null> {
     const variant = await this.assignVariant(params);
 
-    const experiment = await prisma.experiment.findUnique({
+    const experiment = await prisma.experiment.findFirst({
       where: { name: params.experimentName },
     });
 
@@ -194,7 +197,7 @@ export class FeatureFlagsService {
     totalAssignments: number;
     variantDistribution: Array<{ variant: string; count: number; percentage: number }>;
   }> {
-    const experiment = await prisma.experiment.findUnique({
+    const experiment = await prisma.experiment.findFirst({
       where: { name: experimentName },
       include: {
         assignments: true,
@@ -241,7 +244,7 @@ export class FeatureFlagsService {
       sampleSize: number;
     }>
   > {
-    const experiment = await prisma.experiment.findUnique({
+    const experiment = await prisma.experiment.findFirst({
       where: { name: params.experimentName },
       include: {
         assignments: true,
@@ -323,8 +326,14 @@ export class FeatureFlagsService {
    * Desativa experimento
    */
   async deactivateExperiment(experimentName: string): Promise<void> {
-    await prisma.experiment.update({
+    const experiment = await prisma.experiment.findFirst({
       where: { name: experimentName },
+    });
+    if (!experiment) {
+      throw new Error(`Experiment ${experimentName} not found`);
+    }
+    await prisma.experiment.update({
+      where: { id: experiment.id },
       data: {
         active: false,
         endDate: new Date(),

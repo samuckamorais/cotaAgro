@@ -93,6 +93,7 @@ export class ProactiveQuotesJob {
             },
             create: {
               producerId: producer.id,
+              tenantId: producer.tenantId,
               step: 'AWAITING_PROACTIVE_CHOICE',
               context: JSON.stringify({
                 product: pattern.product,

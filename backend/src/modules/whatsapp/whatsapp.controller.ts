@@ -30,10 +30,17 @@ export class WhatsAppController {
    */
   static handleWebhook = ErrorHandler.asyncHandler(
     async (req: Request, res: Response): Promise<void> => {
-      logger.info('Webhook received', { body: req.body });
+      logger.info('Webhook received', { event: req.body?.event, from: req.body?.data?.key?.remoteJid });
 
-      // Parsear payload do provider
-      const incomingMessage = whatsappService.parseWebhookPayload(req.body);
+      let incomingMessage;
+      try {
+        incomingMessage = whatsappService.parseWebhookPayload(req.body);
+      } catch (err: any) {
+        // Eventos ignorados (fromMe, grupos, eventos não-mensagem) — responder 200 silenciosamente
+        logger.debug('Webhook payload skipped', { reason: err.message });
+        res.status(200).json({ success: true });
+        return;
+      }
 
       // Processar mensagem de forma assíncrona (não bloqueia resposta)
       whatsappService.handleIncomingMessage(incomingMessage).catch((error) => {

@@ -233,7 +233,13 @@ export class AnalyticsController {
         return;
       }
 
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        res.status(400).json({ error: 'tenantId não encontrado no usuário autenticado' });
+        return;
+      }
       await featureFlagsService.createExperiment({
+        tenantId,
         name,
         description,
         variants,
