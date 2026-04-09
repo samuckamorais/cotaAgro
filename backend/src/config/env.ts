@@ -38,6 +38,9 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(), // optional para permitir mock
   OPENAI_MODEL: z.string().default('gpt-4o'),
 
+  // Frontend URL (para gerar links enviados via WhatsApp)
+  FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+
   // Business Logic
   QUOTE_EXPIRY_MINUTES: z.string().default('120').transform(Number),
   CONSOLIDATE_CHECK_INTERVAL: z.string().default('5').transform(Number),

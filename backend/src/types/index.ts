@@ -45,17 +45,32 @@ export interface UpdateSupplierDTO {
   isNetworkSupplier?: boolean;
 }
 
+export interface QuoteItemDTO {
+  product: string;
+  quantity: number;
+  unit: string;
+}
+
 export interface CreateQuoteDTO {
   producerId: string;
   category?: string;
-  product: string;
-  quantity: string;
-  unit: string;
+  // Legado (cotação com 1 item via WhatsApp antigo)
+  product?: string;
+  quantity?: string;
+  unit?: string;
+  // Multi-item
+  items?: QuoteItemDTO[];
   region: string;
   deadline: Date;
   observations?: string;
   freight?: string;
   supplierScope: 'MINE' | 'NETWORK' | 'ALL';
+}
+
+export interface CreateProposalItemDTO {
+  quoteItemId: string;
+  unitPrice: number;
+  totalPrice: number;
 }
 
 export interface CreateProposalDTO {
@@ -67,6 +82,8 @@ export interface CreateProposalDTO {
   deliveryDays: number;
   observations?: string;
   isOwnSupplier?: boolean;
+  isPartial?: boolean;
+  items?: CreateProposalItemDTO[];
 }
 
 export interface CreateSubscriptionDTO {
@@ -124,6 +141,7 @@ export type ProducerState =
   | 'AWAITING_CATEGORY'
   | 'AWAITING_PRODUCT'
   | 'AWAITING_QUANTITY'
+  | 'AWAITING_MORE_ITEMS'
   | 'AWAITING_REGION'
   | 'AWAITING_DEADLINE'
   | 'AWAITING_OBSERVATIONS'
@@ -148,12 +166,24 @@ export type SupplierState =
   | 'SUPPLIER_AWAITING_OBS'
   | 'SUPPLIER_PROPOSAL_SENT';
 
+export interface QuoteItemContext {
+  product: string;
+  quantity: number;
+  unit: string;
+}
+
 export interface ConversationContext {
   category?: string;
   availableCategories?: string[];
+
+  // Multi-item: lista acumulada de itens na cotação em andamento
+  items?: QuoteItemContext[];
+
+  // Item atual sendo coletado (product/quantity/unit temporários antes de push em items)
   product?: string;
   quantity?: string;
   unit?: string;
+
   region?: string;
   deadline?: string;
   observations?: string;
@@ -170,7 +200,12 @@ export interface ConversationContext {
   supplierId?: string;
   supplierName?: string;
 
-  // Supplier context
+  // Supplier FSM: preço por item (multi-item)
+  currentItemIndex?: number; // índice do QuoteItem que está sendo cotado
+  quoteItems?: Array<{ id: string; product: string; quantity: number; unit: string }>;
+  proposalItems?: Array<{ quoteItemId: string; unitPrice: number; totalPrice: number }>;
+
+  // Supplier context (legado / 1 item)
   price?: number;
   deliveryDays?: number;
   paymentTerms?: string;

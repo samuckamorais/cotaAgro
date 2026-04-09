@@ -23,6 +23,7 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
   'AWAITING_CATEGORY': { step: 1, total: 6, label: 'Categoria', icon: '🏷️' },
   'AWAITING_PRODUCT': { step: 2, total: 6, label: 'Produto', icon: '📦' },
   'AWAITING_QUANTITY': { step: 3, total: 6, label: 'Quantidade', icon: '📊' },
+  'AWAITING_MORE_ITEMS': null,
   'AWAITING_REGION': { step: 4, total: 6, label: 'Região', icon: '📍' },
   'AWAITING_DEADLINE': { step: 5, total: 6, label: 'Prazo', icon: '⏰' },
   'AWAITING_OBSERVATIONS': null,
@@ -114,6 +115,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
         case 'AWAITING_QUANTITY':
           await this.handleAwaitingQuantity(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_MORE_ITEMS':
+          await this.handleAwaitingMoreItems(producerId, producer.phone, message, context);
           break;
 
         case 'AWAITING_REGION':
@@ -533,10 +538,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     context: ConversationContext
   ): Promise<void> {
     // Extrair quantidade e unidade (ex: "100 sacos", "500kg")
-    const match = message.match(/(\d+)\s*(sacos?|kg|litros?|toneladas?|ton?|l|unidades?)?/i);
+    const match = message.match(/(\d+(?:[.,]\d+)?)\s*(sacos?|sacas?|kg|quilos?|litros?|toneladas?|ton?|l|unidades?|sc|ha|hectares?)?/i);
 
     if (!match) {
-      // Tentar sugerir correções
       const suggestions = await openaiService.suggestCorrections(
         message,
         'quantity',
@@ -557,17 +561,79 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       return;
     }
 
-    context.quantity = match[1];
-    context.unit = match[2] || 'unidades';
+    const quantityFloat = parseFloat(match[1].replace(',', '.'));
+    const unit = match[2] || 'unidades';
 
-    const progressHeader = this.getProgressHeader('AWAITING_REGION');
+    // Acumular item na lista
+    if (!context.items) context.items = [];
+    context.items.push({
+      product: context.product!,
+      quantity: quantityFloat,
+      unit,
+    });
+
+    // Limpar campos temporários do item
+    context.quantity = String(quantityFloat);
+    context.unit = unit;
+
+    // Perguntar se quer adicionar mais itens (mesma categoria)
+    const itemsList = context.items
+      .map((it, i) => `${i + 1}. ${it.product} — ${it.quantity} ${it.unit}`)
+      .join('\n');
 
     await whatsappService.sendMessage({
       to: phone,
-      body: progressHeader + Messages.ASK_REGION(context.quantity, context.unit),
+      body: `✅ *Item adicionado!*\n\n📦 *Itens da cotação (${context.category}):*\n${itemsList}\n\n*Deseja adicionar mais um produto desta categoria?*\n\n*1* — Sim, adicionar outro\n*2* — Não, continuar`,
     });
 
-    await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
+    await this.setState(producerId, 'producer', 'AWAITING_MORE_ITEMS', context);
+  }
+
+  /**
+   * Estado AWAITING_MORE_ITEMS - Pergunta se quer adicionar mais itens
+   */
+  private async handleAwaitingMoreItems(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const normalized = message.toLowerCase().trim();
+
+    if (normalized === '1' || normalized.includes('sim') || normalized.includes('adicionar')) {
+      // Limpar produto/quantidade temporários e voltar para AWAITING_PRODUCT
+      context.product = undefined;
+      context.quantity = undefined;
+      context.unit = undefined;
+
+      const progressHeader = this.getProgressHeader('AWAITING_PRODUCT');
+      const itemCount = context.items?.length || 0;
+
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `${progressHeader}*Qual o próximo produto?* (item ${itemCount + 1})\n\nCategoria: *${context.category}*`,
+      });
+
+      await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', context);
+      return;
+    }
+
+    if (normalized === '2' || normalized.includes('não') || normalized.includes('nao') || normalized.includes('continuar')) {
+      const progressHeader = this.getProgressHeader('AWAITING_REGION');
+
+      await whatsappService.sendMessage({
+        to: phone,
+        body: progressHeader + Messages.ASK_REGION(context.quantity, context.unit),
+      });
+
+      await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
+      return;
+    }
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: 'Digite *1* para adicionar mais um produto ou *2* para continuar.',
+    });
   }
 
   /**
@@ -1014,11 +1080,13 @@ Por favor, responda com:
         scopeLabel = 'Não definido';
     }
 
+    const items = context.items && context.items.length > 0
+      ? context.items
+      : [{ product: context.product!, quantity: parseFloat(context.quantity || '1'), unit: context.unit || 'unidades' }];
+
     const summary = {
       category: context.category,
-      product: context.product!,
-      quantity: context.quantity!,
-      unit: context.unit!,
+      items,
       region: context.region!,
       deadline: new Date(context.deadline!).toLocaleDateString('pt-BR'),
       observations: context.observations,
@@ -1078,52 +1146,71 @@ Por favor, responda com:
       where: { id: producerId },
       select: { tenantId: true },
     });
-    // Criar cotação no banco
-    const quote = await prisma.quote.create({
-      data: {
-        producerId,
-        tenantId: producer.tenantId,
-        category: context.category,
-        product: context.product!,
-        quantity: context.quantity!,
-        unit: context.unit!,
-        region: context.region!,
-        deadline: new Date(context.deadline!),
-        observations: context.observations,
-        freight: context.freight,
-        supplierScope: context.supplierScope!,
-        status: 'PENDING',
-        expiresAt: new Date(Date.now() + 120 * 60 * 1000), // 2 horas
-      },
+
+    // Normalizar itens: se não há context.items (fluxo legado), criar a partir dos campos soltos
+    const items = context.items && context.items.length > 0
+      ? context.items
+      : [{
+          product: context.product!,
+          quantity: parseFloat(context.quantity || '1'),
+          unit: context.unit || 'unidades',
+        }];
+
+    // Criar cotação + QuoteItems em uma única transaction
+    const quote = await prisma.$transaction(async (tx) => {
+      const newQuote = await tx.quote.create({
+        data: {
+          producerId,
+          tenantId: producer.tenantId,
+          category: context.category,
+          // Campos legados — preencher com o primeiro item para compatibilidade
+          product: items[0].product,
+          quantity: String(items[0].quantity),
+          unit: items[0].unit,
+          region: context.region!,
+          deadline: new Date(context.deadline!),
+          observations: context.observations,
+          freight: context.freight,
+          supplierScope: context.supplierScope!,
+          status: 'PENDING',
+          expiresAt: new Date(Date.now() + 120 * 60 * 1000),
+        },
+      });
+
+      await tx.quoteItem.createMany({
+        data: items.map((item) => ({
+          quoteId: newQuote.id,
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+        })),
+      });
+
+      return newQuote;
     });
 
-    // Incrementar contador de cotações usadas
-    await prisma.subscription.update({
+    // Incrementar contador de cotações usadas (1 cota independente do nº de itens)
+    await prisma.subscription.updateMany({
       where: { producerId },
       data: { quotesUsed: { increment: 1 } },
     });
 
-    // Adicionar job para disparar cotações
-    // Se foi MINE e tem fornecedores selecionados, passar a lista
+    // Disparar para fornecedores
     let suppliersCount: number;
-
     if (context.supplierScope === 'MINE' && context.selectedSuppliers) {
-      // Disparar apenas para fornecedores selecionados
       const selectedIds = context.selectedSuppliers.map((s) => s.id);
       suppliersCount = await dispatchQuoteJob(quote.id, selectedIds);
     } else {
-      // Disparar normalmente
       suppliersCount = await dispatchQuoteJob(quote.id);
     }
 
-    // Salvar preferências para próxima cotação
+    // Salvar preferências para próxima cotação (array de itens)
     await prisma.producer.update({
       where: { id: producerId },
       data: {
         lastQuotePreferences: {
-          product: context.product,
-          quantity: context.quantity,
-          unit: context.unit,
+          category: context.category,
+          items,
           region: context.region,
           deadline: context.deadline,
         },
@@ -1135,7 +1222,6 @@ Por favor, responda com:
       body: Messages.QUOTE_DISPATCHED(quote.id, suppliersCount),
     });
 
-    // Atualizar contexto com quoteId e mudar estado
     context.quoteId = quote.id;
     await this.setState(producerId, 'producer', 'QUOTE_ACTIVE', context);
   }
@@ -1152,46 +1238,7 @@ Por favor, responda com:
     const normalized = message.toLowerCase().trim();
 
     if (normalized === 'sim') {
-      const producer = await prisma.producer.findUniqueOrThrow({
-        where: { id: producerId },
-        select: { tenantId: true },
-      });
-      // Criar cotação no banco
-      const quote = await prisma.quote.create({
-        data: {
-          producerId,
-          tenantId: producer.tenantId,
-          category: context.category,
-          product: context.product!,
-          quantity: context.quantity!,
-          unit: context.unit!,
-          region: context.region!,
-          deadline: new Date(context.deadline!),
-          observations: context.observations,
-          freight: context.freight,
-          supplierScope: context.supplierScope!,
-          status: 'PENDING',
-          expiresAt: new Date(Date.now() + 120 * 60 * 1000), // 2 horas
-        },
-      });
-
-      // Incrementar contador de cotações usadas
-      await prisma.subscription.update({
-        where: { producerId },
-        data: { quotesUsed: { increment: 1 } },
-      });
-
-      // Adicionar job para disparar cotações
-      const suppliersCount = await dispatchQuoteJob(quote.id);
-
-      await whatsappService.sendMessage({
-        to: phone,
-        body: Messages.QUOTE_DISPATCHED(quote.id, suppliersCount),
-      });
-
-      // Atualizar contexto com quoteId e mudar estado
-      context.quoteId = quote.id;
-      await this.setState(producerId, 'producer', 'QUOTE_ACTIVE', context);
+      await this.createAndDispatchQuote(producerId, phone, context);
       return;
     }
 

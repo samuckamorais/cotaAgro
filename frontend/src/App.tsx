@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './hooks/use-toast';
+import { ProposalForm } from './pages/ProposalForm';
 import { useAnalytics } from './hooks/useAnalytics';
 import { usePerformance } from './hooks/usePerformance';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -23,6 +24,7 @@ const Producers = lazy(() => import('./pages/Producers').then((m) => ({ default:
 const Users = lazy(() => import('./pages/Users').then((m) => ({ default: m.Users })));
 const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ default: m.Subscriptions })));
 const WhatsAppConfig = lazy(() => import('./pages/WhatsAppConfig').then((m) => ({ default: m.default })));
+const QuoteResults = lazy(() => import('./pages/QuoteResults').then((m) => ({ default: m.QuoteResults })));
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                {/* Rota pública para formulário de proposta do fornecedor */}
+                <Route path="/proposta/:token" element={<ProposalForm />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/*" element={<ProtectedLayout />} />
               </Routes>
@@ -77,6 +81,7 @@ function ProtectedLayout() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/quotes" element={<Quotes />} />
                 <Route path="/quotes/:id" element={<QuoteDetail />} />
+                <Route path="/quotes/:id/resultados" element={<QuoteResults />} />
                 <Route path="/producers" element={<Producers />} />
                 <Route path="/suppliers" element={<Suppliers />} />
                 <Route path="/users" element={<Users />} />

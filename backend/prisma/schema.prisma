@@ -141,8 +141,9 @@ model Supplier {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  producers ProducerSupplier[]
-  proposals Proposal[]
+  producers      ProducerSupplier[]
+  proposals      Proposal[]
+  proposalTokens ProposalToken[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -173,9 +174,9 @@ model Quote {
   producer         Producer      @relation(fields: [producerId], references: [id], onDelete: Cascade)
   producerId       String
   category         String? // categoria do produto (ex: sementes, fertilizantes)
-  product          String
-  quantity         String
-  unit             String // ex: sacos, litros, kg
+  product          String? // deprecated — mantido para compatibilidade com cotações antigas
+  quantity         String? // deprecated — mantido para compatibilidade com cotações antigas
+  unit             String? // deprecated — mantido para compatibilidade com cotações antigas
   region           String
   deadline         DateTime
   observations     String?
@@ -183,11 +184,13 @@ model Quote {
   supplierScope    SupplierScope // MINE | NETWORK | ALL
   status           QuoteStatus // PENDING | COLLECTING | SUMMARIZED | CLOSED | EXPIRED
   expiresAt        DateTime // quando parar de aceitar propostas
-  closedSupplierId String?
+  closedSupplierId String? // vencedor no modo "melhor preço total"
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  proposals Proposal[]
+  proposals      Proposal[]
+  items          QuoteItem[]
+  proposalTokens ProposalToken[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -198,6 +201,21 @@ model Quote {
   @@map("quotes")
 }
 
+model QuoteItem {
+  id                String  @id @default(uuid())
+  quote             Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId           String
+  product           String
+  quantity          Float
+  unit              String
+  winningSupplierId String? // vencedor no modo "por item"
+
+  proposals ProposalItem[]
+
+  @@index([quoteId])
+  @@map("quote_items")
+}
+
 model Proposal {
   id            String   @id @default(uuid())
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -206,17 +224,51 @@ model Proposal {
   quoteId       String
   supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   supplierId    String
-  price         Float
-  totalPrice    Float
+  price         Float // cache da soma dos ProposalItems (ou preço único para cotações legadas)
+  totalPrice    Float // idem
   paymentTerms  String
   deliveryDays  Int
   observations  String?
   isOwnSupplier Boolean  @default(false)
+  isPartial     Boolean  @default(false) // true quando fornecedor não cotou todos os itens
   createdAt     DateTime @default(now())
+
+  items ProposalItem[]
 
   @@index([tenantId])
   @@index([quoteId])
   @@map("proposals")
+}
+
+model ProposalItem {
+  id          String    @id @default(uuid())
+  proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  proposalId  String
+  quoteItem   QuoteItem @relation(fields: [quoteItemId], references: [id], onDelete: Cascade)
+  quoteItemId String
+  unitPrice   Float
+  totalPrice  Float
+
+  @@unique([proposalId, quoteItemId])
+  @@index([proposalId])
+  @@index([quoteItemId])
+  @@map("proposal_items")
+}
+
+model ProposalToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  quote      Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId    String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId String
+  used       Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([token])
+  @@index([quoteId, supplierId])
+  @@map("proposal_tokens")
 }
 
 model Subscription {

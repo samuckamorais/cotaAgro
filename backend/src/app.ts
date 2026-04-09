@@ -16,6 +16,7 @@ import { SupplierController } from './modules/suppliers/supplier.controller';
 import { QuoteController } from './modules/quotes/quote.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { UserController } from './modules/users/user.controller';
+import { ProposalController } from './modules/proposals/proposal.controller';
 import subscriptionsRouter from './modules/subscriptions/subscriptions.routes';
 
 /**
@@ -52,6 +53,10 @@ export function createApp(): Application {
   // Auth routes (public)
   apiRouter.post('/auth/login', AuthController.login);
 
+  // Proposal form routes (public — token-based, sem autenticação)
+  apiRouter.get('/proposta/:token', ProposalController.getForm);
+  apiRouter.post('/proposta/:token', ProposalController.submitForm);
+
   // WhatsApp webhook routes (public)
   apiRouter.get('/whatsapp/webhook', WhatsAppController.verifyWebhook);
   apiRouter.post('/whatsapp/webhook', rateLimitByPhone, WhatsAppController.handleWebhook);
@@ -83,9 +88,12 @@ export function createApp(): Application {
   apiRouter.get('/quotes/stats', authenticate, requireTenant, QuoteController.getStats);
   apiRouter.get('/quotes', authenticate, requireTenant, QuoteController.list);
   apiRouter.get('/quotes/:id', authenticate, requireTenant, QuoteController.getById);
+  apiRouter.get('/quotes/:id/results', authenticate, requireTenant, QuoteController.getResults);
   apiRouter.post('/quotes', authenticate, requireTenant, QuoteController.create);
   apiRouter.post('/quotes/:id/dispatch', authenticate, requireTenant, QuoteController.dispatch);
   apiRouter.put('/quotes/:id/close', authenticate, requireTenant, QuoteController.close);
+  apiRouter.post('/quotes/:id/close-total', authenticate, requireTenant, QuoteController.closeWithTotalWinner);
+  apiRouter.post('/quotes/:id/close-by-item', authenticate, requireTenant, QuoteController.closeWithItemWinners);
 
   // Subscription routes (protected)
   apiRouter.use('/subscriptions', subscriptionsRouter);

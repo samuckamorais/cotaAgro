@@ -60,3 +60,42 @@ export function useCloseQuote() {
     },
   });
 }
+
+export function useQuoteResults(quoteId: string) {
+  return useQuery({
+    queryKey: ['quote-results', quoteId],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: any }>(`/quotes/${quoteId}/results`);
+      return data.data;
+    },
+    enabled: !!quoteId,
+  });
+}
+
+export function useCloseTotalWinner() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ quoteId, supplierId }: { quoteId: string; supplierId: string }) => {
+      const { data } = await api.post(`/quotes/${quoteId}/close-total`, { supplierId });
+      return data;
+    },
+    onSuccess: (_data, { quoteId }) => {
+      queryClient.invalidateQueries({ queryKey: ['quote-results', quoteId] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    },
+  });
+}
+
+export function useCloseByItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ quoteId, winners }: { quoteId: string; winners: Array<{ quoteItemId: string; supplierId: string }> }) => {
+      const { data } = await api.post(`/quotes/${quoteId}/close-by-item`, { winners });
+      return data;
+    },
+    onSuccess: (_data, { quoteId }) => {
+      queryClient.invalidateQueries({ queryKey: ['quote-results', quoteId] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    },
+  });
+}

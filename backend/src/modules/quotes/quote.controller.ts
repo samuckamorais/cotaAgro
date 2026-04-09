@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { QuoteService } from './quote.service';
 import { ErrorHandler, createError } from '../../utils/error-handler';
 import { createQuoteSchema, paginationSchema } from '../../utils/validators';
+import { QuoteResultsService } from '../../services/quote-results.service';
 import { z } from 'zod';
 
 export class QuoteController {
@@ -107,5 +108,59 @@ export class QuoteController {
       success: true,
       data: stats,
     });
+  });
+
+  /**
+   * GET /api/quotes/:id/results
+   * Retorna propostas comparadas para a página de resultados
+   */
+  static getResults = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
+
+    const results = await QuoteResultsService.getResults(tenantId, id);
+
+    res.json({
+      success: true,
+      data: results,
+    });
+  });
+
+  /**
+   * POST /api/quotes/:id/close-total
+   * Fecha cotação com vencedor único (modo preço total)
+   */
+  static closeWithTotalWinner = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { supplierId } = req.body;
+    const tenantId = (req as any).user?.tenantId!;
+
+    if (!supplierId) throw createError.badRequest('supplierId é obrigatório');
+
+    await QuoteResultsService.closeWithTotalWinner(tenantId, id, supplierId);
+
+    res.json({ success: true, message: 'Cotação fechada com vencedor único' });
+  });
+
+  /**
+   * POST /api/quotes/:id/close-by-item
+   * Fecha cotação com vencedores por item
+   */
+  static closeWithItemWinners = ErrorHandler.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const tenantId = (req as any).user?.tenantId!;
+
+    const schema = z.object({
+      winners: z.array(z.object({
+        quoteItemId: z.string().uuid(),
+        supplierId: z.string().uuid(),
+      })).min(1),
+    });
+
+    const { winners } = schema.parse(req.body);
+
+    await QuoteResultsService.closeWithItemWinners(tenantId, id, winners);
+
+    res.json({ success: true, message: 'Cotação fechada com vencedores por item' });
   });
 }

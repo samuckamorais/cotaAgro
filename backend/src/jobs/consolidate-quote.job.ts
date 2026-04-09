@@ -5,6 +5,10 @@ import { Messages } from '../flows/messages';
 import { logger, logWithContext } from '../utils/logger';
 import { env } from '../config/env';
 
+function resultsUrl(quoteId: string): string {
+  return `${env.FRONTEND_URL}/quotes/${quoteId}/resultados`;
+}
+
 /**
  * Job periódico (cron) para consolidar cotações
  * Verifica a cada X minutos se há cotações prontas para consolidação
@@ -79,9 +83,12 @@ export async function consolidateQuote(quoteId: string): Promise<void> {
         data: { status: 'EXPIRED' },
       });
 
+      // Pegar produto do primeiro item ou campo legado
+      const itemName = (quote as any).items?.[0]?.product || quote.product || 'cotação';
+
       await whatsappService.sendMessage({
         to: quote.producer.phone,
-        body: `⏰ Sua cotação *${quote.product}* expirou sem receber propostas.\n\nTente novamente com um prazo maior ou outros fornecedores.`,
+        body: `⏰ Sua cotação *${itemName}* expirou sem receber propostas.\n\nTente novamente com um prazo maior ou outros fornecedores.`,
       });
 
       logWithContext('warn', 'Quote expired without proposals', { quoteId });
@@ -106,10 +113,17 @@ export async function consolidateQuote(quoteId: string): Promise<void> {
       observations: p.observations || undefined,
     }));
 
-    // Enviar resumo ao produtor
+    // Enviar resumo ao produtor + link para página de resultados
+    const resultsLink = resultsUrl(quoteId);
+
     await whatsappService.sendMessage({
       to: quote.producer.phone,
       body: Messages.QUOTE_SUMMARY(formattedProposals),
+    });
+
+    await whatsappService.sendMessage({
+      to: quote.producer.phone,
+      body: `📊 *Veja o comparativo completo e escolha o vencedor:*\n\n🔗 ${resultsLink}`,
     });
 
     // Atualizar status e estado da conversa do produtor

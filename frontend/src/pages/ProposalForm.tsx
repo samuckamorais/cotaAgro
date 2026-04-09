@@ -1,0 +1,272 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+interface QuoteItem {
+  id: string;
+  product: string;
+  quantity: number;
+  unit: string;
+}
+
+interface FormData {
+  token: string;
+  supplier: { name: string };
+  quote: {
+    producerName: string;
+    producerCity: string;
+    category: string | null;
+    region: string;
+    deadline: string;
+    freight: string | null;
+    observations: string | null;
+    items: QuoteItem[];
+  };
+}
+
+export function ProposalForm() {
+  const { token } = useParams<{ token: string }>();
+  const [formData, setFormData] = useState<FormData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Preços por item (quoteItemId → unitPrice string)
+  const [prices, setPrices] = useState<Record<string, string>>({});
+  // Itens pulados
+  const [skipped, setSkipped] = useState<Record<string, boolean>>({});
+  const [paymentTerms, setPaymentTerms] = useState('');
+  const [deliveryDays, setDeliveryDays] = useState('');
+  const [observations, setObservations] = useState('');
+
+  useEffect(() => {
+    if (!token) return;
+    axios
+      .get(`${API_BASE}/proposta/${token}`)
+      .then((res) => {
+        setFormData(res.data.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.error?.message || 'Link inválido ou expirado.';
+        setError(msg);
+        setLoading(false);
+      });
+  }, [token]);
+
+  const totalPrice = formData?.quote.items.reduce((sum, item) => {
+    if (skipped[item.id]) return sum;
+    const p = parseFloat(prices[item.id]?.replace(',', '.') || '0');
+    if (isNaN(p)) return sum;
+    return sum + p * item.quantity;
+  }, 0);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData || !token) return;
+
+    const items = formData.quote.items
+      .filter((it) => !skipped[it.id])
+      .map((it) => ({
+        quoteItemId: it.id,
+        unitPrice: parseFloat(prices[it.id]?.replace(',', '.') || '0'),
+      }))
+      .filter((it) => it.unitPrice > 0);
+
+    if (items.length === 0) {
+      alert('Informe o preço de ao menos um item.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await axios.post(`${API_BASE}/proposta/${token}`, {
+        items,
+        paymentTerms,
+        deliveryDays: parseInt(deliveryDays),
+        observations: observations || undefined,
+      });
+      setSubmitted(true);
+    } catch (err: any) {
+      const msg = err.response?.data?.error?.message || 'Erro ao enviar proposta.';
+      alert(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-green-50 flex items-center justify-center">
+        <p className="text-green-700 text-lg">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-red-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-5xl mb-4">⚠️</div>
+        <h1 className="text-xl font-bold text-red-700 mb-2">Link Inválido</h1>
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-6xl mb-4">✅</div>
+        <h1 className="text-2xl font-bold text-green-700 mb-2">Proposta enviada!</h1>
+        <p className="text-green-600">
+          Obrigado, <strong>{formData?.supplier.name}</strong>!<br />
+          Sua proposta foi registrada com sucesso. Entraremos em contato se for selecionado.
+        </p>
+      </div>
+    );
+  }
+
+  const q = formData!.quote;
+  const deadlineFormatted = new Date(q.deadline).toLocaleDateString('pt-BR');
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-green-600 text-white px-4 py-4">
+        <div className="max-w-lg mx-auto">
+          <p className="text-green-100 text-sm">🌾 CotaAgro</p>
+          <h1 className="text-lg font-bold">Proposta para {q.producerName}</h1>
+          <p className="text-green-100 text-sm">{q.producerCity}</p>
+        </div>
+      </div>
+
+      {/* Quote details */}
+      <div className="max-w-lg mx-auto px-4 py-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-4 text-sm space-y-1">
+          {q.category && <p>🏷️ <strong>Categoria:</strong> {q.category}</p>}
+          <p>📅 <strong>Dt. Entrega:</strong> {deadlineFormatted}</p>
+          <p>📍 <strong>Região:</strong> {q.region}</p>
+          {q.freight && (
+            <p>🚚 <strong>Frete:</strong> {q.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}</p>
+          )}
+          {q.observations && <p>📝 <strong>Obs:</strong> {q.observations}</p>}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Itens */}
+          <div className="space-y-3">
+            <h2 className="font-semibold text-gray-700">Produtos solicitados</h2>
+            {q.items.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow-sm p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-gray-800">{item.product}</p>
+                    <p className="text-sm text-gray-500">Qtd: {item.quantity} {item.unit}</p>
+                  </div>
+                  <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!skipped[item.id]}
+                      onChange={(e) => setSkipped((prev) => ({ ...prev, [item.id]: e.target.checked }))}
+                      className="w-3.5 h-3.5"
+                    />
+                    Não tenho
+                  </label>
+                </div>
+                {!skipped[item.id] && (
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Preço unitário (R$)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-gray-400 text-sm">R$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        required={!skipped[item.id]}
+                        value={prices[item.id] || ''}
+                        onChange={(e) => setPrices((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    {prices[item.id] && parseFloat(prices[item.id]) > 0 && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Total: R$ {(parseFloat(prices[item.id].replace(',', '.')) * item.quantity).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Total estimado */}
+          {typeof totalPrice === 'number' && totalPrice > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+              <p className="text-sm text-green-700">Total estimado da proposta</p>
+              <p className="text-2xl font-bold text-green-700">
+                R$ {totalPrice.toFixed(2).replace('.', ',')}
+              </p>
+            </div>
+          )}
+
+          {/* Condições */}
+          <div className="bg-white rounded-lg shadow-sm p-4 space-y-3">
+            <h2 className="font-semibold text-gray-700">Condições</h2>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Prazo de entrega (dias) *</label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={deliveryDays}
+                onChange={(e) => setDeliveryDays(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Ex: 5"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Condição de pagamento *</label>
+              <input
+                type="text"
+                required
+                value={paymentTerms}
+                onChange={(e) => setPaymentTerms(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Ex: 30 dias, à vista, boleto"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Observações (opcional)</label>
+              <textarea
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                placeholder="Informações adicionais sobre sua proposta"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold text-base hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {submitting ? 'Enviando...' : '✅ Enviar Proposta'}
+          </button>
+
+          <p className="text-xs text-center text-gray-400 pb-6">
+            Ao enviar, sua proposta será registrada automaticamente no sistema CotaAgro.
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+}

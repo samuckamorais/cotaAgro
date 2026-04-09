@@ -95,6 +95,15 @@ if [ -n "$PUBLIC_IP" ]; then
     echo "VITE_API_URL=${VITE_API_URL}" >> .env
   fi
 
+  # Atualiza ou adiciona FRONTEND_URL no .env (usado pelo backend para gerar links WhatsApp)
+  FRONTEND_URL_VALUE="http://${PUBLIC_IP}:5173"
+  if grep -q "^FRONTEND_URL=" .env; then
+    sed -i "s|^FRONTEND_URL=.*|FRONTEND_URL=${FRONTEND_URL_VALUE}|" .env
+  else
+    echo "FRONTEND_URL=${FRONTEND_URL_VALUE}" >> .env
+  fi
+  echo -e "${GREEN}✅ FRONTEND_URL atualizado: ${FRONTEND_URL_VALUE}${NC}"
+
   echo -e "${GREEN}✅ WEBHOOK_URL atualizado: ${WEBHOOK_URL}${NC}"
   echo -e "${GREEN}✅ VITE_API_URL atualizado: ${VITE_API_URL}${NC}"
 else
@@ -210,7 +219,7 @@ fi
 
 # 5.4 - Validar tabelas críticas criadas
 echo "  → Validando estrutura do banco..."
-CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription" "tenants" "whatsapp_configs")
+CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription" "tenants" "whatsapp_configs" "quote_items" "proposal_items" "proposal_tokens")
 MISSING_TABLES=()
 
 for table in "${CRITICAL_TABLES[@]}"; do
@@ -340,7 +349,10 @@ echo "  ✅ Gestão de Usuários (permissões)"
 echo "  ✅ Gestão de Assinaturas (planos: BASIC, PRO, ENTERPRISE)"
 echo "  ✅ Configuração WhatsApp (Twilio, Evolution API)"
 echo "  ✅ RBAC (Controle de Acesso Baseado em Funções)"
-echo "  ✅ Multi-Tenant (Isolamento completo de dados) - NOVO"
+echo "  ✅ Multi-Tenant (Isolamento completo de dados)"
+echo "  ✅ Cotação com múltiplos itens (QuoteItem + ProposalItem)"
+echo "  ✅ Formulário web de proposta para fornecedor (/proposta/:token)"
+echo "  ✅ Página de resultados com ranking total e por item (/quotes/:id/resultados)"
 echo "  ✅ Fornecedores da Rede (compartilhados entre tenants)"
 echo "  ✅ Design System: Clean Minimal Utility"
 echo ""

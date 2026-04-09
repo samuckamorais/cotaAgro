@@ -6,6 +6,7 @@ import { redis } from '../config/redis';
 import { SupplierState, ConversationContext } from '../types';
 import { logger, logWithContext } from '../utils/logger';
 import { supplierNotificationService } from '../services/supplier-notification.service';
+import { ProposalTokenService } from '../services/proposal-token.service';
 
 /**
  * FSM do Fornecedor - Gerencia fluxo de resposta a cotações
@@ -124,7 +125,7 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
   }
 
   /**
-   * Estado SUPPLIER_AWAITING_PRICE - Aguardando preço da proposta
+   * Estado SUPPLIER_AWAITING_PRICE - Aguardando preço da proposta (fluxo 1 item via WhatsApp)
    */
   private async handleAwaitingPrice(
     supplierId: string,
@@ -143,6 +144,15 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
     }
 
     context.price = price;
+    // Para 1 item via WhatsApp, criar ProposalItem no final com base no price total
+    if (context.quoteItems && context.quoteItems.length > 0) {
+      const item = context.quoteItems[0];
+      context.proposalItems = [{
+        quoteItemId: item.id,
+        unitPrice: price / item.quantity,
+        totalPrice: price,
+      }];
+    }
 
     await whatsappService.sendMessage({
       to: phone,
@@ -228,20 +238,43 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
     // Criar proposta no banco
     const quote = await prisma.quote.findUniqueOrThrow({
       where: { id: context.quoteId! },
+      include: { items: true },
     });
 
-    const proposal = await prisma.proposal.create({
-      data: {
-        quoteId: context.quoteId!,
-        supplierId,
-        tenantId: quote.tenantId,
-        price: context.price!,
-        totalPrice: context.price!, // pode ser calculado diferente
-        paymentTerms: context.paymentTerms!,
-        deliveryDays: context.deliveryDays!,
-        observations: context.observations,
-        isOwnSupplier: context.isOwnSupplier || false,
-      },
+    const proposalItems = context.proposalItems || [];
+    const totalPrice = proposalItems.length > 0
+      ? proposalItems.reduce((sum, it) => sum + it.totalPrice, 0)
+      : context.price!;
+    const isPartial = quote.items.length > 0 && proposalItems.length < quote.items.length;
+
+    const proposal = await prisma.$transaction(async (tx) => {
+      const newProposal = await tx.proposal.create({
+        data: {
+          quoteId: context.quoteId!,
+          supplierId,
+          tenantId: quote.tenantId,
+          price: totalPrice,
+          totalPrice,
+          paymentTerms: context.paymentTerms!,
+          deliveryDays: context.deliveryDays!,
+          observations: context.observations,
+          isOwnSupplier: context.isOwnSupplier || false,
+          isPartial,
+        },
+      });
+
+      if (proposalItems.length > 0) {
+        await tx.proposalItem.createMany({
+          data: proposalItems.map((it) => ({
+            proposalId: newProposal.id,
+            quoteItemId: it.quoteItemId,
+            unitPrice: it.unitPrice,
+            totalPrice: it.totalPrice,
+          })),
+        });
+      }
+
+      return newProposal;
     });
 
     // Enviar feedback com ranking (assíncrono, não bloquear)
@@ -271,7 +304,7 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
   ): Promise<void> {
     const stateKey = `supplier_state:${supplierId}`;
     const data = JSON.stringify({ state, context });
-    await redis.setex(stateKey, 1800, data); // 30 minutos
+    await redis.setex(stateKey, 7200, data); // 2 horas
   }
 
   /**
@@ -293,21 +326,35 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
 
     const quote = await prisma.quote.findUniqueOrThrow({
       where: { id: quoteId },
-      include: { producer: { select: { name: true, city: true } } },
+      include: {
+        producer: { select: { name: true, city: true } },
+        items: true,
+      },
     });
+
+    const isMultiItem = quote.items.length > 1;
+
+    // Para multi-item, gerar link do formulário web
+    let proposalFormUrl: string | undefined;
+    if (isMultiItem) {
+      proposalFormUrl = await ProposalTokenService.generateFormUrl(quoteId, supplierId);
+    }
 
     const quoteData = {
       id: quote.id,
       producerName: quote.producer.name,
       producerCity: quote.producer.city,
-      category: (quote as any).category || undefined,
-      product: quote.product,
-      quantity: quote.quantity,
-      unit: quote.unit,
+      category: quote.category || undefined,
+      items: quote.items.map((it) => ({
+        product: it.product,
+        quantity: it.quantity,
+        unit: it.unit,
+      })),
       region: quote.region,
       deadline: quote.deadline.toLocaleDateString('pt-BR'),
       observations: quote.observations || undefined,
-      freight: (quote as any).freight || undefined,
+      freight: quote.freight || undefined,
+      proposalFormUrl,
     };
 
     await whatsappService.sendMessage({
@@ -315,14 +362,20 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
       body: Messages.NEW_QUOTE_NOTIFICATION(quoteData),
     });
 
-    // Definir estado inicial
+    // Para 1 item: manter fluxo WhatsApp; para multi-item: só aguarda recusa (opção 2)
     const context: ConversationContext = {
       quoteId,
       isOwnSupplier,
+      quoteItems: quote.items.map((it) => ({
+        id: it.id,
+        product: it.product,
+        quantity: it.quantity,
+        unit: it.unit,
+      })),
     };
 
     await this.setSupplierState(supplierId, 'SUPPLIER_AWAITING_RESPONSE', context);
 
-    logger.info('Supplier notified about new quote', { supplierId, quoteId });
+    logger.info('Supplier notified about new quote', { supplierId, quoteId, isMultiItem });
   }
 }

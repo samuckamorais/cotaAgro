@@ -98,18 +98,20 @@ Ou digite sua observação e pressione Enter.`,
 
   CONFIRM_QUOTE: (summary: {
     category?: string;
-    product: string;
-    quantity: string;
-    unit: string;
+    items: Array<{ product: string; quantity: number; unit: string }>;
     region: string;
     deadline: string;
     observations?: string;
     freight?: string;
     scope: string;
-  }) => `✅ *Confirme os dados da sua cotação:*
+  }) => {
+    const itemsText = summary.items
+      .map((it, i) => `  ${i + 1}. ${it.product} — ${it.quantity} ${it.unit}`)
+      .join('\n');
 
-${summary.category ? `🏷️ *Categoria:* ${summary.category}\n` : ''}📦 *Produto:* ${summary.product}
-📊 *Quantidade:* ${summary.quantity} ${summary.unit}
+    return `✅ *Confirme os dados da sua cotação:*
+
+${summary.category ? `🏷️ *Categoria:* ${summary.category}\n` : ''}📦 *Produtos:*\n${itemsText}
 📍 *Região:* ${summary.region}
 ⏰ *Prazo:* ${summary.deadline}
 ${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.freight ? `🚚 *Frete:* ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}🎯 *Fornecedores:* ${summary.scope}
@@ -122,7 +124,8 @@ ${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.
 │ ✏️ Corrigir        │
 └──────────────────┘
 
-*Está correto?*`,
+*Está correto?*`;
+  },
 
   QUOTE_DISPATCHED: (quoteId: string, suppliersCount: number) => `Cotação enviada com sucesso! 🚀
 
@@ -245,20 +248,31 @@ Digite *cancelar* para voltar ao menu.`,
     producerName: string;
     producerCity: string;
     category?: string;
-    product: string;
-    quantity: string;
-    unit: string;
+    // Multi-item
+    items?: Array<{ product: string; quantity: number | string; unit: string }>;
+    // Legado (1 item)
+    product?: string;
+    quantity?: string;
+    unit?: string;
     region: string;
     deadline: string;
     observations?: string;
     freight?: string;
+    proposalFormUrl?: string; // link para formulário web (multi-item)
   }) => {
+    const items = quote.items && quote.items.length > 0
+      ? quote.items
+      : quote.product ? [{ product: quote.product, quantity: quote.quantity || '', unit: quote.unit || '' }] : [];
+
     let message = `Olá! 👋 Sou o *CotaAgro*, assistente de cotações do produtor *${quote.producerName}* (${quote.producerCity}).\n\n`;
     message += `Ele está buscando proposta para:\n\n`;
 
-    if (quote.category) message += `🏷️ ${quote.category}\n`;
-    message += `📦 *${quote.product}* — ${quote.quantity} ${quote.unit}\n`;
-    message += `📅 *Dt. Entrega:* ${quote.deadline}\n`;
+    if (quote.category) message += `🏷️ *Categoria:* ${quote.category}\n`;
+    message += `📦 *Produtos solicitados:*\n`;
+    items.forEach((it) => {
+      message += `  • ${it.product} — ${it.quantity} ${it.unit}\n`;
+    });
+    message += `\n📅 *Dt. Entrega:* ${quote.deadline}\n`;
     message += `📍 ${quote.region}\n`;
     if (quote.freight) {
       message += `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n`;
@@ -266,8 +280,16 @@ Digite *cancelar* para voltar ao menu.`,
     if (quote.observations) message += `📝 *Obs:* ${quote.observations}\n`;
 
     message += `\nVocê tem interesse em enviar uma proposta?\n`;
-    message += `*1* — Sim, quero participar\n`;
-    message += `*2* — Não, desta vez não`;
+
+    if (quote.proposalFormUrl) {
+      // Multi-item: link para formulário web
+      message += `\n✅ *Sim, quero participar:*\n🔗 ${quote.proposalFormUrl}\n\n`;
+      message += `*2* — Não, desta vez não`;
+    } else {
+      // 1 item: fluxo WhatsApp
+      message += `*1* — Sim, quero participar\n`;
+      message += `*2* — Não, desta vez não`;
+    }
 
     return message;
   },
