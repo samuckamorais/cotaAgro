@@ -17,6 +17,7 @@ import { QuoteController } from './modules/quotes/quote.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { UserController } from './modules/users/user.controller';
 import { ProposalController } from './modules/proposals/proposal.controller';
+import { SettingsController } from './modules/settings/settings.controller';
 import subscriptionsRouter from './modules/subscriptions/subscriptions.routes';
 
 /**
@@ -107,6 +108,10 @@ export function createApp(): Application {
   apiRouter.put('/users/:id', authenticate, requireTenant, UserController.update);
   apiRouter.delete('/users/:id', authenticate, requireTenant, UserController.delete);
   apiRouter.patch('/users/:id/status', authenticate, requireTenant, UserController.toggleStatus);
+
+  // Settings routes (protected — vinculado ao produtor do usuário logado)
+  apiRouter.get('/settings', authenticate, SettingsController.get);
+  apiRouter.put('/settings', authenticate, SettingsController.update);
 
   // WhatsApp Config routes (protected + tenant isolation - admin or WHATSAPP_CONFIG permission)
   const whatsappConfigController = new WhatsAppConfigController();

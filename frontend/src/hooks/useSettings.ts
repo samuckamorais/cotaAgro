@@ -1,0 +1,33 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '../api/client';
+
+export interface ProducerSettings {
+  proposalLinkExpiryHours: number;
+  quoteDeadlineDays: number;
+  defaultSupplierScope: 'OWN' | 'NETWORK' | 'ALL';
+  maxItemsPerQuote: number;
+}
+
+export function useSettings() {
+  return useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: ProducerSettings }>('/settings');
+      return data.data;
+    },
+  });
+}
+
+export function useUpdateSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: Partial<ProducerSettings>) => {
+      const { data } = await api.put<{ success: boolean; data: ProducerSettings }>('/settings', payload);
+      return data.data;
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['settings'], updated);
+    },
+  });
+}

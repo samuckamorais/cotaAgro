@@ -2,14 +2,19 @@ import crypto from 'crypto';
 import { prisma } from '../config/database';
 import { env } from '../config/env';
 
-const TOKEN_EXPIRY_HOURS = 24;
+const DEFAULT_EXPIRY_HOURS = 24;
 
 export class ProposalTokenService {
   /**
    * Gera um token único para o par (quoteId, supplierId) e retorna a URL do formulário.
    * Se já existir token válido, reutiliza.
+   * @param expiryHours tempo de expiração em horas (padrão: 24h, ou o definido nas ProducerSettings)
    */
-  static async generateFormUrl(quoteId: string, supplierId: string): Promise<string> {
+  static async generateFormUrl(
+    quoteId: string,
+    supplierId: string,
+    expiryHours: number = DEFAULT_EXPIRY_HOURS
+  ): Promise<string> {
     // Reutilizar token não-utilizado ainda válido
     const existing = await prisma.proposalToken.findFirst({
       where: {
@@ -25,7 +30,7 @@ export class ProposalTokenService {
     }
 
     const token = crypto.randomBytes(4).toString('hex');
-    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
     await prisma.proposalToken.create({
       data: { token, quoteId, supplierId, expiresAt },

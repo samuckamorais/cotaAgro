@@ -7,6 +7,7 @@ import { SupplierState, ConversationContext } from '../types';
 import { logger, logWithContext } from '../utils/logger';
 import { supplierNotificationService } from '../services/supplier-notification.service';
 import { ProposalTokenService } from '../services/proposal-token.service';
+import { ProducerSettingsService } from '../services/producer-settings.service';
 
 /**
  * FSM do Fornecedor - Gerencia fluxo de resposta a cotações
@@ -334,10 +335,17 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
 
     const isMultiItem = quote.items.length > 1;
 
+    // Carregar configurações do produtor para usar expiração personalizada
+    const producerSettings = await ProducerSettingsService.getOrCreate(quote.producerId);
+
     // Para multi-item, gerar link do formulário web
     let proposalFormUrl: string | undefined;
     if (isMultiItem) {
-      proposalFormUrl = await ProposalTokenService.generateFormUrl(quoteId, supplierId);
+      proposalFormUrl = await ProposalTokenService.generateFormUrl(
+        quoteId,
+        supplierId,
+        producerSettings.proposalLinkExpiryHours
+      );
     }
 
     const quoteData = {

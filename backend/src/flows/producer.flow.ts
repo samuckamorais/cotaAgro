@@ -10,6 +10,7 @@ import { contactExtractorService } from '../services/contact-extractor.service';
 import { nluExtractorService } from '../services/nlu-extractor.service';
 import { openaiService } from '../services/openai.service';
 import { supplierNotificationService } from '../services/supplier-notification.service';
+import { ProducerSettingsService } from '../services/producer-settings.service';
 
 /**
  * Mapa de progresso para cada estado do fluxo
@@ -295,12 +296,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       };
 
       // Ir direto para confirmação de fornecedores
-      await whatsappService.sendMessage({
-        to: phone,
-        body: Messages.ASK_SUPPLIER_SCOPE,
-      });
-
-      await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SCOPE', updatedContext);
+      await this.askOrApplySupplierScope(producerId, phone, updatedContext);
       return;
     }
 
@@ -324,6 +320,38 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
   /**
    * Busca categorias únicas dos fornecedores do tenant e inicia seleção de categoria
    */
+  /**
+   * Aplica o escopo de fornecedores: se o padrão nas settings for OWN ou NETWORK,
+   * pula a pergunta e avança direto. Se for ALL, exibe a pergunta de seleção.
+   */
+  private async askOrApplySupplierScope(
+    producerId: string,
+    phone: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const settings = await ProducerSettingsService.getOrCreate(producerId);
+    const scope = settings.defaultSupplierScope;
+
+    if (scope === 'OWN') {
+      context.supplierScope = 'OWN';
+      await this.showSupplierListForSelection(producerId, phone, context);
+      return;
+    }
+
+    if (scope === 'NETWORK') {
+      context.supplierScope = 'NETWORK';
+      await this.showQuoteConfirmation(producerId, phone, context);
+      return;
+    }
+
+    // ALL — perguntar ao usuário
+    await whatsappService.sendMessage({
+      to: phone,
+      body: Messages.ASK_SUPPLIER_SCOPE,
+    });
+    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SCOPE', context);
+  }
+
   private async startCategorySelection(
     producerId: string,
     phone: string,
@@ -423,12 +451,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     context.freight = freight;
 
-    await whatsappService.sendMessage({
-      to: phone,
-      body: Messages.ASK_SUPPLIER_SCOPE,
-    });
-
-    await this.setState(producerId, 'producer', 'AWAITING_SUPPLIER_SCOPE', context);
+    await this.askOrApplySupplierScope(producerId, phone, context);
   }
 
   /**
@@ -565,11 +588,28 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     context.quantity = String(quantityFloat);
     context.unit = unit;
 
-    // Perguntar se quer adicionar mais itens (mesma categoria)
+    // Verificar limite de itens das configurações do produtor
+    const settings = await ProducerSettingsService.getOrCreate(producerId);
     const itemsList = context.items
       .map((it, i) => `${i + 1}. ${it.product} — ${it.quantity} ${it.unit}`)
       .join('\n');
 
+    if (context.items.length >= settings.maxItemsPerQuote) {
+      // Limite atingido — avança direto para região
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `✅ *Item adicionado!*\n\n📦 *Itens da cotação (${context.category}):*\n${itemsList}\n\n⚠️ Limite de ${settings.maxItemsPerQuote} itens por cotação atingido.`,
+      });
+      const progressHeader = this.getProgressHeader('AWAITING_REGION');
+      await whatsappService.sendMessage({
+        to: phone,
+        body: progressHeader + Messages.ASK_REGION(context.quantity, context.unit),
+      });
+      await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
+      return;
+    }
+
+    // Perguntar se quer adicionar mais itens (mesma categoria)
     await whatsappService.sendMessage({
       to: phone,
       body: `✅ *Item adicionado!*\n\n📦 *Itens da cotação (${context.category}):*\n${itemsList}\n\n*Deseja adicionar mais um produto desta categoria?*\n\n*1* — Sim, adicionar outro\n*2* — Não, continuar`,

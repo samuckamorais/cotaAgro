@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Users, Building2, MessageSquare } from 'lucide-react';
+import { Home, FileText, Users, Building2, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { name: 'Cotações', path: '/quotes', icon: FileText, resource: 'QUOTES' },
   { name: 'Produtores', path: '/producers', icon: Users, resource: 'PRODUCERS' },
   { name: 'Fornecedores', path: '/suppliers', icon: Building2, resource: 'SUPPLIERS' },
-  { name: 'WhatsApp', path: '/whatsapp', icon: MessageSquare, resource: 'WHATSAPP_CONFIG' },
+  { name: 'Config', path: '/settings', icon: Settings2, resource: 'DASHBOARD' },
 ];
 
 export function BottomNav() {

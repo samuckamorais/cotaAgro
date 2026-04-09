@@ -115,6 +115,7 @@ model Producer {
   quotes            Quote[]
   conversationState ConversationState?
   user              User?
+  settings          ProducerSettings?
 
   @@unique([tenantId, cpfCnpj])
   @@unique([tenantId, phone])
@@ -385,6 +386,23 @@ model User {
   @@index([tenantId])
   @@index([producerId])
   @@map("users")
+}
+
+model ProducerSettings {
+  id                      String       @id @default(uuid())
+  producer                Producer     @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  producerId              String       @unique
+
+  // Configurações de cotação
+  proposalLinkExpiryHours Int          @default(24)    // Tempo de expiração do link de proposta (horas)
+  quoteDeadlineDays       Int          @default(3)     // Prazo padrão de entrega sugerido (dias)
+  defaultSupplierScope    SupplierScope @default(ALL)  // Escopo padrão de fornecedores
+  maxItemsPerQuote        Int          @default(10)    // Limite máximo de itens por cotação
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("producer_settings")
 }
 
 model Permission {

@@ -25,6 +25,7 @@ const Users = lazy(() => import('./pages/Users').then((m) => ({ default: m.Users
 const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ default: m.Subscriptions })));
 const WhatsAppConfig = lazy(() => import('./pages/WhatsAppConfig').then((m) => ({ default: m.default })));
 const QuoteResults = lazy(() => import('./pages/QuoteResults').then((m) => ({ default: m.QuoteResults })));
+const SettingsPage = lazy(() => import('./pages/Settings').then((m) => ({ default: m.SettingsPage })));
 
 function App() {
   return (
@@ -88,6 +89,7 @@ function ProtectedLayout() {
                 <Route path="/users" element={<Users />} />
                 <Route path="/subscriptions" element={<Subscriptions />} />
                 <Route path="/whatsapp" element={<WhatsAppConfig />} />
+                <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </Suspense>
           </main>
@@ -108,6 +110,7 @@ function ProtectedLayout() {
               <Route path="/users" element={<Users />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/whatsapp" element={<WhatsAppConfig />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Suspense>
         </main>
