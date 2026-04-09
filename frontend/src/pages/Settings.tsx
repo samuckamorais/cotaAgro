@@ -3,7 +3,7 @@ import { Settings2, Clock, CalendarDays, Users, Package, Save, CheckCircle } fro
 import { useSettings, useUpdateSettings, ProducerSettings } from '../hooks/useSettings';
 
 const SCOPE_LABELS: Record<ProducerSettings['defaultSupplierScope'], string> = {
-  OWN: 'Apenas meus fornecedores',
+  MINE: 'Apenas meus fornecedores',
   NETWORK: 'Apenas rede CotaAgro',
   ALL: 'Todos (meus + rede)',
 };
@@ -15,7 +15,7 @@ export function SettingsPage() {
   const [form, setForm] = useState<ProducerSettings>({
     proposalLinkExpiryHours: 24,
     quoteDeadlineDays: 3,
-    defaultSupplierScope: 'ALL',
+    defaultSupplierScope: 'ALL' as const,
     maxItemsPerQuote: 10,
   });
 
@@ -117,7 +117,7 @@ export function SettingsPage() {
             </label>
             <p className="text-xs text-muted-foreground">Comportamento padrão ao definir para quem enviar a cotação</p>
             <div className="space-y-2">
-              {(['OWN', 'NETWORK', 'ALL'] as const).map((scope) => (
+              {(['MINE', 'NETWORK', 'ALL'] as const).map((scope) => (
                 <label key={scope} className="flex items-center gap-3 cursor-pointer group">
                   <input
                     type="radio"

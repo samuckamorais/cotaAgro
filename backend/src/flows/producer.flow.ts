@@ -332,8 +332,8 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     const settings = await ProducerSettingsService.getOrCreate(producerId);
     const scope = settings.defaultSupplierScope;
 
-    if (scope === 'OWN') {
-      context.supplierScope = 'OWN';
+    if (scope === 'MINE') {
+      context.supplierScope = 'MINE';
       await this.showSupplierListForSelection(producerId, phone, context);
       return;
     }

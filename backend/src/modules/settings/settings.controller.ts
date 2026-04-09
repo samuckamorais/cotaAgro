@@ -7,7 +7,7 @@ import { ErrorHandler, createError } from '../../utils/error-handler';
 const updateSettingsSchema = z.object({
   proposalLinkExpiryHours: z.number().int().min(1).max(168).optional(), // 1h a 7 dias
   quoteDeadlineDays: z.number().int().min(1).max(30).optional(),
-  defaultSupplierScope: z.enum(['OWN', 'NETWORK', 'ALL']).optional(),
+  defaultSupplierScope: z.enum(['MINE', 'NETWORK', 'ALL']).optional(),
   maxItemsPerQuote: z.number().int().min(1).max(20).optional(),
 });
 

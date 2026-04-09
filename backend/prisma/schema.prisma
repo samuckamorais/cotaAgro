@@ -396,7 +396,7 @@ model ProducerSettings {
   // Configurações de cotação
   proposalLinkExpiryHours Int          @default(24)    // Tempo de expiração do link de proposta (horas)
   quoteDeadlineDays       Int          @default(3)     // Prazo padrão de entrega sugerido (dias)
-  defaultSupplierScope    SupplierScope @default(ALL)  // Escopo padrão de fornecedores
+  defaultSupplierScope    SupplierScope @default(ALL)   // Escopo padrão de fornecedores (MINE/NETWORK/ALL)
   maxItemsPerQuote        Int          @default(10)    // Limite máximo de itens por cotação
 
   createdAt DateTime @default(now())

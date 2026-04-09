@@ -4,7 +4,7 @@ import { api } from '../api/client';
 export interface ProducerSettings {
   proposalLinkExpiryHours: number;
   quoteDeadlineDays: number;
-  defaultSupplierScope: 'OWN' | 'NETWORK' | 'ALL';
+  defaultSupplierScope: 'MINE' | 'NETWORK' | 'ALL';
   maxItemsPerQuote: number;
 }
 
