@@ -188,7 +188,7 @@ export function ProposalForm() {
                         required={!skipped[item.id]}
                         value={prices[item.id] || ''}
                         onChange={(e) => setPrices((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                         placeholder="0,00"
                       />
                     </div>
@@ -231,7 +231,7 @@ export function ProposalForm() {
                 required
                 value={deliveryDays}
                 onChange={(e) => setDeliveryDays(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Ex: 5"
               />
             </div>
@@ -243,7 +243,7 @@ export function ProposalForm() {
                 required
                 value={paymentTerms}
                 onChange={(e) => setPaymentTerms(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Ex: 30 dias, à vista, boleto"
               />
             </div>
@@ -254,7 +254,7 @@ export function ProposalForm() {
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                 placeholder="Informações adicionais sobre sua proposta"
               />
             </div>
