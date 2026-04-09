@@ -362,6 +362,7 @@ export class SupplierFSM extends FSMEngine<SupplierState> {
       deadline: quote.deadline.toLocaleDateString('pt-BR'),
       observations: quote.observations || undefined,
       freight: quote.freight || undefined,
+      paymentTerms: quote.paymentTerms || undefined,
       proposalFormUrl,
     };
 

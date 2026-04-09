@@ -44,6 +44,16 @@ Vou te ajudar a encontrar os melhores preços de forma rápida e automática!
 
 Responda com *1* ou *2*.`,
 
+  ASK_PAYMENT_TERMS: (freight: string) => `✅ *Frete:* ${freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}
+
+💳 *Qual a forma de pagamento desejada?*
+
+Exemplos:
+• À vista
+• 30 dias
+• 30/60/90 dias
+• 50% entrada + 50% na entrega`,
+
   ASK_QUANTITY: (product: string) => `✅ *Produto:* ${product}
 
 *Qual a quantidade desejada?*
@@ -93,6 +103,7 @@ Ou digite sua observação e pressione Enter.`,
     deadline: string;
     observations?: string;
     freight?: string;
+    quotePaymentTerms?: string;
     scope: string;
   }) => {
     const itemsText = summary.items
@@ -104,7 +115,7 @@ Ou digite sua observação e pressione Enter.`,
 ${summary.category ? `🏷️ *Categoria:* ${summary.category}\n` : ''}📦 *Produtos:*\n${itemsText}
 📍 *Região:* ${summary.region}
 ⏰ *Prazo:* ${summary.deadline}
-${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.freight ? `🚚 *Frete:* ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}🎯 *Fornecedores:* ${summary.scope}
+${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.freight ? `🚚 *Frete:* ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}${summary.quotePaymentTerms ? `💳 *Pagamento:* ${summary.quotePaymentTerms}\n` : ''}🎯 *Fornecedores:* ${summary.scope}
 
 ✅ Sim, enviar
 ✏️ Corrigir
@@ -243,6 +254,7 @@ Digite *cancelar* para voltar ao menu.`,
     deadline: string;
     observations?: string;
     freight?: string;
+    paymentTerms?: string;
     proposalFormUrl?: string; // link para formulário web (multi-item)
   }) => {
     const items = quote.items && quote.items.length > 0
@@ -262,6 +274,7 @@ Digite *cancelar* para voltar ao menu.`,
     if (quote.freight) {
       message += `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n`;
     }
+    if (quote.paymentTerms) message += `💳 *Pagamento:* ${quote.paymentTerms}\n`;
     if (quote.observations) message += `📝 *Obs:* ${quote.observations}\n`;
 
     message += `\nVocê tem interesse em enviar uma proposta?\n`;

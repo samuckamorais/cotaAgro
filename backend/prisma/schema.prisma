@@ -182,6 +182,7 @@ model Quote {
   deadline         DateTime
   observations     String?
   freight          String? // CIF (fornecedor entrega) | FOB (produtor busca)
+  paymentTerms     String? // Forma de pagamento desejada (ex: à vista, 30/60/90 dias)
   supplierScope    SupplierScope // MINE | NETWORK | ALL
   status           QuoteStatus // PENDING | COLLECTING | SUMMARIZED | CLOSED | EXPIRED
   expiresAt        DateTime // quando parar de aceitar propostas

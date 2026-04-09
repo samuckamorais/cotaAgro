@@ -146,6 +146,7 @@ export type ProducerState =
   | 'AWAITING_DEADLINE'
   | 'AWAITING_OBSERVATIONS'
   | 'AWAITING_FREIGHT'
+  | 'AWAITING_PAYMENT_TERMS'
   | 'AWAITING_SUPPLIER_SCOPE'
   | 'AWAITING_SUPPLIER_SELECTION'
   | 'AWAITING_SUPPLIER_EXCLUSION'
@@ -188,6 +189,7 @@ export interface ConversationContext {
   deadline?: string;
   observations?: string;
   freight?: 'CIF' | 'FOB';
+  quotePaymentTerms?: string; // Forma de pagamento exigida pelo produtor
   supplierScope?: 'MINE' | 'NETWORK' | 'ALL';
   quoteId?: string;
 

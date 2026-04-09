@@ -21,14 +21,15 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
   'AWAITING_REPEAT_CHOICE': null,
   'AWAITING_IMAGE_CHOICE': null,
   'AWAITING_PROACTIVE_CHOICE': null,
-  'AWAITING_CATEGORY': { step: 1, total: 6, label: 'Categoria', icon: '🏷️' },
-  'AWAITING_PRODUCT': { step: 2, total: 6, label: 'Produto', icon: '📦' },
-  'AWAITING_QUANTITY': { step: 3, total: 6, label: 'Quantidade', icon: '📊' },
+  'AWAITING_CATEGORY': { step: 1, total: 7, label: 'Categoria', icon: '🏷️' },
+  'AWAITING_PRODUCT': { step: 2, total: 7, label: 'Produto', icon: '📦' },
+  'AWAITING_QUANTITY': { step: 3, total: 7, label: 'Quantidade', icon: '📊' },
   'AWAITING_MORE_ITEMS': null,
-  'AWAITING_REGION': { step: 4, total: 6, label: 'Região', icon: '📍' },
-  'AWAITING_DEADLINE': { step: 5, total: 6, label: 'Prazo', icon: '⏰' },
+  'AWAITING_REGION': { step: 4, total: 7, label: 'Região', icon: '📍' },
+  'AWAITING_DEADLINE': { step: 5, total: 7, label: 'Prazo', icon: '⏰' },
   'AWAITING_OBSERVATIONS': null,
-  'AWAITING_FREIGHT': { step: 6, total: 6, label: 'Frete', icon: '🚚' },
+  'AWAITING_FREIGHT': { step: 6, total: 7, label: 'Frete', icon: '🚚' },
+  'AWAITING_PAYMENT_TERMS': { step: 7, total: 7, label: 'Pagamento', icon: '💳' },
   'AWAITING_SUPPLIER_SCOPE': null,
   'AWAITING_SUPPLIER_SELECTION': null,
   'AWAITING_SUPPLIER_EXCLUSION': null,
@@ -136,6 +137,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
         case 'AWAITING_FREIGHT':
           await this.handleAwaitingFreight(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_PAYMENT_TERMS':
+          await this.handleAwaitingPaymentTerms(producerId, producer.phone, message, context);
           break;
 
         case 'AWAITING_SUPPLIER_SCOPE':
@@ -450,6 +455,35 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     }
 
     context.freight = freight;
+
+    const progressHeader = this.getProgressHeader('AWAITING_PAYMENT_TERMS');
+    await whatsappService.sendMessage({
+      to: phone,
+      body: progressHeader + Messages.ASK_PAYMENT_TERMS(freight),
+    });
+    await this.setState(producerId, 'producer', 'AWAITING_PAYMENT_TERMS', context);
+  }
+
+  /**
+   * Estado AWAITING_PAYMENT_TERMS - Aguardando forma de pagamento desejada pelo produtor
+   */
+  private async handleAwaitingPaymentTerms(
+    producerId: string,
+    phone: string,
+    message: string,
+    context: ConversationContext
+  ): Promise<void> {
+    const terms = message.trim();
+
+    if (terms.length < 2) {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: 'Por favor, informe a forma de pagamento. Exemplo: *à vista*, *30 dias*, *30/60/90 dias*.',
+      });
+      return;
+    }
+
+    context.quotePaymentTerms = terms;
 
     await this.askOrApplySupplierScope(producerId, phone, context);
   }
@@ -1135,6 +1169,7 @@ Por favor, responda com:
       deadline: new Date(context.deadline!).toLocaleDateString('pt-BR'),
       observations: context.observations,
       freight: context.freight,
+      quotePaymentTerms: context.quotePaymentTerms,
       scope: scopeLabel,
     };
 
@@ -1215,6 +1250,7 @@ Por favor, responda com:
           deadline: new Date(context.deadline!),
           observations: context.observations,
           freight: context.freight,
+          paymentTerms: context.quotePaymentTerms,
           supplierScope: context.supplierScope!,
           status: 'PENDING',
           expiresAt: new Date(Date.now() + 120 * 60 * 1000),
