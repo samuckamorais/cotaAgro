@@ -196,15 +196,9 @@ export class WhatsAppService {
     if (extracted.supplier) confirmationMsg += `🏢 *Fornecedor:* ${extracted.supplier}\n`;
 
     confirmationMsg += '\n*Quer cotar o mesmo produto?*\n\n';
-    confirmationMsg += '┌────────────────────────────┐\n';
-    confirmationMsg += '│ 1️⃣ Sim, mesma quantidade      │\n';
-    confirmationMsg += '└────────────────────────────┘\n\n';
-    confirmationMsg += '┌────────────────────────────┐\n';
-    confirmationMsg += '│ 2️⃣ Sim, mas alterar quantidade│\n';
-    confirmationMsg += '└────────────────────────────┘\n\n';
-    confirmationMsg += '┌────────────────────────────┐\n';
-    confirmationMsg += '│ 3️⃣ Nova cotação               │\n';
-    confirmationMsg += '└────────────────────────────┘';
+    confirmationMsg += '1️⃣ Sim, mesma quantidade\n';
+    confirmationMsg += '2️⃣ Sim, mas alterar quantidade\n';
+    confirmationMsg += '3️⃣ Nova cotação';
 
     await this.sendMessage({
       to: phone,

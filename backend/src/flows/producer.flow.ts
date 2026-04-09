@@ -902,12 +902,8 @@ Por favor, responda com:
     });
 
     message += '\n❓ *Enviar para todos ou escolher?*\n\n';
-    message += '┌───────────────────────┐\n';
-    message += '│ 1️⃣ Enviar para todos   │\n';
-    message += '└───────────────────────┘\n\n';
-    message += '┌───────────────────────┐\n';
-    message += '│ 2️⃣ Escolher fornecedores │\n';
-    message += '└───────────────────────┘';
+    message += '1️⃣ Enviar para todos\n';
+    message += '2️⃣ Escolher fornecedores';
 
     await whatsappService.sendMessage({
       to: phone,

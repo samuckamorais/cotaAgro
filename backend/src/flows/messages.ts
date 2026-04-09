@@ -72,9 +72,7 @@ Exemplos:
 📝 *Alguma observação adicional?*
 
 Se não tiver observações, é só confirmar:
-┌───────────────────────────┐
-│ ✅ Continuar sem observações │
-└───────────────────────────┘
+✅ Continuar sem observações
 
 Ou digite sua observação e pressione Enter.`,
 
@@ -82,17 +80,9 @@ Ou digite sua observação e pressione Enter.`,
 
 *Para quais fornecedores deseja enviar a cotação?*
 
-┌───────────────────────────┐
-│ 1️⃣ Apenas meus fornecedores  │
-└───────────────────────────┘
-
-┌───────────────────────────┐
-│ 2️⃣ Apenas rede CotaAgro      │
-└───────────────────────────┘
-
-┌───────────────────────────┐
-│ 3️⃣ Todos (meus + rede)       │
-└───────────────────────────┘
+1️⃣ Apenas meus fornecedores
+2️⃣ Apenas rede CotaAgro
+3️⃣ Todos (meus + rede)
 
 *Responda com o número:* 1, 2 ou 3`,
 
@@ -116,13 +106,8 @@ ${summary.category ? `🏷️ *Categoria:* ${summary.category}\n` : ''}📦 *Pro
 ⏰ *Prazo:* ${summary.deadline}
 ${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.freight ? `🚚 *Frete:* ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}🎯 *Fornecedores:* ${summary.scope}
 
-┌──────────────────┐
-│ ✅ Sim, enviar    │
-└──────────────────┘
-
-┌──────────────────┐
-│ ✏️ Corrigir        │
-└──────────────────┘
+✅ Sim, enviar
+✏️ Corrigir
 
 *Está correto?*`;
   },
@@ -457,12 +442,7 @@ Tente novamente em alguns instantes. Se o problema persistir, entre em contato c
 📍 ${last.region}
 ${deadlineText}
 
-┌─────────────────────┐
-│ 1️⃣ Sim, repetir       │
-└─────────────────────┘
-
-┌─────────────────────┐
-│ 2️⃣ Nova cotação      │
-└─────────────────────┘`;
+1️⃣ Sim, repetir
+2️⃣ Nova cotação`;
   },
 };

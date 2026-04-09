@@ -296,15 +296,9 @@ export class PatternDetectionService {
     }
 
     message += '\n*Quer que eu prepare uma cotação agora?*\n\n';
-    message += '┌─────────────────────────┐\n';
-    message += '│ 1️⃣ Sim, cotar agora        │\n';
-    message += '└─────────────────────────┘\n\n';
-    message += '┌─────────────────────────┐\n';
-    message += '│ 2️⃣ Não, depois             │\n';
-    message += '└─────────────────────────┘\n\n';
-    message += '┌─────────────────────────┐\n';
-    message += '│ 3️⃣ Criar cotação recorrente│\n';
-    message += '└─────────────────────────┘';
+    message += '1️⃣ Sim, cotar agora\n';
+    message += '2️⃣ Não, depois\n';
+    message += '3️⃣ Criar cotação recorrente';
 
     return message;
   }
