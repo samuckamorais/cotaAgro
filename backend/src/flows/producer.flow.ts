@@ -330,20 +330,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     tenantId: string,
     prefilledContext: ConversationContext = {}
   ): Promise<void> {
-    // Buscar categorias únicas de todos os fornecedores do tenant
+    // Buscar categorias únicas de todos os fornecedores do tenant (cadastrados)
     const suppliers = await prisma.supplier.findMany({
-      where: {
-        OR: [
-          {
-            isNetworkSupplier: false,
-            producers: { some: { producerId } },
-          },
-          {
-            isNetworkSupplier: true,
-            tenantId,
-          },
-        ],
-      },
+      where: { tenantId },
       select: { categories: true },
     });
 
