@@ -50,9 +50,9 @@ Responda com *1* ou *2*.`,
 
 Exemplos:
 • À vista
-• 30 dias
-• 30/60/90 dias
-• 50% entrada + 50% na entrega`,
+• 30/60
+• Safra
+• Safrinha`,
 
   ASK_QUANTITY: (product: string) => `✅ *Produto:* ${product}
 
