@@ -13,6 +13,7 @@ interface QuoteItem {
 
 interface FormData {
   token: string;
+  expiresAt: string;
   supplier: { name: string };
   quote: {
     producerName: string;
@@ -41,6 +42,8 @@ export function ProposalForm() {
   const [paymentTerms, setPaymentTerms] = useState('');
   const [deliveryDays, setDeliveryDays] = useState('');
   const [observations, setObservations] = useState('');
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -56,6 +59,31 @@ export function ProposalForm() {
         setLoading(false);
       });
   }, [token]);
+
+  useEffect(() => {
+    if (!formData?.expiresAt) return;
+
+    const calc = () => {
+      const diff = new Date(formData.expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setExpired(true);
+        setTimeLeft(null);
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(
+        h > 0
+          ? `${h}h ${String(m).padStart(2, '0')}min`
+          : `${m}min ${String(s).padStart(2, '0')}s`
+      );
+    };
+
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, [formData?.expiresAt]);
 
   const totalPrice = formData?.quote.items.reduce((sum, item) => {
     if (skipped[item.id]) return sum;
@@ -129,8 +157,19 @@ export function ProposalForm() {
     );
   }
 
+  if (expired) {
+    return (
+      <div className="min-h-screen bg-red-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-5xl mb-4">⏰</div>
+        <h1 className="text-xl font-bold text-red-700 mb-2">Link expirado</h1>
+        <p className="text-red-600">O prazo para envio desta proposta encerrou. Entre em contato com o produtor.</p>
+      </div>
+    );
+  }
+
   const q = formData!.quote;
   const deadlineFormatted = new Date(q.deadline).toLocaleDateString('pt-BR');
+  const isUrgent = timeLeft !== null && !timeLeft.includes('h');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -142,6 +181,13 @@ export function ProposalForm() {
           <p className="text-green-100 text-sm">{q.producerCity}</p>
         </div>
       </div>
+
+      {/* Countdown banner */}
+      {timeLeft && (
+        <div className={`px-4 py-3 text-center text-sm font-semibold ${isUrgent ? 'bg-red-500 text-white' : 'bg-amber-400 text-amber-900'}`}>
+          ⏳ Este link expira em {timeLeft}
+        </div>
+      )}
 
       {/* Quote details */}
       <div className="max-w-lg mx-auto px-4 py-4">

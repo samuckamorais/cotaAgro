@@ -44,12 +44,13 @@ export class ProposalController {
       return;
     }
 
-    const { quote, supplier } = record;
+    const { quote, supplier, expiresAt } = record;
 
     res.json({
       success: true,
       data: {
         token,
+        expiresAt: expiresAt.toISOString(),
         supplier: { name: supplier.name },
         quote: {
           producerName: quote.producer.name,
