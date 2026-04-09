@@ -97,17 +97,31 @@ fi
 
 # -----------------------------------------------------------
 # 4. Atualizar DATABASE_URL no .env
+#    ATENÇÃO: apenas DATABASE_URL é alterada.
+#    Variáveis como EVOLUTION_INSTANCE_NAME, REDIS_URL, etc.
+#    apontam para recursos externos e NÃO devem ser renomeadas.
 # -----------------------------------------------------------
 echo -e "${YELLOW}[4/6] Atualizando .env...${NC}"
 
 if [ -f ".env" ]; then
-  # Normalizar CRLF e substituir referências antigas
+  # Normalizar CRLF
   sed -i 's/\r//' .env
-  sed -i 's|cotaagro|farmflow|g' .env
-  sed -i 's|cotaAgro|farmflow|g' .env
-  echo -e "${GREEN}✅ .env atualizado${NC}"
+
+  # Atualizar apenas DATABASE_URL (recurso interno gerenciado pelo compose)
+  if grep -q "^DATABASE_URL=.*cotaagro" .env || grep -q "^DATABASE_URL=.*cotaAgro" .env; then
+    sed -i 's|^\(DATABASE_URL=.*\)cotaagro|\1farmflow|g' .env
+    sed -i 's|^\(DATABASE_URL=.*\)cotaAgro|\1farmflow|g' .env
+    echo -e "${GREEN}✅ DATABASE_URL atualizada para farmflow${NC}"
+  else
+    echo -e "${GREEN}✅ DATABASE_URL já está correta ou não presente no .env${NC}"
+  fi
+
   echo "  DATABASE_URL atual:"
   grep "^DATABASE_URL" .env || echo "  (não encontrado no .env — será injetado pelo docker-compose.yml)"
+
+  echo ""
+  echo -e "${YELLOW}  ℹ️  Variáveis NÃO alteradas (recursos externos):${NC}"
+  grep -E "^EVOLUTION_INSTANCE_NAME|^REDIS_URL|^WEBHOOK_URL" .env 2>/dev/null || true
 else
   echo -e "${YELLOW}⚠️  Arquivo .env não encontrado — pulando${NC}"
 fi
