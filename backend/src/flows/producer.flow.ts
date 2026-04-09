@@ -846,7 +846,22 @@ Por favor, responda com:
       ],
     });
 
-    if (suppliers.length === 0) {
+    // Filtrar por categoria da cotação (case-insensitive)
+    const filteredSuppliers = context.category
+      ? suppliers.filter((s: any) =>
+          s.categories.some(
+            (cat: string) => cat.toLowerCase() === context.category!.toLowerCase()
+          )
+        )
+      : suppliers;
+
+    const suppliersToUse = filteredSuppliers.length > 0 ? filteredSuppliers : suppliers;
+    const categoryWarning =
+      context.category && filteredSuppliers.length === 0
+        ? `⚠️ Nenhum fornecedor cadastrado para a categoria *${context.category}*. Mostrando todos.\n\n`
+        : '';
+
+    if (suppliersToUse.length === 0) {
       await whatsappService.sendMessage({
         to: phone,
         body: 'Você ainda não possui fornecedores cadastrados. Vou enviar para a rede CotaAgro.',
@@ -857,7 +872,7 @@ Por favor, responda com:
     }
 
     // Salvar lista de fornecedores disponíveis no contexto
-    context.availableSuppliers = suppliers.map((s: any) => ({
+    context.availableSuppliers = suppliersToUse.map((s: any) => ({
       id: s.id,
       name: s.name,
       phone: s.phone,
@@ -865,9 +880,10 @@ Por favor, responda com:
     context.excludedSuppliers = [];
 
     // Montar mensagem com lista numerada e informações
-    let message = `📋 *Seus Fornecedores* (${suppliers.length} encontrados)\n\n`;
+    const categoryLabel = context.category ? ` — ${context.category}` : '';
+    let message = `${categoryWarning}📋 *Seus Fornecedores*${categoryLabel} (${suppliersToUse.length} encontrados)\n\n`;
 
-    suppliers.forEach((supplier: any, index: number) => {
+    suppliersToUse.forEach((supplier: any, index: number) => {
       // Rating com estrelas
       const stars = supplier.rating > 0 ? `⭐ ${supplier.rating.toFixed(1)}` : '🆕 Novo';
 
