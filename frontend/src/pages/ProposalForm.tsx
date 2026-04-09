@@ -192,11 +192,17 @@ export function ProposalForm() {
                         placeholder="0,00"
                       />
                     </div>
-                    {prices[item.id] && parseFloat(prices[item.id]) > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Total: R$ {(parseFloat(prices[item.id].replace(',', '.')) * item.quantity).toFixed(2)}
-                      </p>
-                    )}
+                    {(() => {
+                      const rawPrice = prices[item.id];
+                      if (!rawPrice) return null;
+                      const unitPrice = parseFloat(rawPrice.replace(',', '.'));
+                      if (isNaN(unitPrice) || unitPrice <= 0) return null;
+                      return (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Total: R$ {(unitPrice * item.quantity).toFixed(2)}
+                        </p>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
