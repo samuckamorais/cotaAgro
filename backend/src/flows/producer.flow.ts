@@ -932,10 +932,13 @@ Por favor, responda com:
 
     // Opção 2: Escolher fornecedores
     if (normalized === '2' || normalized.includes('escolher')) {
-      // Mostrar mensagem para digitar números a excluir
+      const availableSuppliers = context.availableSuppliers || [];
+      const supplierList = availableSuppliers
+        .map((s, i) => `${i + 1}. ${s.name}`)
+        .join('\n');
       await whatsappService.sendMessage({
         to: phone,
-        body: `Digite os *números* dos fornecedores que deseja *REMOVER* (separados por vírgula):\n\nExemplo: 1,3\n\nOu digite *voltar* para enviar para todos.`,
+        body: `Fornecedores selecionados:\n${supplierList}\n\nDigite os *números* dos fornecedores que deseja *REMOVER* (separados por vírgula):\n\nExemplo: 1,3\n\nOu digite *voltar* para enviar para todos.`,
       });
       // Continuar no mesmo estado aguardando os números
       return;
