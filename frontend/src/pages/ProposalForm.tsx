@@ -192,6 +192,7 @@ export function ProposalForm() {
       {/* Quote details */}
       <div className="max-w-lg mx-auto px-4 py-4">
         <div className="bg-white rounded-lg shadow-sm p-4 mb-4 text-sm space-y-1 text-gray-800">
+          <p>🧑‍🌾 <strong>Produtor:</strong> {q.producerName} — {q.producerCity}</p>
           {q.category && <p>🏷️ <strong>Categoria:</strong> {q.category}</p>}
           <p>📅 <strong>Dt. Entrega:</strong> {deadlineFormatted}</p>
           <p>📍 <strong>Região:</strong> {q.region}</p>
