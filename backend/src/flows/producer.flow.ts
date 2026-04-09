@@ -1210,10 +1210,10 @@ Por favor, responda com:
       data: {
         lastQuotePreferences: {
           category: context.category,
-          items,
+          items: items as any,
           region: context.region,
           deadline: context.deadline,
-        },
+        } as any,
       },
     });
 

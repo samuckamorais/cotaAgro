@@ -43,8 +43,9 @@ export class PatternDetectionService {
       // Analisar produto mais cotado
       const productCounts = new Map<string, number>();
       recentQuotes.forEach((quote) => {
-        const count = productCounts.get(quote.product) || 0;
-        productCounts.set(quote.product, count + 1);
+        const product = quote.product ?? '';
+        const count = productCounts.get(product) || 0;
+        productCounts.set(product, count + 1);
       });
 
       const mostQuotedProduct = Array.from(productCounts.entries()).sort(
@@ -57,10 +58,14 @@ export class PatternDetectionService {
       }
 
       const product = mostQuotedProduct[0];
-      const productQuotes = recentQuotes.filter((q) => q.product === product);
+      const productQuotes = recentQuotes.filter((q) => (q.product ?? '') === product);
 
-      // Calcular quantidade média
-      const avgQuantity = this.calculateAverageQuantity(productQuotes);
+      // Calcular quantidade média (filtrar registros com quantity/unit preenchidos)
+      const productQuotesWithQty = productQuotes
+        .filter((q): q is typeof q & { quantity: string; unit: string } =>
+          q.quantity !== null && q.unit !== null
+        );
+      const avgQuantity = this.calculateAverageQuantity(productQuotesWithQty);
 
       // Analisar frequência temporal
       const frequencyPattern = this.analyzeTemporalFrequency(productQuotes);
