@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/p';
 
 interface QuoteItem {
   id: string;
@@ -45,7 +45,7 @@ export function ProposalForm() {
   useEffect(() => {
     if (!token) return;
     axios
-      .get(`${API_BASE}/proposta/${token}`)
+      .get(`${API_BASE}/${token}`)
       .then((res) => {
         setFormData(res.data.data);
         setLoading(false);
@@ -83,7 +83,7 @@ export function ProposalForm() {
 
     setSubmitting(true);
     try {
-      await axios.post(`${API_BASE}/proposta/${token}`, {
+      await axios.post(`${API_BASE}/${token}`, {
         items,
         paymentTerms,
         deliveryDays: parseInt(deliveryDays),

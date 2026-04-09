@@ -24,7 +24,7 @@ export class ProposalTokenService {
       return this.buildUrl(existing.token);
     }
 
-    const token = crypto.randomBytes(12).toString('hex');
+    const token = crypto.randomBytes(4).toString('hex');
     const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
     await prisma.proposalToken.create({
@@ -82,6 +82,6 @@ export class ProposalTokenService {
   }
 
   private static buildUrl(token: string): string {
-    return `${env.FRONTEND_URL}/proposta/${token}`;
+    return `${env.FRONTEND_URL}/p/${token}`;
   }
 }

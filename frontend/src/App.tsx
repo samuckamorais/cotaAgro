@@ -37,6 +37,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 {/* Rota pública para formulário de proposta do fornecedor */}
                 <Route path="/proposta/:token" element={<ProposalForm />} />
+                <Route path="/p/:token" element={<ProposalForm />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/*" element={<ProtectedLayout />} />
               </Routes>

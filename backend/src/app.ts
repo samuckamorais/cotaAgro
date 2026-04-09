@@ -56,6 +56,8 @@ export function createApp(): Application {
   // Proposal form routes (public — token-based, sem autenticação)
   apiRouter.get('/proposta/:token', ProposalController.getForm);
   apiRouter.post('/proposta/:token', ProposalController.submitForm);
+  apiRouter.get('/p/:token', ProposalController.getForm);
+  apiRouter.post('/p/:token', ProposalController.submitForm);
 
   // WhatsApp webhook routes (public)
   apiRouter.get('/whatsapp/webhook', WhatsAppController.verifyWebhook);
