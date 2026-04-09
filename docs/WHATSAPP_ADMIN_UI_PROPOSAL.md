@@ -1,14 +1,14 @@
 # Proposta: Interface Admin para Configuração WhatsApp (SaaS Multi-Tenant)
 
 **Data:** 07/04/2026  
-**Contexto:** CotaAgro como SaaS multi-tenant  
+**Contexto:** FarmFlow como SaaS multi-tenant  
 **Prioridade:** 🔥 ALTA (P1 - Essencial para modelo SaaS)
 
 ---
 
 ## 🎯 Justificativa
 
-Como CotaAgro será um **SaaS multi-tenant**, cada cliente precisa configurar seu próprio WhatsApp:
+Como FarmFlow será um **SaaS multi-tenant**, cada cliente precisa configurar seu próprio WhatsApp:
 
 ### ❌ **Problemas sem interface web:**
 - Cliente depende do suporte técnico para configurar
@@ -56,7 +56,7 @@ Como CotaAgro será um **SaaS multi-tenant**, cada cliente precisa configurar se
        └───────────────────┴───────────────────┘
                            │
                   ┌────────▼────────┐
-                  │   CotaAgro      │
+                  │   FarmFlow      │
                   │   Backend       │
                   │  (Multi-tenant) │
                   └────────┬────────┘
@@ -147,7 +147,7 @@ model WhatsAppConfigLog {
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  CotaAgro Dashboard                          [User ▾] [Sair]  │
+│  FarmFlow Dashboard                          [User ▾] [Sair]  │
 ├───────────────────────────────────────────────────────────────┤
 │  Sidebar:                    │  WhatsApp Configuration         │
 │  • Dashboard                 │                                 │
@@ -173,7 +173,7 @@ model WhatsAppConfigLog {
 │                              │  ┌─ Evolution API Settings ─┐  │
 │                              │  │ URL: [localhost:8080]     │  │
 │                              │  │ Key: [••••••••••••••]     │  │
-│                              │  │ Nome: [cotaagro]          │  │
+│                              │  │ Nome: [farmflow]          │  │
 │                              │  │ [🔗 Conectar QR Code]     │  │
 │                              │  └───────────────────────────┘  │
 │                              │                                 │
@@ -257,7 +257,7 @@ Body: {
   credentials: {
     apiUrl: "http://localhost:8080",
     apiKey: "abc123",
-    instanceName: "cotaagro"
+    instanceName: "farmflow"
   }
 }
 

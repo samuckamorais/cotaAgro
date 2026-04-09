@@ -1,4 +1,4 @@
-# Scripts de Deploy e Manutenção - CotaAgro
+# Scripts de Deploy e Manutenção - FarmFlow
 
 Scripts para facilitar o deploy e manutenção da aplicação na VPS.
 
@@ -38,7 +38,7 @@ bash scripts/vps-deploy.sh
 13. ✅ Faz health check
 
 **Credenciais criadas:**
-- Email: `admin@cotaagro.com`
+- Email: `admin@farmflow.com`
 - Senha: `Farmflow0147*`
 
 **Funcionalidades disponíveis:**
@@ -102,8 +102,8 @@ bash scripts/vps-fix-db.sh
 ssh usuario@187.77.255.92
 
 # 2. Clonar repositório
-git clone https://github.com/samuckamorais/cotaAgro.git
-cd cotaAgro
+git clone https://github.com/samuckamorais/farmFlow.git
+cd farmFlow
 
 # 3. Instalar dependências (opcional)
 bash scripts/vps-install.sh
@@ -157,7 +157,7 @@ docker compose up -d
 
 ## 🔐 Credenciais Padrão
 
-- **Email:** admin@cotaagro.com
+- **Email:** admin@farmflow.com
 - **Senha:** Farmflow0147*
 
 ---

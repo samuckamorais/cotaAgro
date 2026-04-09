@@ -3,7 +3,7 @@
  */
 
 // Mock de variáveis de ambiente para testes
-process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/cotaagro_test';
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/farmflow_test';
 process.env.REDIS_URL = 'redis://localhost:6379/1';
 process.env.JWT_SECRET = 'test_jwt_secret_with_at_least_32_chars';
 process.env.NODE_ENV = 'test';

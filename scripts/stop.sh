@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Script de Stop
+# FarmFlow - Script de Stop
 # Para os containers
 
 set -e
 
-echo "🛑 CotaAgro - Parando containers..."
+echo "🛑 FarmFlow - Parando containers..."
 
 # Verificar se está no diretório correto
 cd "$(dirname "$0")/.."

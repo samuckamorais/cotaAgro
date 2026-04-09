@@ -176,7 +176,7 @@ identify(userId: string) // No-op para privacidade
 **Implementação Plausible**:
 ```tsx
 // Injeta script automaticamente
-<script defer data-domain="cotaagro.com.br" 
+<script defer data-domain="farmflow.com.br" 
         src="https://plausible.io/js/script.js"></script>
 
 // Track eventos
@@ -316,7 +316,7 @@ VITE_API_URL=http://localhost:3000
 # Analytics
 VITE_ANALYTICS_ENABLED=false
 VITE_ANALYTICS_PROVIDER=plausible
-VITE_ANALYTICS_SITE_ID=cotaagro.com.br
+VITE_ANALYTICS_SITE_ID=farmflow.com.br
 VITE_ANALYTICS_ENDPOINT= # Para custom provider
 
 # Error Tracking
@@ -474,14 +474,14 @@ npm run dev
 ### 2. Production with Plausible
 
 **Passo 1**: Crie conta em https://plausible.io  
-**Passo 2**: Adicione seu site (ex: `cotaagro.com.br`)  
+**Passo 2**: Adicione seu site (ex: `farmflow.com.br`)  
 **Passo 3**: Configure environment:
 
 ```bash
 # .env.production
 VITE_ANALYTICS_ENABLED=true
 VITE_ANALYTICS_PROVIDER=plausible
-VITE_ANALYTICS_SITE_ID=cotaagro.com.br
+VITE_ANALYTICS_SITE_ID=farmflow.com.br
 VITE_ENABLE_PERFORMANCE_MONITORING=true
 ```
 

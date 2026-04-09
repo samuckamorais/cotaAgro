@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Script de Reset Completo
+# FarmFlow - Script de Reset Completo
 # Para containers e remove volumes (CUIDADO: apaga dados!)
 
 set -e
 
-echo "🌾 CotaAgro - Reset Completo"
+echo "🌾 FarmFlow - Reset Completo"
 echo "=============================="
 echo ""
 echo "⚠️  ATENÇÃO: Este comando irá:"

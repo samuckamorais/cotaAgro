@@ -1,4 +1,4 @@
-# 🚀 CotaAgro - Guia de Início Rápido
+# 🚀 FarmFlow - Guia de Início Rápido
 
 Este guia rápido mostra como subir o projeto em **menos de 5 minutos** e testar o fluxo completo.
 
@@ -15,7 +15,7 @@ Este guia rápido mostra como subir o projeto em **menos de 5 minutos** e testar
 ## Passo 1: Clone e Configure
 
 ```bash
-cd /Users/samuelgm/Workspace/flow/cotaagro
+cd /Users/samuelgm/Workspace/flow/farmflow
 
 # Copiar .env de exemplo
 cp .env.example .env
@@ -24,7 +24,7 @@ cp .env.example .env
 Edite o `.env` e configure **apenas o essencial**:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cotaagro
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/farmflow
 REDIS_URL=redis://redis:6379
 JWT_SECRET=meu_secret_jwt_com_pelo_menos_32_caracteres_aqui
 WHATSAPP_PROVIDER=twilio
@@ -238,7 +238,7 @@ Se estiver testando localmente com Twilio/Evolution API:
 
 ## 🎉 Pronto!
 
-Você agora tem o **CotaAgro** rodando localmente. O sistema está pronto para:
+Você agora tem o **FarmFlow** rodando localmente. O sistema está pronto para:
 
 ✅ Receber mensagens via WhatsApp
 ✅ Processar com FSM

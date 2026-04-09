@@ -138,7 +138,7 @@ function EvolutionForm({ values, onChange, disabled, onShowQRCode }: EvolutionFo
         <Label htmlFor="instanceName">Nome da Instância</Label>
         <Input
           id="instanceName"
-          placeholder="cotaagro"
+          placeholder="farmflow"
           value={values.instanceName}
           onChange={(e) => onChange({ ...values, instanceName: e.target.value })}
           disabled={disabled}

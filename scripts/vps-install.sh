@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================
-# CotaAgro - Instalação inicial da VPS (Ubuntu 24.04)
+# FarmFlow - Instalação inicial da VPS (Ubuntu 24.04)
 # Execute como root ou com sudo: bash vps-install.sh
 # =============================================================
 
@@ -14,7 +14,7 @@ NC='\033[0m'
 
 echo ""
 echo "============================================="
-echo " CotaAgro - Instalação da VPS"
+echo " FarmFlow - Instalação da VPS"
 echo "============================================="
 echo ""
 
@@ -92,12 +92,12 @@ ufw status
 # 6. Clonar repositório
 # -----------------------------------------------------------
 echo -e "${YELLOW}[6/7] Clonando repositório...${NC}"
-REPO_DIR="/home/deploy/cotaAgro"
+REPO_DIR="/home/deploy/farmFlow"
 
 if [ -d "$REPO_DIR" ]; then
   echo "Repositório já existe em $REPO_DIR"
 else
-  read -p "URL do repositório Git (ex: https://github.com/user/cotaAgro.git): " REPO_URL
+  read -p "URL do repositório Git (ex: https://github.com/user/farmFlow.git): " REPO_URL
   git clone "$REPO_URL" "$REPO_DIR"
   chown -R deploy:deploy "$REPO_DIR"
 fi

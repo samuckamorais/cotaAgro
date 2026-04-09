@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Script de Restart
+# FarmFlow - Script de Restart
 # Para e reinicia os containers
 
 set -e
 
-echo "🔄 CotaAgro - Reiniciando..."
+echo "🔄 FarmFlow - Reiniciando..."
 
 # Verificar se está no diretório correto
 cd "$(dirname "$0")/.."

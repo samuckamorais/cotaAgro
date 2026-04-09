@@ -1,4 +1,4 @@
-# ✅ IMPLEMENTAÇÃO COMPLETA - CotaAgro
+# ✅ IMPLEMENTAÇÃO COMPLETA - FarmFlow
 
 **Data**: 30 de Março de 2024
 **Status**: 🎉 **SISTEMA 100% IMPLEMENTADO**
@@ -257,7 +257,7 @@ GET /api/dashboard/top-products
 ### 1. Backend + Frontend com Docker
 
 ```bash
-cd /Users/samuelgm/Workspace/flow/cotaagro
+cd /Users/samuelgm/Workspace/flow/farmflow
 
 # Subir todos os serviços
 docker-compose up -d
@@ -405,7 +405,7 @@ Ao acessar http://localhost:5173, você verá:
 
 ## 🎉 SISTEMA PRONTO PARA PRODUÇÃO!
 
-O **CotaAgro** agora está **100% funcional** com:
+O **FarmFlow** agora está **100% funcional** com:
 
 ✅ Backend completo (API REST + FSM + Jobs)
 ✅ Frontend funcional (Dashboard + Cotações)

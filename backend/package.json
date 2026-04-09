@@ -1,7 +1,7 @@
 {
-  "name": "cotaagro-backend",
+  "name": "farmflow-backend",
   "version": "1.0.0",
-  "description": "Backend do CotaAgro - Sistema de cotações agrícolas via WhatsApp",
+  "description": "Backend do FarmFlow - Sistema de cotações agrícolas via WhatsApp",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

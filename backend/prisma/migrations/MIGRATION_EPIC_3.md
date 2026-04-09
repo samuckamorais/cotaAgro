@@ -131,7 +131,7 @@ This will:
 ### Option 2: Manual SQL Execution
 ```bash
 # Connect to PostgreSQL
-psql -U postgres -d cotaagro
+psql -U postgres -d farmflow
 
 # Run the migration SQL
 \i prisma/migrations/20260402190000_epic_3_analytics/migration.sql
@@ -236,7 +236,7 @@ curl -X POST http://localhost:3000/webhook/whatsapp \
   -d '{"from": "+5564999999999", "body": "oi"}'
 
 # Check metrics were recorded
-psql -U postgres -d cotaagro -c "SELECT * FROM conversation_metrics ORDER BY timestamp DESC LIMIT 10;"
+psql -U postgres -d farmflow -c "SELECT * FROM conversation_metrics ORDER BY timestamp DESC LIMIT 10;"
 
 # Test analytics endpoints
 curl "http://localhost:3000/api/analytics/overview?startDate=2026-04-01&endDate=2026-04-03"
@@ -259,7 +259,7 @@ curl -X POST http://localhost:3000/api/analytics/experiments \
   }'
 
 # Check assignment
-psql -U postgres -d cotaagro -c "SELECT * FROM experiments;"
+psql -U postgres -d farmflow -c "SELECT * FROM experiments;"
 
 # Assign users (done automatically in code)
 # Verify distribution

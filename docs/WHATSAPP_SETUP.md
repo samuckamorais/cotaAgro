@@ -1,6 +1,6 @@
-# Guia de Configuração do WhatsApp - CotaAgro
+# Guia de Configuração do WhatsApp - FarmFlow
 
-Este guia explica como configurar o WhatsApp para comunicação com o sistema CotaAgro.
+Este guia explica como configurar o WhatsApp para comunicação com o sistema FarmFlow.
 
 ## 📋 Índice
 
@@ -17,7 +17,7 @@ Este guia explica como configurar o WhatsApp para comunicação com o sistema Co
 
 ## Visão Geral
 
-O CotaAgro suporta dois providers de WhatsApp:
+O FarmFlow suporta dois providers de WhatsApp:
 
 | Provider | Tipo | Custo | Complexidade | Recomendado para |
 |----------|------|-------|--------------|------------------|
@@ -28,7 +28,7 @@ O CotaAgro suporta dois providers de WhatsApp:
 
 ```
 ┌─────────────┐         ┌──────────────┐         ┌───────────────┐
-│  WhatsApp   │ ──────> │   Provider   │ ──────> │  CotaAgro     │
+│  WhatsApp   │ ──────> │   Provider   │ ──────> │  FarmFlow     │
 │  (Usuário)  │ <────── │ (Twilio/Evo) │ <────── │  Backend      │
 └─────────────┘         └──────────────┘         └───────────────┘
                               │                          │
@@ -154,7 +154,7 @@ curl -X POST http://localhost:8080/instance/create \
   -H "Content-Type: application/json" \
   -H "apikey: sua_chave_secreta" \
   -d '{
-    "instanceName": "cotaagro",
+    "instanceName": "farmflow",
     "qrcode": true,
     "integration": "WHATSAPP-BAILEYS"
   }'
@@ -164,12 +164,12 @@ curl -X POST http://localhost:8080/instance/create \
 
 1. Acesse: http://localhost:8080/manager
 2. Clique em "New Instance"
-3. Nome: `cotaagro`
+3. Nome: `farmflow`
 4. Tipo: WhatsApp Baileys
 
 #### 2.3. Conectar ao WhatsApp
 
-1. Acesse: http://localhost:8080/instance/connect/cotaagro
+1. Acesse: http://localhost:8080/instance/connect/farmflow
 2. Escaneie o QR Code com seu WhatsApp:
    - Abra WhatsApp
    - Menu → Aparelhos conectados
@@ -184,7 +184,7 @@ Edite `backend/.env`:
 WHATSAPP_PROVIDER=evolution
 EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=sua_chave_secreta
-EVOLUTION_INSTANCE_NAME=cotaagro
+EVOLUTION_INSTANCE_NAME=farmflow
 ```
 
 #### 2.5. Configurar Webhook na Evolution API
@@ -192,7 +192,7 @@ EVOLUTION_INSTANCE_NAME=cotaagro
 **Via API:**
 
 ```bash
-curl -X POST http://localhost:8080/webhook/set/cotaagro \
+curl -X POST http://localhost:8080/webhook/set/farmflow \
   -H "Content-Type: application/json" \
   -H "apikey: sua_chave_secreta" \
   -d '{
@@ -214,24 +214,24 @@ curl -X POST http://localhost:8080/webhook/set/cotaagro \
 
 ## Configuração de Webhook
 
-O webhook é a URL que o provider usa para enviar mensagens recebidas ao CotaAgro.
+O webhook é a URL que o provider usa para enviar mensagens recebidas ao FarmFlow.
 
 ### Produção
 
 Configure um domínio público:
 
 ```bash
-WEBHOOK_URL=https://api.cotaagro.com.br
+WEBHOOK_URL=https://api.farmflow.com.br
 ```
 
-O endpoint completo será: `https://api.cotaagro.com.br/api/webhook/whatsapp`
+O endpoint completo será: `https://api.farmflow.com.br/api/webhook/whatsapp`
 
 ### Staging
 
 Use um servidor de staging:
 
 ```bash
-WEBHOOK_URL=https://staging.cotaagro.com.br
+WEBHOOK_URL=https://staging.farmflow.com.br
 ```
 
 ---
@@ -306,7 +306,7 @@ cloudflared tunnel --url http://localhost:3000
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/cotaagro
+DATABASE_URL=postgresql://user:pass@localhost:5432/farmflow
 REDIS_URL=redis://localhost:6379
 
 # Server
@@ -320,7 +320,7 @@ TWILIO_AUTH_TOKEN=your_auth_token_here
 TWILIO_WHATSAPP_NUMBER=+14155238886
 
 # Webhook
-WEBHOOK_URL=https://api.cotaagro.com.br
+WEBHOOK_URL=https://api.farmflow.com.br
 
 # OpenAI
 OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx
@@ -335,7 +335,7 @@ JWT_EXPIRES_IN=7d
 
 ```bash
 # Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cotaagro_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/farmflow_dev
 REDIS_URL=redis://localhost:6379
 
 # Server
@@ -346,7 +346,7 @@ NODE_ENV=development
 WHATSAPP_PROVIDER=evolution
 EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=my_dev_api_key
-EVOLUTION_INSTANCE_NAME=cotaagro
+EVOLUTION_INSTANCE_NAME=farmflow
 
 # Webhook (ngrok)
 WEBHOOK_URL=https://abc123.ngrok.io
@@ -407,7 +407,7 @@ Message sent via Twilio { to: '+5564999999999' }
 O bot deve responder com a mensagem de boas-vindas:
 
 ```
-Olá [Nome]! 👋 Bem-vindo ao CotaAgro
+Olá [Nome]! 👋 Bem-vindo ao FarmFlow
 
 💡 Economize até 5 horas por semana em cotações de insumos agrícolas.
 
@@ -459,13 +459,13 @@ Vou te ajudar a encontrar os melhores preços de forma rápida e automática!
 ```bash
 # Verificar webhook configurado
 curl -H "apikey: sua_chave" \
-  http://localhost:8080/webhook/find/cotaagro
+  http://localhost:8080/webhook/find/farmflow
 
 # Reconfigurar webhook
 curl -X POST -H "apikey: sua_chave" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://sua-url.com/api/webhook/whatsapp"}' \
-  http://localhost:8080/webhook/set/cotaagro
+  http://localhost:8080/webhook/set/farmflow
 ```
 
 ---
@@ -478,7 +478,7 @@ curl -X POST -H "apikey: sua_chave" \
 
 1. Reconectar via QR Code:
    ```
-   http://localhost:8080/instance/connect/cotaagro
+   http://localhost:8080/instance/connect/farmflow
    ```
 
 2. Verificar logs da Evolution API:
@@ -489,12 +489,12 @@ curl -X POST -H "apikey: sua_chave" \
 3. Se persistir, recriar instância:
    ```bash
    curl -X DELETE -H "apikey: sua_chave" \
-     http://localhost:8080/instance/delete/cotaagro
+     http://localhost:8080/instance/delete/farmflow
    
    # Criar novamente
    curl -X POST -H "apikey: sua_chave" \
      -H "Content-Type: application/json" \
-     -d '{"instanceName": "cotaagro"}' \
+     -d '{"instanceName": "farmflow"}' \
      http://localhost:8080/instance/create
    ```
 
@@ -528,7 +528,7 @@ curl -X POST -H "apikey: sua_chave" \
 1. Verifique status da conexão:
    ```bash
    curl -H "apikey: sua_chave" \
-     http://localhost:8080/instance/connectionState/cotaagro
+     http://localhost:8080/instance/connectionState/farmflow
    ```
 2. Se `state != "open"`, reconecte via QR Code
 
@@ -541,7 +541,7 @@ curl -X POST -H "apikey: sua_chave" \
 ```bash
 # Status da instância
 curl -H "apikey: sua_chave" \
-  http://localhost:8080/instance/connectionState/cotaagro
+  http://localhost:8080/instance/connectionState/farmflow
 
 # Listar todas as instâncias
 curl -H "apikey: sua_chave" \
@@ -549,7 +549,7 @@ curl -H "apikey: sua_chave" \
 
 # Logs da instância
 curl -H "apikey: sua_chave" \
-  http://localhost:8080/instance/logs/cotaagro
+  http://localhost:8080/instance/logs/farmflow
 ```
 
 ### Enviar mensagem teste via API
@@ -558,7 +558,7 @@ curl -H "apikey: sua_chave" \
 
 ```bash
 curl -X POST https://api.twilio.com/2010-04-01/Accounts/ACCOUNT_SID/Messages.json \
-  --data-urlencode "Body=Teste CotaAgro" \
+  --data-urlencode "Body=Teste FarmFlow" \
   --data-urlencode "From=whatsapp:+14155238886" \
   --data-urlencode "To=whatsapp:+5564999999999" \
   -u ACCOUNT_SID:AUTH_TOKEN
@@ -567,12 +567,12 @@ curl -X POST https://api.twilio.com/2010-04-01/Accounts/ACCOUNT_SID/Messages.jso
 **Evolution API:**
 
 ```bash
-curl -X POST http://localhost:8080/message/sendText/cotaagro \
+curl -X POST http://localhost:8080/message/sendText/farmflow \
   -H "Content-Type: application/json" \
   -H "apikey: sua_chave" \
   -d '{
     "number": "5564999999999",
-    "text": "Teste CotaAgro"
+    "text": "Teste FarmFlow"
   }'
 ```
 
@@ -583,7 +583,7 @@ curl -X POST http://localhost:8080/message/sendText/cotaagro \
 npm run prisma:studio
 
 # Ou via psql
-psql cotaagro
+psql farmflow
 DELETE FROM conversation_states WHERE producerId = 'ID_DO_PRODUTOR';
 ```
 
@@ -618,7 +618,7 @@ Após configurar o WhatsApp:
 
 - **Twilio Docs:** https://www.twilio.com/docs/whatsapp
 - **Evolution API Docs:** https://doc.evolution-api.com/
-- **CotaAgro Docs:** [../README.md](../README.md)
+- **FarmFlow Docs:** [../README.md](../README.md)
 - **Análise UX:** [WHATSAPP_UX_ANALYSIS.md](../WHATSAPP_UX_ANALYSIS.md)
 - **Product Backlog:** [WHATSAPP_PRODUCT_BACKLOG.md](../WHATSAPP_PRODUCT_BACKLOG.md)
 

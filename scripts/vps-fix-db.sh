@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================
-# CotaAgro - Script de Correção do Banco de Dados
+# FarmFlow - Script de Correção do Banco de Dados
 # Execute quando houver problemas de login ou dados
 # =============================================================
 
@@ -17,7 +17,7 @@ cd "$REPO_DIR"
 
 echo ""
 echo "============================================="
-echo " CotaAgro - Correção do Banco de Dados"
+echo " FarmFlow - Correção do Banco de Dados"
 echo "============================================="
 echo ""
 
@@ -50,8 +50,8 @@ echo -e "${GREEN}✅ Migrations aplicadas${NC}"
 echo -e "${YELLOW}[3/3] Verificando usuário Admin...${NC}"
 
 # Verificar se usuário admin existe
-ADMIN_EXISTS=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
-  "SELECT COUNT(*) FROM \"User\" WHERE email='admin@cotaagro.com';" 2>/dev/null || echo "0")
+ADMIN_EXISTS=$(docker compose exec -T postgres psql -U postgres -d farmflow -tAc \
+  "SELECT COUNT(*) FROM \"User\" WHERE email='admin@farmflow.com';" 2>/dev/null || echo "0")
 
 if [ "$(echo $ADMIN_EXISTS | tr -d ' ')" = "0" ]; then
   echo -e "${YELLOW}Usuário Admin não encontrado. Criando...${NC}"
@@ -78,7 +78,7 @@ echo -e "${GREEN}✅ Correção concluída!${NC}"
 echo "============================================="
 echo ""
 echo -e "${GREEN}Credenciais para login:${NC}"
-echo "  Email: admin@cotaagro.com"
+echo "  Email: admin@farmflow.com"
 echo "  Senha: Farmflow0147*"
 echo ""
 echo "Verifique os logs se ainda houver problemas:"

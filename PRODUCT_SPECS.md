@@ -1,4 +1,4 @@
-# CotaAgro - Especificações de Produto
+# FarmFlow - Especificações de Produto
 
 **Product Owner:** Claude Code  
 **Data:** 2026-04-02  
@@ -26,7 +26,7 @@
 ## Visão Geral do Produto
 
 ### Propósito
-CotaAgro é uma plataforma B2B que automatiza o processo de cotação agrícola via WhatsApp, conectando produtores rurais a fornecedores de insumos, ração, fertilizantes e outros produtos agrícolas.
+FarmFlow é uma plataforma B2B que automatiza o processo de cotação agrícola via WhatsApp, conectando produtores rurais a fornecedores de insumos, ração, fertilizantes e outros produtos agrícolas.
 
 ### Personas
 1. **Administrador**: Gestor da plataforma, controle total
@@ -125,7 +125,7 @@ Autenticar usuários administrativos (Admin/Operadores) no sistema com credencia
 │   ║   CA  ║     │    Background: primary (indigo)
 │   ╚═══════╝     │    Text: primary-foreground, font-medium
 │                 │
-│    CotaAgro     │  ← Título: text-2xl, font-medium
+│    FarmFlow     │  ← Título: text-2xl, font-medium
 │                 │
 │ Sistema de...   │  ← Subtítulo: text-sm, muted-foreground
 └─────────────────┘
@@ -158,7 +158,7 @@ Autenticar usuários administrativos (Admin/Operadores) no sistema com credencia
 │  └──────────────────────────────────┘ │
 │                                        │
 │  Credenciais padrão:                  │
-│  admin@cotaagro.com / Farmflow0147*   │
+│  admin@farmflow.com / Farmflow0147*   │
 └────────────────────────────────────────┘
 ```
 

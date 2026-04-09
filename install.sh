@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Instalação Rápida
+# FarmFlow - Instalação Rápida
 # Execute: curl -sSL https://raw.githubusercontent.com/.../install.sh | bash
 
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                                                              ║"
-echo "║           🌾 CotaAgro - Instalação Rápida 🌾                ║"
+echo "║           🌾 FarmFlow - Instalação Rápida 🌾                ║"
 echo "║                                                              ║"
 echo "║  Sistema de Cotações Agrícolas via WhatsApp                  ║"
 echo "║                                                              ║"

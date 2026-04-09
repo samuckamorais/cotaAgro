@@ -843,7 +843,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     if (normalized === '1' || normalized.includes('meus') || normalized.includes('apenas meus')) {
       scope = 'MINE';
-    } else if (normalized === '2' || normalized.includes('rede') || normalized.includes('cotaagro')) {
+    } else if (normalized === '2' || normalized.includes('rede') || normalized.includes('farmflow')) {
       scope = 'NETWORK';
     } else if (normalized === '3' || normalized.includes('todos') || normalized.includes('meus + rede')) {
       scope = 'ALL';
@@ -855,7 +855,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
 Por favor, responda com:
 • *1* para apenas seus fornecedores
-• *2* para rede CotaAgro
+• *2* para rede FarmFlow
 • *3* para todos`,
       });
       return;
@@ -938,7 +938,7 @@ Por favor, responda com:
     if (suppliersToUse.length === 0) {
       await whatsappService.sendMessage({
         to: phone,
-        body: 'Você ainda não possui fornecedores cadastrados. Vou enviar para a rede CotaAgro.',
+        body: 'Você ainda não possui fornecedores cadastrados. Vou enviar para a rede FarmFlow.',
       });
       context.supplierScope = 'NETWORK';
       await this.showQuoteConfirmation(producerId, phone, context);
@@ -1149,7 +1149,7 @@ Por favor, responda com:
         scopeLabel = `Seus fornecedores selecionados (${count})`;
         break;
       case 'NETWORK':
-        scopeLabel = 'Rede CotaAgro';
+        scopeLabel = 'Rede FarmFlow';
         break;
       case 'ALL':
         scopeLabel = 'Todos (seus + rede)';

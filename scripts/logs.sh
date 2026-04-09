@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CotaAgro - Script de Logs
+# FarmFlow - Script de Logs
 # Mostra logs dos containers
 
 # Verificar se está no diretório correto
@@ -8,12 +8,12 @@ cd "$(dirname "$0")/.."
 
 # Verificar se há argumentos
 if [ -z "$1" ]; then
-    echo "🌾 CotaAgro - Logs (todos os serviços)"
+    echo "🌾 FarmFlow - Logs (todos os serviços)"
     echo "Pressione Ctrl+C para sair"
     echo ""
     docker compose logs -f
 else
-    echo "🌾 CotaAgro - Logs ($1)"
+    echo "🌾 FarmFlow - Logs ($1)"
     echo "Pressione Ctrl+C para sair"
     echo ""
     docker compose logs -f "$1"

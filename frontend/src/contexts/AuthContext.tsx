@@ -38,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Recuperar token do localStorage
-    const storedToken = localStorage.getItem('@cotaagro:token');
-    const storedUser = localStorage.getItem('@cotaagro:user');
+    const storedToken = localStorage.getItem('@farmflow:token');
+    const storedUser = localStorage.getItem('@farmflow:user');
 
     if (storedToken && storedUser) {
       setToken(storedToken);
@@ -57,8 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(newToken);
     setUser(newUser);
 
-    localStorage.setItem('@cotaagro:token', newToken);
-    localStorage.setItem('@cotaagro:user', JSON.stringify(newUser));
+    localStorage.setItem('@farmflow:token', newToken);
+    localStorage.setItem('@farmflow:user', JSON.stringify(newUser));
 
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
 
-    localStorage.removeItem('@cotaagro:token');
-    localStorage.removeItem('@cotaagro:user');
+    localStorage.removeItem('@farmflow:token');
+    localStorage.removeItem('@farmflow:user');
 
     delete api.defaults.headers.common['Authorization'];
   };

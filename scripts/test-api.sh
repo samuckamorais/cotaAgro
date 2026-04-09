@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Script de Teste da API
+# FarmFlow - Script de Teste da API
 # Testa os principais endpoints
 
 set -e
 
-echo "🌾 CotaAgro - Teste da API"
+echo "🌾 FarmFlow - Teste da API"
 echo "=============================="
 echo ""
 

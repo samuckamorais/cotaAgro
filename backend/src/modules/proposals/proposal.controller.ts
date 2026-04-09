@@ -33,7 +33,7 @@ export class ProposalController {
       const messages: Record<string, string> = {
         TOKEN_NOT_FOUND: 'Link inválido ou expirado.',
         TOKEN_ALREADY_USED: 'Você já enviou uma proposta para esta cotação.',
-        TOKEN_EXPIRED: 'Este link expirou. Solicite um novo ao CotaAgro.',
+        TOKEN_EXPIRED: 'Este link expirou. Solicite um novo ao FarmFlow.',
         QUOTE_CLOSED: 'Esta cotação já foi encerrada.',
       };
 

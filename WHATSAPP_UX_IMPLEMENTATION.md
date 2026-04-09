@@ -1,4 +1,4 @@
-# CotaAgro - Implementação de Melhorias UX WhatsApp
+# FarmFlow - Implementação de Melhorias UX WhatsApp
 ## Especificações Técnicas - Prioridade 1 (Quick Wins)
 
 **Desenvolvedor:** Guia de Implementação  
@@ -39,7 +39,7 @@ Substituir mensagem de boas-vindas genérica por onboarding personalizado que us
 
 **❌ Código Atual:**
 ```typescript
-WELCOME: `Olá! 👋 Bem-vindo ao *CotaAgro*!
+WELCOME: `Olá! 👋 Bem-vindo ao *FarmFlow*!
 
 Sou seu assistente de cotações de insumos agrícolas.
 
@@ -53,7 +53,7 @@ Como posso ajudar?`,
 
 **✅ Código Proposto:**
 ```typescript
-WELCOME: (producerName: string) => `Olá ${producerName}! 👋 Bem-vindo ao *CotaAgro*
+WELCOME: (producerName: string) => `Olá ${producerName}! 👋 Bem-vindo ao *FarmFlow*
 
 💡 *Economize até 5 horas por semana* em cotações de insumos agrícolas.
 
@@ -157,7 +157,7 @@ producerId = "abc123"
 producer.name = "João Silva"
 
 // Expected Output
-"Olá João Silva! 👋 Bem-vindo ao *CotaAgro*..."
+"Olá João Silva! 👋 Bem-vindo ao *FarmFlow*..."
 ```
 
 **Teste 2: Nome Ausente**
@@ -167,7 +167,7 @@ producerId = "abc123"
 producer.name = null
 
 // Expected Output
-"Olá! 👋 Bem-vindo ao *CotaAgro*..." (sem nome)
+"Olá! 👋 Bem-vindo ao *FarmFlow*..." (sem nome)
 ```
 
 ---
@@ -832,7 +832,7 @@ ASK_SUPPLIER_SCOPE: `Entendido! 📝
 *Para quais fornecedores deseja enviar a cotação?*
 
 *1* - Apenas meus fornecedores
-*2* - Apenas rede CotaAgro
+*2* - Apenas rede FarmFlow
 *3* - Todos (meus + rede)
 
 Digite o número da opção:`,
@@ -849,7 +849,7 @@ ASK_SUPPLIER_SCOPE: `Entendido! 📝
 └─────────────────────────┘
 
 ┌─────────────────────────┐
-│ 2️⃣ Apenas rede CotaAgro    │
+│ 2️⃣ Apenas rede FarmFlow    │
 └─────────────────────────┘
 
 ┌─────────────────────────┐
@@ -904,7 +904,7 @@ let scope: 'MINE' | 'NETWORK' | 'ALL';
 
 if (normalized === '1' || normalized.includes('meus') || normalized.includes('apenas meus')) {
   scope = 'MINE';
-} else if (normalized === '2' || normalized.includes('rede') || normalized.includes('cotaagro')) {
+} else if (normalized === '2' || normalized.includes('rede') || normalized.includes('farmflow')) {
   scope = 'NETWORK';
 } else if (normalized === '3' || normalized.includes('todos') || normalized.includes('meus + rede')) {
   scope = 'ALL';
@@ -916,7 +916,7 @@ if (normalized === '1' || normalized.includes('meus') || normalized.includes('ap
 
 Por favor, responda com:
 • *1* para apenas seus fornecedores
-• *2* para rede CotaAgro
+• *2* para rede FarmFlow
 • *3* para todos`,
   });
   return;

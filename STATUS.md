@@ -1,4 +1,4 @@
-# 📊 Status do Projeto CotaAgro
+# 📊 Status do Projeto FarmFlow
 
 **Última atualização**: 30 de Março de 2024
 
@@ -228,7 +228,7 @@
 
 ```bash
 # 1. Subir projeto
-cd /Users/samuelgm/Workspace/flow/cotaagro
+cd /Users/samuelgm/Workspace/flow/farmflow
 docker-compose up -d
 
 # 2. Rodar migrations

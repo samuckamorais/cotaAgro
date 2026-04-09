@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextData>({} as ThemeContextData);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem('@cotaagro:theme');
+    const stored = localStorage.getItem('@farmflow:theme');
     return (stored as Theme) || 'system';
   });
 
@@ -46,7 +46,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Atualizar tema
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('@cotaagro:theme', newTheme);
+    localStorage.setItem('@farmflow:theme', newTheme);
     const resolved = resolveTheme(newTheme);
     applyTheme(resolved);
   };

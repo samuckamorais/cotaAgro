@@ -10,7 +10,7 @@ export const Messages = {
 
   WELCOME: (producerName?: string) => {
     const greeting = producerName ? `Olá ${producerName}!` : 'Olá!';
-    return `${greeting} 👋 Bem-vindo ao *CotaAgro*
+    return `${greeting} 👋 Bem-vindo ao *FarmFlow*
 
 💡 *Economize até 5 horas por semana* em cotações de insumos agrícolas.
 
@@ -91,7 +91,7 @@ Ou digite sua observação e pressione Enter.`,
 *Para quais fornecedores deseja enviar a cotação?*
 
 1️⃣ Apenas meus fornecedores
-2️⃣ Apenas rede CotaAgro
+2️⃣ Apenas rede FarmFlow
 3️⃣ Todos (meus + rede)
 
 *Responda com o número:* 1, 2 ou 3`,
@@ -143,7 +143,7 @@ Você receberá um resumo com as propostas em breve. ⏳`,
     message += `Propostas recebidas (menor → maior valor):\n\n`;
 
     proposals.forEach((p) => {
-      const badge = p.isOwn ? '(Seu fornecedor)' : '(Rede CotaAgro)';
+      const badge = p.isOwn ? '(Seu fornecedor)' : '(Rede FarmFlow)';
       message += `${p.rank}️⃣ *${p.supplierName}* ${badge}\n`;
       message += `💰 R$ ${p.totalPrice.toFixed(2)}\n`;
       message += `📅 Entrega em ${p.deliveryDays} dias\n`;
@@ -162,7 +162,7 @@ Você receberá um resumo com as propostas em breve. ⏳`,
 
 Fornecedor escolhido: *${supplierName}*
 
-Entraremos em contato para finalizar os detalhes. Obrigado por usar o CotaAgro! 🌾`,
+Entraremos em contato para finalizar os detalhes. Obrigado por usar o FarmFlow! 🌾`,
 
   QUOTE_CANCELLED: `Cotação cancelada. ❌
 
@@ -261,7 +261,7 @@ Digite *cancelar* para voltar ao menu.`,
       ? quote.items
       : quote.product ? [{ product: quote.product, quantity: quote.quantity || '', unit: quote.unit || '' }] : [];
 
-    let message = `Olá! 👋 Sou o *CotaAgro*, assistente de cotações do produtor *${quote.producerName}* (${quote.producerCity}).\n\n`;
+    let message = `Olá! 👋 Sou o *FarmFlow*, assistente de cotações do produtor *${quote.producerName}* (${quote.producerCity}).\n\n`;
     message += `Ele está buscando proposta para:\n\n`;
 
     if (quote.category) message += `🏷️ *Categoria:* ${quote.category}\n`;
@@ -397,7 +397,7 @@ Obrigado pelo retorno.`,
 
 Digite *ajuda* para ver as opções disponíveis.`,
 
-  HELP: `*CotaAgro - Ajuda* 📚
+  HELP: `*FarmFlow - Ajuda* 📚
 
 *Comandos disponíveis:*
 • *nova cotação* - Solicitar cotação

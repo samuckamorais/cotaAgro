@@ -113,7 +113,7 @@ export class WhatsAppService {
       logger.warn('Message from unknown number', { from, phoneVariants });
       await this.sendMessage({
         to: from,
-        body: `Olá! Seu número não está cadastrado no CotaAgro.\n\nPara começar a usar, entre em contato com nosso suporte.`,
+        body: `Olá! Seu número não está cadastrado no FarmFlow.\n\nPara começar a usar, entre em contato com nosso suporte.`,
       });
     } catch (error) {
       logger.error('Error handling incoming message', { error, from, body });

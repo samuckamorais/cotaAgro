@@ -1,4 +1,4 @@
-# CotaAgro WhatsApp - Product Backlog
+# FarmFlow WhatsApp - Product Backlog
 
 **Product Owner:** Claude Opus 4.6  
 **Data:** 02/04/2026  
@@ -671,7 +671,7 @@ Fornecedor:
 - Retenção (D30): > 70%
 - CAC payback: < 3 meses
 - Cotações por usuário/mês: > 8
-- Share of wallet: > 60% (% dos insumos comprados via CotaAgro)
+- Share of wallet: > 60% (% dos insumos comprados via FarmFlow)
 ```
 
 ---

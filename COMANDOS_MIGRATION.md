@@ -23,10 +23,10 @@ Esta migration adiciona isolamento multi-tenant ao sistema. É uma mudança **BR
 
 ```bash
 # PostgreSQL local
-pg_dump -U postgres cotaagro > backup_pre_tenant_$(date +%Y%m%d_%H%M%S).sql
+pg_dump -U postgres farmflow > backup_pre_tenant_$(date +%Y%m%d_%H%M%S).sql
 
 # Docker PostgreSQL
-docker exec -t postgres_container pg_dump -U postgres cotaagro > backup_pre_tenant_$(date +%Y%m%d_%H%M%S).sql
+docker exec -t postgres_container pg_dump -U postgres farmflow > backup_pre_tenant_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 ---
@@ -35,7 +35,7 @@ docker exec -t postgres_container pg_dump -U postgres cotaagro > backup_pre_tena
 
 ### Opção A: Docker Compose
 ```bash
-cd /Users/samuelgm/Workspace/cotaAgro
+cd /Users/samuelgm/Workspace/farmFlow
 docker-compose up -d postgres
 ```
 
@@ -46,7 +46,7 @@ brew services start postgresql@14
 
 ### Verificar se está rodando:
 ```bash
-psql -U postgres -d cotaagro -c "SELECT version();"
+psql -U postgres -d farmflow -c "SELECT version();"
 ```
 
 ---
@@ -54,7 +54,7 @@ psql -U postgres -d cotaagro -c "SELECT version();"
 ## 📦 Passo 3: Aplicar a Migration
 
 ```bash
-cd /Users/samuelgm/Workspace/cotaAgro/backend
+cd /Users/samuelgm/Workspace/farmFlow/backend
 
 # Formatar o schema
 npx prisma format
@@ -79,7 +79,7 @@ npx prisma migrate dev --name add_tenant_isolation
 ## 🌱 Passo 4: Executar o Seed
 
 ```bash
-cd /Users/samuelgm/Workspace/cotaAgro/backend
+cd /Users/samuelgm/Workspace/farmFlow/backend
 npx prisma db seed
 ```
 
@@ -129,7 +129,7 @@ npx prisma studio
 
 ### 5.2 Verificar constraints via SQL
 ```bash
-psql -U postgres -d cotaagro
+psql -U postgres -d farmflow
 ```
 
 ```sql
@@ -153,13 +153,13 @@ SELECT * FROM tenants;
 
 ### 6.1 Iniciar o backend
 ```bash
-cd /Users/samuelgm/Workspace/cotaAgro/backend
+cd /Users/samuelgm/Workspace/farmFlow/backend
 npm run dev
 ```
 
 ### 6.2 Iniciar o frontend
 ```bash
-cd /Users/samuelgm/Workspace/cotaAgro/frontend
+cd /Users/samuelgm/Workspace/farmFlow/frontend
 npm run dev
 ```
 
@@ -216,7 +216,7 @@ npx prisma db seed
 ### Erro: "Unique constraint violation"
 ```bash
 # Limpar banco e recriar
-psql -U postgres -d cotaagro -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+psql -U postgres -d farmflow -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 cd backend
 npx prisma migrate dev --name add_tenant_isolation
 npx prisma db seed
@@ -225,7 +225,7 @@ npx prisma db seed
 ### Erro: "User already exists" no seed
 ```bash
 # Deletar dados antigos
-psql -U postgres -d cotaagro -c "TRUNCATE users CASCADE;"
+psql -U postgres -d farmflow -c "TRUNCATE users CASCADE;"
 npx prisma db seed
 ```
 
@@ -240,7 +240,7 @@ npx prisma db seed
 # CTRL+C no terminal do backend
 
 # 2. Restaurar backup
-psql -U postgres -d cotaagro < backup_pre_tenant_TIMESTAMP.sql
+psql -U postgres -d farmflow < backup_pre_tenant_TIMESTAMP.sql
 
 # 3. Reverter código (se já deu commit)
 git revert HEAD
@@ -307,4 +307,4 @@ Se encontrar qualquer problema:
 ---
 
 **Data**: 2026-04-07  
-**Autor**: Implementação Multi-Tenant CotaAgro
+**Autor**: Implementação Multi-Tenant FarmFlow

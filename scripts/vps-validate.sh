@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================
-# CotaAgro - Validação Pós-Deploy
+# FarmFlow - Validação Pós-Deploy
 # Verifica se todos os serviços estão funcionando corretamente
 # Execute: bash scripts/vps-validate.sh
 # =============================================================
@@ -19,7 +19,7 @@ cd "$REPO_DIR"
 
 echo ""
 echo "============================================="
-echo " CotaAgro - Validação Pós-Deploy"
+echo " FarmFlow - Validação Pós-Deploy"
 echo "============================================="
 echo ""
 
@@ -88,11 +88,11 @@ echo -e "${YELLOW}[4/6] Verificando banco de dados...${NC}"
 CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription")
 
 for table in "${CRITICAL_TABLES[@]}"; do
-  check "Tabela '$table' existe" "docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \"SELECT COUNT(*) FROM information_schema.tables WHERE table_name='$table';\" | grep -q '1'"
+  check "Tabela '$table' existe" "docker compose exec -T postgres psql -U postgres -d farmflow -tAc \"SELECT COUNT(*) FROM information_schema.tables WHERE table_name='$table';\" | grep -q '1'"
 done
 
 # Verificar se Admin existe
-check "Usuário Admin criado" "docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \"SELECT COUNT(*) FROM \\\"User\\\" WHERE email='admin@cotaagro.com';\" | grep -q -E '[1-9]'"
+check "Usuário Admin criado" "docker compose exec -T postgres psql -U postgres -d farmflow -tAc \"SELECT COUNT(*) FROM \\\"User\\\" WHERE email='admin@farmflow.com';\" | grep -q -E '[1-9]'"
 
 echo ""
 
@@ -147,7 +147,7 @@ if [ $FAILED_CHECKS -eq 0 ]; then
   echo ""
   echo "Próximos passos:"
   echo "  1. Acesse o frontend: http://$(curl -s ifconfig.me):5173"
-  echo "  2. Faça login com: admin@cotaagro.com / Farmflow0147*"
+  echo "  2. Faça login com: admin@farmflow.com / Farmflow0147*"
   echo "  3. Configure seu primeiro produtor"
   echo "  4. Configure integração WhatsApp (TWILIO_WHATSAPP_NUMBER)"
   echo ""

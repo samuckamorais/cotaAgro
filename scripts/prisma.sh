@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# CotaAgro - Script de Comandos Prisma
+# FarmFlow - Script de Comandos Prisma
 # Facilita execução de comandos Prisma no container
 
 # Verificar se está no diretório correto
 cd "$(dirname "$0")/.."
 
 if [ -z "$1" ]; then
-    echo "🌾 CotaAgro - Comandos Prisma"
+    echo "🌾 FarmFlow - Comandos Prisma"
     echo ""
     echo "Uso: ./scripts/prisma.sh <comando>"
     echo ""

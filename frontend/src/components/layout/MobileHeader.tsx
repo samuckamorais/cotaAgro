@@ -56,7 +56,7 @@ export function MobileHeader({ onOpenCommandPalette, title }: MobileHeaderProps)
                 <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
                   <span className="text-[10px] font-medium text-primary-foreground">CA</span>
                 </div>
-                <span className="text-sm font-medium text-foreground">CotaAgro</span>
+                <span className="text-sm font-medium text-foreground">FarmFlow</span>
               </div>
             )}
           </div>

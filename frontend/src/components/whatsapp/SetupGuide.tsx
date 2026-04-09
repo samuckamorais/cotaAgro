@@ -149,7 +149,7 @@ function EvolutionGuide({
               Clique em <strong>"Nova Instância"</strong> ou <strong>"Create Instance"</strong>
             </p>
             <ul className="text-xs text-muted-foreground space-y-1 ml-4">
-              <li>• Nome: <code className="text-foreground">cotaagro-{'{seu-nome}'}</code></li>
+              <li>• Nome: <code className="text-foreground">farmflow-{'{seu-nome}'}</code></li>
               <li>• Tipo: WhatsApp</li>
               <li>• Webhook: Deixe em branco por enquanto</li>
             </ul>
@@ -223,7 +223,7 @@ function EvolutionGuide({
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Use apenas letras minúsculas e números</li>
               <li>• Sem espaços (use hífen se necessário)</li>
-              <li>• Exemplos: <code className="text-foreground">cotaagro-producao</code></li>
+              <li>• Exemplos: <code className="text-foreground">farmflow-producao</code></li>
             </ul>
           </div>
 

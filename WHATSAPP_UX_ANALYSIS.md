@@ -1,4 +1,4 @@
-# CotaAgro - Análise UX do Fluxo WhatsApp
+# FarmFlow - Análise UX do Fluxo WhatsApp
 
 **Product Owner:** Claude Opus 4.6  
 **Data:** 02/04/2026  
@@ -44,7 +44,7 @@ IDLE → AWAITING_PRODUCT → AWAITING_QUANTITY → AWAITING_REGION
 
 **Atual:**
 ```
-Olá! 👋 Bem-vindo ao CotaAgro!
+Olá! 👋 Bem-vindo ao FarmFlow!
 Sou seu assistente de cotações...
 
 Para começar, envie:
@@ -557,12 +557,12 @@ Notificações úteis:
 
 **Antes:**
 ```
-Olá! Bem-vindo ao CotaAgro...
+Olá! Bem-vindo ao FarmFlow...
 ```
 
 **Depois:**
 ```
-Olá João! 👋 Bem-vindo ao CotaAgro
+Olá João! 👋 Bem-vindo ao FarmFlow
 
 Economize até 5 horas por semana em cotações.
 
@@ -940,7 +940,7 @@ Use este checklist ao criar/revisar qualquer fluxo conversacional:
 
 ## 🎯 Conclusão
 
-O fluxo WhatsApp do CotaAgro tem **fundação sólida** (FSM, GPT-4, arquitetura limpa), mas está **sub-otimizado para conversão**.
+O fluxo WhatsApp do FarmFlow tem **fundação sólida** (FSM, GPT-4, arquitetura limpa), mas está **sub-otimizado para conversão**.
 
 **3 Ações Imediatas (esta semana):**
 1. ✅ Onboarding personalizado com value prop

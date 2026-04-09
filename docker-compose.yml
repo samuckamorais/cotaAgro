@@ -1,9 +1,9 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: cotaagro-postgres
+    container_name: farmflow-postgres
     environment:
-      POSTGRES_DB: cotaagro
+      POSTGRES_DB: farmflow
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: cotaagro-redis
+    container_name: farmflow-redis
     ports:
       - "6379:6379"
     volumes:
@@ -33,7 +33,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: cotaagro-backend
+    container_name: farmflow-backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,7 +42,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cotaagro
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/farmflow
       REDIS_URL: redis://redis:6379
       PORT: 3000
     ports:
@@ -55,7 +55,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
-    container_name: cotaagro-frontend
+    container_name: farmflow-frontend
     depends_on:
       - backend
     ports:

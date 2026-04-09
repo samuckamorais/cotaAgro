@@ -1,8 +1,8 @@
-// CotaAgro Service Worker
+// FarmFlow Service Worker
 // Provides offline capabilities and performance improvements
 
-const CACHE_NAME = 'cotaagro-v1';
-const RUNTIME_CACHE = 'cotaagro-runtime-v1';
+const CACHE_NAME = 'farmflow-v1';
+const RUNTIME_CACHE = 'farmflow-runtime-v1';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [

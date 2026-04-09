@@ -1,7 +1,7 @@
 {
-  "name": "cotaagro-frontend",
+  "name": "farmflow-frontend",
   "version": "1.0.0",
-  "description": "Frontend do CotaAgro - Painel administrativo",
+  "description": "Frontend do FarmFlow - Painel administrativo",
   "type": "module",
   "scripts": {
     "dev": "vite",

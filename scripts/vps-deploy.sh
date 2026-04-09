@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================
-# CotaAgro - Deploy / Atualização na VPS
+# FarmFlow - Deploy / Atualização na VPS
 # Execute a partir da raiz do projeto: bash scripts/vps-deploy.sh
 # =============================================================
 
@@ -17,7 +17,7 @@ cd "$REPO_DIR"
 
 echo ""
 echo "============================================="
-echo " CotaAgro - Deploy"
+echo " FarmFlow - Deploy"
 echo " Diretório: $REPO_DIR"
 echo " Versão: 2.0 (Multi-Tenant + Isolamento)"
 echo "============================================="
@@ -193,7 +193,7 @@ echo -e "${GREEN}✅ Prisma Client gerado${NC}"
 
 # 5.3 - Seed: Verificar e popular dados iniciais (Multi-Tenant)
 echo "  → Verificando dados iniciais (Multi-Tenant)..."
-TENANT_COUNT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+TENANT_COUNT=$(docker compose exec -T postgres psql -U postgres -d farmflow -tAc \
   "SELECT COUNT(*) FROM tenants;" 2>/dev/null || echo "0")
 
 if [ "$(echo $TENANT_COUNT | tr -d ' ')" = "0" ]; then
@@ -213,7 +213,7 @@ if [ "$(echo $TENANT_COUNT | tr -d ' ')" = "0" ]; then
 else
   echo "  ℹ️  Banco já possui tenants configurados, seed ignorado."
   echo "  → Listando tenants existentes..."
-  docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+  docker compose exec -T postgres psql -U postgres -d farmflow -tAc \
     "SELECT name, slug, active FROM tenants;" 2>/dev/null || echo "  ⚠️  Não foi possível listar tenants"
 fi
 
@@ -223,7 +223,7 @@ CRITICAL_TABLES=("User" "Producer" "Supplier" "Quote" "Proposal" "Subscription" 
 MISSING_TABLES=()
 
 for table in "${CRITICAL_TABLES[@]}"; do
-  TABLE_EXISTS=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+  TABLE_EXISTS=$(docker compose exec -T postgres psql -U postgres -d farmflow -tAc \
     "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='$table';" 2>/dev/null || echo "0")
 
   if [ "$(echo $TABLE_EXISTS | tr -d ' ')" = "0" ]; then
@@ -243,7 +243,7 @@ fi
 
 # 5.4.1 - Validar coluna tenantId (Multi-Tenant)
 echo "  → Validando isolamento multi-tenant..."
-PRODUCER_HAS_TENANT=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+PRODUCER_HAS_TENANT=$(docker compose exec -T postgres psql -U postgres -d farmflow -tAc \
   "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='producers' AND column_name='tenantId';" 2>/dev/null || echo "0")
 
 if [ "$(echo $PRODUCER_HAS_TENANT | tr -d ' ')" = "0" ]; then
@@ -254,7 +254,7 @@ else
   echo -e "${GREEN}✅ Isolamento multi-tenant configurado corretamente${NC}"
 
   # Verificar se há produtores sem tenant (dados antigos)
-  ORPHAN_PRODUCERS=$(docker compose exec -T postgres psql -U postgres -d cotaagro -tAc \
+  ORPHAN_PRODUCERS=$(docker compose exec -T postgres psql -U postgres -d farmflow -tAc \
     "SELECT COUNT(*) FROM producers WHERE \"tenantId\" IS NULL;" 2>/dev/null || echo "0")
 
   if [ "$(echo $ORPHAN_PRODUCERS | tr -d ' ')" != "0" ]; then

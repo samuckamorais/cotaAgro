@@ -1,4 +1,4 @@
-# 🧪 Relatório de Validação - CotaAgro
+# 🧪 Relatório de Validação - FarmFlow
 
 **Data**: 30 de Março de 2024
 **Status**: ✅ Validação Completa (sem Docker disponível no ambiente)
@@ -112,11 +112,11 @@
 
 ### Variáveis de Ambiente (.env)
 ```env
-✅ DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cotaagro
+✅ DATABASE_URL=postgresql://postgres:postgres@postgres:5432/farmflow
 ✅ REDIS_URL=redis://redis:6379
 ✅ PORT=3000
 ✅ NODE_ENV=development
-✅ JWT_SECRET=cotaagro_jwt_secret_change_in_production_with_32_chars_minimum (51 chars ✅)
+✅ JWT_SECRET=farmflow_jwt_secret_change_in_production_with_32_chars_minimum (51 chars ✅)
 ✅ JWT_EXPIRES_IN=7d
 ✅ WHATSAPP_PROVIDER=twilio
 ✅ WEBHOOK_URL=http://localhost:3000
@@ -424,7 +424,7 @@ Quando Docker estiver disponível:
 
 1. **Subir ambiente**:
    ```bash
-   cd /Users/samuelgm/Workspace/flow/cotaagro
+   cd /Users/samuelgm/Workspace/flow/farmflow
    docker-compose up -d
    ```
 

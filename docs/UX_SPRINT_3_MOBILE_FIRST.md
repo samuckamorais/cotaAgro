@@ -233,8 +233,8 @@ lg (1024px+): Desktop
 
 ```json
 {
-  "name": "CotaAgro - Gestão de Cotações Agrícolas",
-  "short_name": "CotaAgro",
+  "name": "FarmFlow - Gestão de Cotações Agrícolas",
+  "short_name": "FarmFlow",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#4F6EF7",
@@ -277,8 +277,8 @@ Request → Try Network
 - Take control imediato
 
 **Caches**:
-- `cotaagro-v1`: Assets estáticos
-- `cotaagro-runtime-v1`: Requisições dinâmicas
+- `farmflow-v1`: Assets estáticos
+- `farmflow-runtime-v1`: Requisições dinâmicas
 
 **Impacto**:
 - ✅ Funciona offline básico
@@ -298,7 +298,7 @@ Request → Try Network
 <meta name="theme-color" content="#4F6EF7" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="CotaAgro" />
+<meta name="apple-mobile-web-app-title" content="FarmFlow" />
 <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 <link rel="manifest" href="/manifest.json" />
 ```
@@ -499,7 +499,7 @@ Apps nativos usam bottom nav porque:
 🔄 Push notifications (requires HTTPS + permission)  
 🔄 Offline queue para ações (sync when online)  
 🔄 App shortcuts (long-press icon)  
-🔄 Share target API (share to CotaAgro)  
+🔄 Share target API (share to FarmFlow)  
 🔄 Biometric authentication  
 🔄 Camera API para documentos  
 

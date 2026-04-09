@@ -55,7 +55,7 @@ export function Login() {
                 <Wheat className="w-7 h-7" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">CotaAgro</h1>
+                <h1 className="text-3xl font-bold">FarmFlow</h1>
                 <p className="text-primary-foreground/80 text-sm">Gestão Inteligente de Cotações</p>
               </div>
             </div>
@@ -108,7 +108,7 @@ export function Login() {
 
           {/* Footer */}
           <div className="text-sm text-primary-foreground/60">
-            <p>© 2024 CotaAgro. Todos os direitos reservados.</p>
+            <p>© 2024 FarmFlow. Todos os direitos reservados.</p>
           </div>
         </div>
       </div>
@@ -121,7 +121,7 @@ export function Login() {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-xl mb-4">
               <Wheat className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">CotaAgro</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-1">FarmFlow</h1>
             <p className="text-sm text-muted-foreground">
               Sistema de Gestão de Cotações Agrícolas
             </p>

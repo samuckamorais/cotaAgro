@@ -11,7 +11,7 @@
 
 ## 📋 Contexto
 
-O sistema CotaAgro já possui uma tela básica de usuários (`/users`) com funcionalidades de listagem, cadastro, edição e exclusão. No entanto, falta implementar a funcionalidade de **pausar/ativar acesso** do usuário de forma visual e intuitiva, além de melhorias na UX e segurança.
+O sistema FarmFlow já possui uma tela básica de usuários (`/users`) com funcionalidades de listagem, cadastro, edição e exclusão. No entanto, falta implementar a funcionalidade de **pausar/ativar acesso** do usuário de forma visual e intuitiva, além de melhorias na UX e segurança.
 
 **Situação Atual**:
 - ✅ Listagem de usuários com paginação
@@ -628,6 +628,6 @@ static async list(
 
 ---
 
-**Criado por**: PO Sênior - CotaAgro  
+**Criado por**: PO Sênior - FarmFlow  
 **Última atualização**: 2026-04-08  
 **Próxima revisão**: Após refinamento com o time

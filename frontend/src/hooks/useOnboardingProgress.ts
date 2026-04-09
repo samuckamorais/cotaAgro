@@ -6,7 +6,7 @@ interface OnboardingStep {
   completed: boolean;
 }
 
-const ONBOARDING_STORAGE_KEY = 'cotaagro:onboarding';
+const ONBOARDING_STORAGE_KEY = 'farmflow:onboarding';
 
 export function useOnboardingProgress() {
   const { user } = useAuth();

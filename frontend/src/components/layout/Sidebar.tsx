@@ -27,7 +27,7 @@ export function Sidebar() {
             <span className="text-xs font-medium text-primary-foreground">CA</span>
           </div>
           <div>
-            <div className="text-sm font-medium text-foreground">CotaAgro</div>
+            <div className="text-sm font-medium text-foreground">FarmFlow</div>
             <div className="text-xs text-muted-foreground">Painel Admin</div>
           </div>
         </div>

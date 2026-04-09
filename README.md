@@ -1,4 +1,4 @@
-# CotaAgro
+# FarmFlow
 
 **Assistente de Cotações de Insumos Agrícolas via WhatsApp**
 
@@ -51,7 +51,7 @@ Sistema SaaS B2B que automatiza o processo de cotação de insumos agrícolas di
 ### 1. Clone o repositório
 
 ```bash
-cd /Users/samuelgm/Workspace/flow/cotaagro
+cd /Users/samuelgm/Workspace/flow/farmflow
 ```
 
 ### 2. Configure as variáveis de ambiente
@@ -64,7 +64,7 @@ Edite o arquivo `.env` e preencha as variáveis necessárias:
 
 ```env
 # Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cotaagro
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/farmflow
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -232,7 +232,7 @@ docker-compose exec backend npm run test:coverage
 ## 🗂️ Estrutura de Pastas
 
 ```
-cotaagro/
+farmflow/
 ├── backend/
 │   ├── src/
 │   │   ├── config/         # Configurações (env, DB, Redis)
@@ -295,12 +295,12 @@ Este é um projeto privado. Para contribuir, entre em contato com a equipe de de
 
 ## 📄 Licença
 
-Proprietário - CotaAgro © 2024
+Proprietário - FarmFlow © 2024
 
 ---
 
 ## 📞 Suporte
 
 Para dúvidas ou suporte:
-- Email: suporte@cotaagro.com.br
+- Email: suporte@farmflow.com.br
 - WhatsApp: +55 64 99999-9999

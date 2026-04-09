@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Script de Start
+# FarmFlow - Script de Start
 # Inicia os containers (assume que já foram configurados)
 
 set -e
 
-echo "🌾 CotaAgro - Iniciando..."
+echo "🌾 FarmFlow - Iniciando..."
 
 # Verificar se está no diretório correto
 cd "$(dirname "$0")/.."

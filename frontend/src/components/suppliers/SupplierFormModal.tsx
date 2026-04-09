@@ -232,7 +232,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
                 className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-ring"
               />
               <div>
-                <span className="font-medium text-foreground">Fornecedor da Rede CotaAgro</span>
+                <span className="font-medium text-foreground">Fornecedor da Rede FarmFlow</span>
                 <p className="text-sm text-muted-foreground">
                   Marque esta opção se o fornecedor faz parte da rede da plataforma. Caso
                   contrário, será considerado como seu fornecedor pessoal.

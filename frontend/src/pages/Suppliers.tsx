@@ -121,7 +121,7 @@ export function Suppliers() {
           Meus Fornecedores
         </Badge>
         <Badge variant="outline" className="cursor-pointer text-xs">
-          Rede CotaAgro
+          Rede FarmFlow
         </Badge>
       </div>
 

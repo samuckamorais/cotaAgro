@@ -1,6 +1,6 @@
 {
-  "name": "CotaAgro - Gestão de Cotações Agrícolas",
-  "short_name": "CotaAgro",
+  "name": "FarmFlow - Gestão de Cotações Agrícolas",
+  "short_name": "FarmFlow",
   "description": "Sistema completo de gestão de cotações agrícolas via WhatsApp",
   "start_url": "/",
   "display": "standalone",

@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ============================================================================
-# CotaAgro - WhatsApp Configuration Setup Script
+# FarmFlow - WhatsApp Configuration Setup Script
 # ============================================================================
-# Este script facilita a configuração do WhatsApp para o sistema CotaAgro
+# Este script facilita a configuração do WhatsApp para o sistema FarmFlow
 # Suporta dois providers: Twilio e Evolution API
 # ============================================================================
 
@@ -160,7 +160,7 @@ setup_twilio_webhook() {
     print_info "O Twilio precisa de uma URL pública para enviar mensagens recebidas"
     echo ""
 
-    WEBHOOK_URL=$(prompt_input "URL do webhook (ex: https://api.cotaagro.com.br)" "")
+    WEBHOOK_URL=$(prompt_input "URL do webhook (ex: https://api.farmflow.com.br)" "")
 
     if [ -z "$WEBHOOK_URL" ]; then
         print_warning "Webhook não configurado. Configure depois em .env"
@@ -210,7 +210,7 @@ setup_evolution() {
     echo ""
     EVOLUTION_API_URL=$(prompt_input "URL da Evolution API" "http://localhost:8080")
     EVOLUTION_API_KEY=$(prompt_input "API Key da Evolution" "")
-    EVOLUTION_INSTANCE_NAME=$(prompt_input "Nome da instância" "cotaagro")
+    EVOLUTION_INSTANCE_NAME=$(prompt_input "Nome da instância" "farmflow")
 
     if [ -z "$EVOLUTION_API_KEY" ]; then
         print_warning "API Key vazia. A Evolution API pode exigir autenticação"
@@ -271,7 +271,7 @@ setup_evolution_webhook() {
     echo ""
     print_header "Configuração de Webhook - Evolution API"
 
-    WEBHOOK_URL=$(prompt_input "URL do webhook (ex: https://api.cotaagro.com.br)" "")
+    WEBHOOK_URL=$(prompt_input "URL do webhook (ex: https://api.farmflow.com.br)" "")
 
     if [ -z "$WEBHOOK_URL" ]; then
         print_warning "Webhook não configurado"
@@ -366,7 +366,7 @@ setup_ngrok() {
 setup_openai() {
     print_header "Configuração OpenAI API"
 
-    echo "CotaAgro usa GPT-4 para:"
+    echo "FarmFlow usa GPT-4 para:"
     echo "  • Interpretação de mensagens (NLU)"
     echo "  • Transcrição de áudio (Whisper)"
     echo "  • Análise de fotos (Vision)"

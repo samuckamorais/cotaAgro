@@ -4,7 +4,7 @@ import { useSettings, useUpdateSettings, ProducerSettings } from '../hooks/useSe
 
 const SCOPE_LABELS: Record<ProducerSettings['defaultSupplierScope'], string> = {
   MINE: 'Apenas meus fornecedores',
-  NETWORK: 'Apenas rede CotaAgro',
+  NETWORK: 'Apenas rede FarmFlow',
   ALL: 'Todos (meus + rede)',
 };
 

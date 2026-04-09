@@ -1,4 +1,4 @@
-# CotaAgro - Resumo da Implementação P1 (Quick Wins)
+# FarmFlow - Resumo da Implementação P1 (Quick Wins)
 
 **Desenvolvedor:** Claude Opus 4.6 (Senior Developer)  
 **Data:** 02/04/2026  
@@ -9,7 +9,7 @@
 
 ## 📊 Resumo Executivo
 
-Implementadas **4 melhorias prioritárias (P1)** no fluxo WhatsApp do CotaAgro, focadas em aumentar taxa de conclusão e reduzir fricção.
+Implementadas **4 melhorias prioritárias (P1)** no fluxo WhatsApp do FarmFlow, focadas em aumentar taxa de conclusão e reduzir fricção.
 
 **Impacto Esperado:**
 - ✅ Taxa de primeira resposta: 40% → 70% (+75%)
@@ -40,8 +40,8 @@ Implementadas **4 melhorias prioritárias (P1)** no fluxo WhatsApp do CotaAgro, 
 
 **Exemplo:**
 ```
-❌ Antes: "Olá! Bem-vindo ao CotaAgro..."
-✅ Depois: "Olá João Silva! 👋 Bem-vindo ao CotaAgro
+❌ Antes: "Olá! Bem-vindo ao FarmFlow..."
+✅ Depois: "Olá João Silva! 👋 Bem-vindo ao FarmFlow
 
 💡 Economize até 5 horas por semana em cotações..."
 ```
@@ -142,7 +142,7 @@ Exemplos: 100 sacos, 500 kg, 20 litros
 ```
 ❌ Antes:
 "1 - Apenas meus fornecedores
- 2 - Apenas rede CotaAgro
+ 2 - Apenas rede FarmFlow
  3 - Todos
  Digite o número:"
 
@@ -152,7 +152,7 @@ Exemplos: 100 sacos, 500 kg, 20 litros
  └───────────────────────────┘
  
  ┌───────────────────────────┐
- │ 2️⃣ Apenas rede CotaAgro      │
+ │ 2️⃣ Apenas rede FarmFlow      │
  └───────────────────────────┘
  
  ┌───────────────────────────┐
@@ -164,7 +164,7 @@ Exemplos: 100 sacos, 500 kg, 20 litros
 
 **Validação Tolerante:**
 - ✅ Aceita "1", "meus", "apenas meus" → MINE
-- ✅ Aceita "2", "rede", "cotaagro" → NETWORK
+- ✅ Aceita "2", "rede", "farmflow" → NETWORK
 - ✅ Aceita "3", "todos", "meus + rede" → ALL
 - ✅ Aceita "sim", "s", "enviar", "confirmar" → confirmar
 - ✅ Aceita "não", "nao", "corrigir", "editar" → corrigir
@@ -404,8 +404,8 @@ Exemplos: 100 sacos, 500 kg, 20 litros
 
 ## 📚 Referências
 
-- **Documento Original:** `/Users/samuelgm/Workspace/cotaAgro/WHATSAPP_UX_ANALYSIS.md`
-- **Especificações Técnicas:** `/Users/samuelgm/Workspace/cotaAgro/WHATSAPP_UX_IMPLEMENTATION.md`
+- **Documento Original:** `/Users/samuelgm/Workspace/farmFlow/WHATSAPP_UX_ANALYSIS.md`
+- **Especificações Técnicas:** `/Users/samuelgm/Workspace/farmFlow/WHATSAPP_UX_IMPLEMENTATION.md`
 - **Arquivos Modificados:** Ver seção "Arquivos Modificados" acima
 
 ---

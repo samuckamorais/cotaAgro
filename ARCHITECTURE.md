@@ -1,12 +1,12 @@
-# 🏗️ Arquitetura do CotaAgro
+# 🏗️ Arquitetura do FarmFlow
 
-Este documento detalha a arquitetura técnica do sistema CotaAgro.
+Este documento detalha a arquitetura técnica do sistema FarmFlow.
 
 ---
 
 ## Visão Geral
 
-O CotaAgro é um sistema SaaS B2B que automatiza cotações de insumos agrícolas via WhatsApp, conectando produtores rurais a fornecedores de forma eficiente e organizada.
+O FarmFlow é um sistema SaaS B2B que automatiza cotações de insumos agrícolas via WhatsApp, conectando produtores rurais a fornecedores de forma eficiente e organizada.
 
 ```
 ┌─────────────┐     WhatsApp      ┌──────────────┐
@@ -340,7 +340,7 @@ sequenceDiagram
 
 ## Conclusão
 
-O CotaAgro foi projetado para ser:
+O FarmFlow foi projetado para ser:
 - ✅ **Escalável**: Suporta crescimento horizontal
 - ✅ **Resiliente**: Retry automático, estado persistido
 - ✅ **Manutenível**: TypeScript strict, arquitetura modular

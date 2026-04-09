@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CotaAgro - Script de Setup Completo
+# FarmFlow - Script de Setup Completo
 # Este script configura e inicia a aplicação do zero
 
 set -e
 
-echo "🌾 CotaAgro - Setup Completo"
+echo "🌾 FarmFlow - Setup Completo"
 echo "=============================="
 echo ""
 

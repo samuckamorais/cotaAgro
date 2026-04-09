@@ -108,7 +108,7 @@ This will:
 ### Option 2: Manual SQL Execution
 ```bash
 # Connect to PostgreSQL
-psql -U postgres -d cotaagro
+psql -U postgres -d farmflow
 
 # Run the migration SQL
 \i prisma/migrations/20260402172239_epic_1_complete/migration.sql

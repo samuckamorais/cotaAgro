@@ -176,7 +176,7 @@ export function ProposalForm() {
       {/* Header */}
       <div className="bg-green-600 text-white px-4 py-4">
         <div className="max-w-lg mx-auto">
-          <p className="text-green-100 text-sm">🌾 CotaAgro</p>
+          <p className="text-green-100 text-sm">🌾 FarmFlow</p>
           <h1 className="text-lg font-bold">Proposta para {q.producerName}</h1>
           <p className="text-green-100 text-sm">{q.producerCity}</p>
         </div>
@@ -316,7 +316,7 @@ export function ProposalForm() {
           </button>
 
           <p className="text-xs text-center text-gray-400 pb-6">
-            Ao enviar, sua proposta será registrada automaticamente no sistema CotaAgro.
+            Ao enviar, sua proposta será registrada automaticamente no sistema FarmFlow.
           </p>
         </form>
       </div>

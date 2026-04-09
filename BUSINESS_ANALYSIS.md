@@ -1,4 +1,4 @@
-# CotaAgro - Análise de Negócio e Pontos de Melhoria
+# FarmFlow - Análise de Negócio e Pontos de Melhoria
 
 **Business Owner:** Claude Opus 4.6  
 **Data da Análise:** 02/04/2026  
@@ -9,7 +9,7 @@
 
 ## 📊 Executive Summary
 
-O CotaAgro é uma plataforma B2B SaaS promissora que resolve um problema real do agronegócio brasileiro: **a ineficiência no processo de cotação de insumos agrícolas**. O MVP está funcional com stack moderna, mas existem **gaps críticos** que precisam ser endereçados antes de escalar operações e buscar investimento.
+O FarmFlow é uma plataforma B2B SaaS promissora que resolve um problema real do agronegócio brasileiro: **a ineficiência no processo de cotação de insumos agrícolas**. O MVP está funcional com stack moderna, mas existem **gaps críticos** que precisam ser endereçados antes de escalar operações e buscar investimento.
 
 **Score Geral: 6.5/10**
 - ✅ Produto: 7/10 (funcional, mas falta validação de mercado)
@@ -24,7 +24,7 @@ O CotaAgro é uma plataforma B2B SaaS promissora que resolve um problema real do
 ### Proposta de Valor
 **Para:** Produtores rurais que precisam comprar insumos agrícolas  
 **Que:** Perdem tempo cotando com múltiplos fornecedores manualmente  
-**O CotaAgro é:** Uma plataforma que automatiza cotações via WhatsApp usando IA  
+**O FarmFlow é:** Uma plataforma que automatiza cotações via WhatsApp usando IA  
 **Diferente de:** Fazer ligações/WhatsApp manual ou usar planilhas  
 **Nosso produto:** Dispara cotações para múltiplos fornecedores, coleta propostas automaticamente e entrega um resumo consolidado
 
@@ -127,7 +127,7 @@ PRIORIDADE 2 (Semana 2-3):
 ```
 PRIORIDADE 3 (Semana 4):
 □ Onboarding WhatsApp para produtores:
-  - "Olá {Nome}! 👋 Sou o assistente da CotaAgro"
+  - "Olá {Nome}! 👋 Sou o assistente da FarmFlow"
   - "Para começar, vou te ajudar a fazer sua primeira cotação"
   - "Digite o produto que precisa. Ex: 'Preciso de 50 sacas de ração'"
   - [IA guia passo a passo]
@@ -182,7 +182,7 @@ PRIORIDADE 4 (Semana 5-8):
 □ Partnerships:
   - Contato com 3 cooperativas agrícolas piloto
   - Proposta: "Seus associados ganham 10% desconto"
-  - White-label opcional (CotaAgro Powered by [Coop])
+  - White-label opcional (FarmFlow Powered by [Coop])
 
 □ Referral Program:
   - "Indique um produtor, ganhe 1 mês grátis"
@@ -284,7 +284,7 @@ PRIORIDADE 4 (Semana 5-8):
   - Exportar relatório em PDF para contador
 
 □ Network Effects:
-  - "X produtores da sua região usam CotaAgro"
+  - "X produtores da sua região usam FarmFlow"
   - "Fornecedor Y tem 4.8★ (32 avaliações)"
   - Marketplace interno: produtor pode ver melhores preços históricos
 
@@ -510,7 +510,7 @@ PRIORIDADE 4 (Semana 5-8):
 
 1. **Landing page simples** (Framer template)
 2. **Instalar PostHog** (tracking básico)
-3. **Criar perfil LinkedIn + Instagram** da CotaAgro
+3. **Criar perfil LinkedIn + Instagram** da FarmFlow
 4. **Escrever 1 case (fictício se necessário):** "Como produtor X economizou R$ 5.400"
 5. **Ligar para 10 cooperativas** e marcar reunião
 6. **Configurar Sentry** (15 min)
@@ -594,7 +594,7 @@ Se um VC olhasse hoje, veria:
 
 ## 🎯 Conclusão
 
-O CotaAgro tem um **fundamento sólido**: stack moderna, design limpo, problema real. Mas está em **estágio zero de validação**. 
+O FarmFlow tem um **fundamento sólido**: stack moderna, design limpo, problema real. Mas está em **estágio zero de validação**. 
 
 **Maior risco:** Construir features antes de validar problema.
 

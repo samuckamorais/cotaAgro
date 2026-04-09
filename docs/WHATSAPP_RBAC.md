@@ -151,9 +151,9 @@ npx tsx scripts/seed-whatsapp-permission.ts
 
 📊 Encontrados 2 administrador(es):
 
-   • João Silva (joao@cotaagro.com)
+   • João Silva (joao@farmflow.com)
      ✅ Permissão WHATSAPP_CONFIG concedida
-   • Maria Santos (maria@cotaagro.com)
+   • Maria Santos (maria@farmflow.com)
      ✓ Já possui permissão WHATSAPP_CONFIG
 
 ✅ Processo concluído!
