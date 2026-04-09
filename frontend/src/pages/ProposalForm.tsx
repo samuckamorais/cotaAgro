@@ -145,7 +145,7 @@ export function ProposalForm() {
 
       {/* Quote details */}
       <div className="max-w-lg mx-auto px-4 py-4">
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-4 text-sm space-y-1">
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-4 text-sm space-y-1 text-gray-800">
           {q.category && <p>🏷️ <strong>Categoria:</strong> {q.category}</p>}
           <p>📅 <strong>Dt. Entrega:</strong> {deadlineFormatted}</p>
           <p>📍 <strong>Região:</strong> {q.region}</p>
@@ -160,7 +160,7 @@ export function ProposalForm() {
           <div className="space-y-3">
             <h2 className="font-semibold text-gray-700">Produtos solicitados</h2>
             {q.items.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-sm p-4">
+              <div key={item.id} className="bg-white rounded-lg shadow-sm p-4 text-gray-800">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium text-gray-800">{item.product}</p>
@@ -220,7 +220,7 @@ export function ProposalForm() {
           )}
 
           {/* Condições */}
-          <div className="bg-white rounded-lg shadow-sm p-4 space-y-3">
+          <div className="bg-white rounded-lg shadow-sm p-4 space-y-3 text-gray-800">
             <h2 className="font-semibold text-gray-700">Condições</h2>
 
             <div>
