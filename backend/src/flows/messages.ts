@@ -282,9 +282,10 @@ Digite *cancelar* para voltar ao menu.`,
     message += `\nVocê tem interesse em enviar uma proposta?\n`;
 
     if (quote.proposalFormUrl) {
-      // Multi-item: link para formulário web
-      message += `\n✅ *Sim, quero participar:*\n🔗 ${quote.proposalFormUrl}\n\n`;
-      message += `*2* — Não, desta vez não`;
+      // Multi-item: link para formulário web (URL sozinha na linha para ser clicável no WhatsApp)
+      message += `\n✅ Para enviar sua proposta, acesse:\n`;
+      message += `${quote.proposalFormUrl}\n\n`;
+      message += `*2* — Não tenho interesse desta vez`;
     } else {
       // 1 item: fluxo WhatsApp
       message += `*1* — Sim, quero participar\n`;
