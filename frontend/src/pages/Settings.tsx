@@ -26,11 +26,10 @@ export function SettingsPage() {
   }, [settings]);
 
   useEffect(() => {
-    if (isSuccess) {
-      setSaved(true);
-      const t = setTimeout(() => setSaved(false), 3000);
-      return () => clearTimeout(t);
-    }
+    if (!isSuccess) return;
+    setSaved(true);
+    const t = setTimeout(() => setSaved(false), 3000);
+    return () => clearTimeout(t);
   }, [isSuccess]);
 
   const handleSubmit = (e: React.FormEvent) => {
