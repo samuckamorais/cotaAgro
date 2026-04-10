@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { useCreateSupplier, useUpdateSupplier } from '../../hooks/useSuppliers';
 import { SUPPLIER_CATEGORIES } from '../../types/supplier';
 import { X } from 'lucide-react';
+import { BRAZIL_STATES } from '../../data/brazil-locations';
 
 interface SupplierFormModalProps {
   isOpen: boolean;
@@ -16,7 +17,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
     phone: '',
     company: '',
     email: '',
-    regions: '',
+    regions: [] as string[],
     categories: [] as string[],
     isNetworkSupplier: false,
   });
@@ -26,25 +27,24 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
 
   useEffect(() => {
     if (supplier) {
+      // Suporte a regiões salvas como array de UFs ou como string legada separada por vírgula
+      let regions: string[] = [];
+      if (Array.isArray(supplier.regions)) {
+        regions = supplier.regions;
+      } else if (typeof supplier.regions === 'string') {
+        regions = supplier.regions.split(',').map((r: string) => r.trim()).filter(Boolean);
+      }
       setFormData({
         name: supplier.name || '',
         phone: supplier.phone || '',
         company: supplier.company || '',
         email: supplier.email || '',
-        regions: supplier.regions?.join(', ') || '',
+        regions,
         categories: supplier.categories || [],
         isNetworkSupplier: supplier.isNetworkSupplier || false,
       });
     } else {
-      setFormData({
-        name: '',
-        phone: '',
-        company: '',
-        email: '',
-        regions: '',
-        categories: [],
-        isNetworkSupplier: false,
-      });
+      setFormData({ name: '', phone: '', company: '', email: '', regions: [], categories: [], isNetworkSupplier: false });
     }
   }, [supplier, isOpen]);
 
@@ -57,21 +57,33 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
     }));
   };
 
+  const handleToggleRegion = (uf: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regions: prev.regions.includes(uf)
+        ? prev.regions.filter((r) => r !== uf)
+        : [...prev.regions, uf],
+    }));
+  };
+
+  const handleSelectAllRegions = () => {
+    const allUfs = BRAZIL_STATES.map((s) => s.uf);
+    const allSelected = allUfs.every((uf) => formData.regions.includes(uf));
+    setFormData((prev) => ({ ...prev, regions: allSelected ? [] : allUfs }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Normalizar telefone: garantir formato +55XXXXXXXXXXX
-    const rawPhone = formData.phone.replace(/\D/g, ''); // apenas dígitos
-    const phone = rawPhone.startsWith('55')
-      ? `+${rawPhone}`
-      : `+55${rawPhone}`;
+    const rawPhone = formData.phone.replace(/\D/g, '');
+    const phone = rawPhone.startsWith('55') ? `+${rawPhone}` : `+55${rawPhone}`;
 
     const payload = {
       name: formData.name,
       phone,
       company: formData.company || undefined,
       email: formData.email || undefined,
-      regions: formData.regions.split(',').map((r) => r.trim()).filter(Boolean),
+      regions: formData.regions,
       categories: formData.categories,
       isNetworkSupplier: formData.isNetworkSupplier,
     };
@@ -92,6 +104,10 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
 
   if (!isOpen) return null;
 
+  const inputClass = 'w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring';
+  const allUfs = BRAZIL_STATES.map((s) => s.uf);
+  const allSelected = allUfs.every((uf) => formData.regions.includes(uf));
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -100,10 +116,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
           <h2 className="text-2xl font-bold text-foreground">
             {supplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition"
-          >
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -120,7 +133,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className={inputClass}
               placeholder="Ex: João Silva"
             />
           </div>
@@ -135,7 +148,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               required
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className={inputClass}
               placeholder="Ex: 64999999999 ou +5564999999999"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -143,7 +156,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
             </p>
           </div>
 
-          {/* Empresa (opcional) */}
+          {/* Empresa */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               Empresa (opcional)
@@ -152,12 +165,12 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className={inputClass}
               placeholder="Ex: AgroSupply Ltda"
             />
           </div>
 
-          {/* Email (opcional) */}
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               E-mail (opcional)
@@ -166,27 +179,49 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              className={inputClass}
               placeholder="Ex: contato@empresa.com.br"
             />
           </div>
 
-          {/* Regiões */}
+          {/* Estados Atendidos */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Regiões Atendidas <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.regions}
-              onChange={(e) => setFormData({ ...formData, regions: e.target.value })}
-              className="w-full px-3 py-2 text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Ex: Goiânia, Rio Verde, Jataí"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Separe múltiplas regiões com vírgula
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-foreground">
+                Estados Atendidos <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleSelectAllRegions}
+                className="text-xs text-primary hover:underline"
+              >
+                {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              {formData.regions.length === 0
+                ? 'Nenhum estado selecionado'
+                : `${formData.regions.length} estado(s): ${formData.regions.join(', ')}`}
             </p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 bg-muted/30 p-3 rounded-lg max-h-48 overflow-y-auto">
+              {BRAZIL_STATES.map((s) => (
+                <label
+                  key={s.uf}
+                  className="flex items-center gap-1.5 cursor-pointer hover:bg-background p-1.5 rounded transition"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.regions.includes(s.uf)}
+                    onChange={() => handleToggleRegion(s.uf)}
+                    className="w-3.5 h-3.5 text-primary rounded focus:ring-2 focus:ring-ring"
+                  />
+                  <span className="text-xs text-foreground font-medium">{s.uf}</span>
+                </label>
+              ))}
+            </div>
+            {formData.regions.length === 0 && (
+              <p className="text-xs text-red-500 mt-1">Selecione pelo menos um estado</p>
+            )}
           </div>
 
           {/* Categorias */}
@@ -214,9 +249,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               ))}
             </div>
             {formData.categories.length === 0 && (
-              <p className="text-xs text-red-500 mt-2">
-                Selecione pelo menos uma área de atuação
-              </p>
+              <p className="text-xs text-red-500 mt-2">Selecione pelo menos uma área de atuação</p>
             )}
           </div>
 
@@ -226,9 +259,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               <input
                 type="checkbox"
                 checked={formData.isNetworkSupplier}
-                onChange={(e) =>
-                  setFormData({ ...formData, isNetworkSupplier: e.target.checked })
-                }
+                onChange={(e) => setFormData({ ...formData, isNetworkSupplier: e.target.checked })}
                 className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-ring"
               />
               <div>
@@ -241,7 +272,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
             </label>
           </div>
 
-          {/* Explicação sobre importação via WhatsApp */}
+          {/* Dica WhatsApp */}
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
             <p className="text-sm text-foreground">
               <strong>💡 Dica:</strong> Você também pode cadastrar fornecedores diretamente pelo
@@ -252,12 +283,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
 
           {/* Ações */}
           <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancelar
             </Button>
             <Button
@@ -266,14 +292,13 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
               disabled={
                 createMutation.isPending ||
                 updateMutation.isPending ||
-                formData.categories.length === 0
+                formData.categories.length === 0 ||
+                formData.regions.length === 0
               }
             >
               {createMutation.isPending || updateMutation.isPending
                 ? 'Salvando...'
-                : supplier
-                ? 'Salvar Alterações'
-                : 'Cadastrar Fornecedor'}
+                : supplier ? 'Salvar Alterações' : 'Cadastrar Fornecedor'}
             </Button>
           </div>
         </form>
