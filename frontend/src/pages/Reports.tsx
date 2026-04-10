@@ -6,7 +6,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency } from '../lib/utils';
 import {
   useReportFunnel,
   useReportOperational,
@@ -15,7 +15,6 @@ import {
   useReportCategoryRegion,
 } from '../hooks/useReports';
 import {
-  TrendingUp,
   AlertTriangle,
   Clock,
   CheckCircle,
@@ -23,7 +22,6 @@ import {
   Package,
   Building2,
   MapPin,
-  FileText,
   BarChart2,
   PiggyBank,
   Users,
@@ -32,13 +30,13 @@ import {
 type Tab = 'funnel' | 'operational' | 'savings' | 'suppliers' | 'category';
 
 // Utilitário para montar datas padrão
-function defaultDates() {
+function defaultDates(): { from: string; to: string } {
   const to = new Date();
   const from = new Date();
   from.setDate(from.getDate() - 90);
   return {
-    from: from.toISOString().split('T')[0],
-    to: to.toISOString().split('T')[0],
+    from: from.toISOString().substring(0, 10),
+    to: to.toISOString().substring(0, 10),
   };
 }
 
@@ -67,7 +65,7 @@ function DateRangeFilter({
         type="date"
         value={to}
         min={from}
-        max={new Date().toISOString().split('T')[0]}
+        max={new Date().toISOString().substring(0, 10)}
         onChange={(e) => onChange(from, e.target.value)}
         className="px-2 py-1 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
       />
@@ -154,7 +152,7 @@ function FunnelReport() {
               <XAxis type="number" tick={{ fontSize: 12 }} />
               <YAxis type="category" dataKey="stage" tick={{ fontSize: 12 }} width={110} />
               <Tooltip
-                formatter={(value: any, name: any, props: any) => [
+                formatter={(value: any, _name: any, props: any) => [
                   `${value} cotações (${props.payload.rate}%)`,
                   props.payload.stage,
                 ]}
