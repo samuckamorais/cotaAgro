@@ -51,17 +51,6 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
  */
 export class ProducerFSM extends FSMEngine<ProducerState> {
   /**
-   * Retorna indicador de progresso simplificado (ex: "Passo 3 de 7")
-   * Mantido para uso futuro ou reintrodução
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private _getProgressLabel(state: ProducerState): string {
-    const progress = FLOW_PROGRESS[state];
-    if (!progress) return '';
-    return `_Passo ${progress.step} de ${progress.total} — ${progress.label}_\n\n`;
-  }
-
-  /**
    * Handler principal que roteia mensagem para o handler do estado atual
    */
   async handleMessage(producerId: string, message: string, nluResult?: NLUResult): Promise<void> {
