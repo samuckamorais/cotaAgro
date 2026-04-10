@@ -18,6 +18,7 @@ import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { UserController } from './modules/users/user.controller';
 import { ProposalController } from './modules/proposals/proposal.controller';
 import { SettingsController } from './modules/settings/settings.controller';
+import { ReportController } from './modules/reports/report.controller';
 import subscriptionsRouter from './modules/subscriptions/subscriptions.routes';
 
 /**
@@ -108,6 +109,13 @@ export function createApp(): Application {
   apiRouter.put('/users/:id', authenticate, requireTenant, UserController.update);
   apiRouter.delete('/users/:id', authenticate, requireTenant, UserController.delete);
   apiRouter.patch('/users/:id/status', authenticate, requireTenant, UserController.toggleStatus);
+
+  // Reports routes (protected + tenant isolation)
+  apiRouter.get('/reports/funnel', authenticate, requireTenant, ReportController.funnel);
+  apiRouter.get('/reports/operational', authenticate, requireTenant, ReportController.operational);
+  apiRouter.get('/reports/savings', authenticate, requireTenant, ReportController.savings);
+  apiRouter.get('/reports/supplier-performance', authenticate, requireTenant, ReportController.supplierPerformance);
+  apiRouter.get('/reports/category-region', authenticate, requireTenant, ReportController.categoryRegion);
 
   // Settings routes (protected — vinculado ao produtor do usuário logado)
   apiRouter.get('/settings', authenticate, SettingsController.get);

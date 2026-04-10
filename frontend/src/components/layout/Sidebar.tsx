@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Users, Building2, CreditCard, Shield, MessageSquare, Settings2 } from 'lucide-react';
+import { Home, FileText, Users, Building2, CreditCard, Shield, MessageSquare, Settings2, BarChart2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -11,6 +11,7 @@ const menuItems = [
   { name: 'Assinaturas', path: '/subscriptions', icon: CreditCard, resource: 'SUBSCRIPTIONS' },
   { name: 'WhatsApp', path: '/whatsapp', icon: MessageSquare, resource: 'WHATSAPP_CONFIG' },
   { name: 'Usuários', path: '/users', icon: Shield, resource: 'USERS' },
+  { name: 'Relatórios', path: '/reports', icon: BarChart2, resource: 'REPORTS' },
   { name: 'Configurações', path: '/settings', icon: Settings2, resource: 'DASHBOARD' },
 ];
 
