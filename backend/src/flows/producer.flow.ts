@@ -55,7 +55,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
    * Mantido para uso futuro ou reintrodução
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private getProgressLabel(state: ProducerState): string {
+  private _getProgressLabel(state: ProducerState): string {
     const progress = FLOW_PROGRESS[state];
     if (!progress) return '';
     return `_Passo ${progress.step} de ${progress.total} — ${progress.label}_\n\n`;
