@@ -98,13 +98,26 @@ export class EvolutionProvider implements IWhatsAppProvider {
     }
 
     // Extrair texto da mensagem (suporta vários formatos)
-    const conversation =
+    let conversation =
       (msgObj?.conversation as string) ||
       (msgObj?.extendedTextMessage as any)?.text ||
       (msgObj?.buttonsResponseMessage as any)?.selectedDisplayText ||
       (msgObj?.listResponseMessage as any)?.title ||
       (msgObj?.imageMessage as any)?.caption ||
       '';
+
+    // Suporte a contatos compartilhados (contactMessage)
+    // Evolution API envia: { contactMessage: { displayName, vcard } }
+    const contactMsg = msgObj?.contactMessage as any;
+    if (!conversation && contactMsg) {
+      const vcard = contactMsg.vcard as string | undefined;
+      const displayName = contactMsg.displayName as string | undefined;
+      if (vcard) {
+        conversation = vcard;
+      } else if (displayName) {
+        conversation = `CONTATO: ${displayName}`;
+      }
+    }
 
     if (!conversation) {
       throw createError.badRequest('Mensagem sem texto — tipo de mídia não suportado');

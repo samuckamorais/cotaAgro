@@ -4,61 +4,112 @@ import { logger } from '../utils/logger';
 
 /**
  * Serviço para extrair dados de contatos compartilhados via WhatsApp
- * Usa OpenAI para interpretar o vCard e extrair informações estruturadas
  */
 export class ContactExtractorService {
   /**
-   * Extrai dados de um contato a partir do texto do vCard ou mensagem
+   * Detecta se uma mensagem contém um vCard (formato de contato)
    */
-  async extractContactData(contactText: string): Promise<ContactData | null> {
+  isVCard(message: string): boolean {
+    return (
+      message.includes('BEGIN:VCARD') ||
+      message.startsWith('FN:') ||
+      message.includes('\nFN:') ||
+      message.includes('\nTEL')
+    );
+  }
+
+  /**
+   * Extrai dados de um vCard formatado
+   */
+  extractFromVCard(vcard: string): ContactData | null {
     try {
-      const prompt = `
-Você é um assistente que extrai informações de contatos. Analise o texto abaixo e extraia as seguintes informações:
-- name: nome completo da pessoa
-- phone: número de telefone (com DDI se disponível, formato: +5564999999999)
-- company: nome da empresa (se mencionado)
-- email: endereço de e-mail (se disponível)
+      // Normalizar quebras de linha (CRLF ou LF)
+      const lines = vcard.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      const data: Partial<ContactData> = {};
 
-IMPORTANTE:
-- Se não encontrar um campo, não o inclua na resposta
-- O phone é obrigatório
-- Retorne apenas um objeto JSON válido
+      for (const line of lines) {
+        const trimmed = line.trim();
 
-Texto do contato:
-${contactText}
-
-Responda apenas com o JSON, sem explicações.
-`.trim();
-
-      const response = await openaiService.interpretMessage(prompt);
-
-      // Tentar parsear o JSON da resposta
-      const cleanedResponse = JSON.stringify(response).trim().replace(/```json\n?|\n?```/g, '');
-      const extracted = JSON.parse(cleanedResponse) as Partial<ContactData>;
-
-      // Validar dados obrigatórios
-      if (!extracted.name || !extracted.phone) {
-        logger.warn('Contact extraction missing required fields', { extracted });
-        return null;
+        if (trimmed.startsWith('FN:')) {
+          data.name = trimmed.substring(3).trim();
+        } else if (trimmed.startsWith('N:') && !data.name) {
+          // N:Sobrenome;Nome;;; → reconstruir nome
+          const parts = trimmed.substring(2).split(';').map((p) => p.trim()).filter(Boolean);
+          if (parts.length >= 2) data.name = `${parts[1]} ${parts[0]}`.trim();
+          else if (parts.length === 1) data.name = parts[0];
+        } else if (trimmed.startsWith('TEL') || trimmed.includes(':TEL')) {
+          // TEL:+5564999999999 ou TEL;TYPE=CELL:+5564999999999
+          const colonIdx = trimmed.indexOf(':');
+          if (colonIdx !== -1) {
+            const phone = trimmed.substring(colonIdx + 1).trim();
+            if (phone && !data.phone) {
+              data.phone = this.normalizePhone(phone);
+            }
+          }
+        } else if (trimmed.startsWith('EMAIL') && trimmed.includes(':')) {
+          const colonIdx = trimmed.indexOf(':');
+          data.email = trimmed.substring(colonIdx + 1).trim();
+        } else if (trimmed.startsWith('ORG:')) {
+          data.company = trimmed.substring(4).trim();
+        }
       }
 
-      // Normalizar telefone (remover espaços, traços, parênteses)
-      extracted.phone = this.normalizePhone(extracted.phone);
+      if (data.name && data.phone) {
+        logger.info('vCard parsed successfully', { name: data.name, phone: data.phone });
+        return data as ContactData;
+      }
 
-      logger.info('Contact data extracted successfully', { extracted });
-      return extracted as ContactData;
+      logger.warn('vCard missing required fields', { data });
+      return null;
     } catch (error) {
-      logger.error('Failed to extract contact data', { error, contactText });
+      logger.error('Failed to parse vCard', { error });
       return null;
     }
   }
 
   /**
-   * Extrai dados de contato de um payload de WhatsApp (formato Twilio/Evolution)
+   * Extrai dados de contato de um payload de WhatsApp (formato Evolution API)
+   * Tenta vCard primeiro, depois OpenAI como fallback
+   */
+  async extractContactData(contactText: string): Promise<ContactData | null> {
+    // 1. Tentar parsear como vCard diretamente
+    if (this.isVCard(contactText)) {
+      const fromVCard = this.extractFromVCard(contactText);
+      if (fromVCard) return fromVCard;
+    }
+
+    // 2. Fallback: OpenAI para texto livre ou vCard malformado
+    try {
+      const extracted = await openaiService.extractContactFromText(contactText);
+      if (extracted && extracted.name && extracted.phone) {
+        extracted.phone = this.normalizePhone(extracted.phone);
+        return extracted;
+      }
+    } catch (error) {
+      logger.error('OpenAI contact extraction failed', { error });
+    }
+
+    return null;
+  }
+
+  /**
+   * Extrai dados de contato de um payload do WhatsApp (formato Evolution API)
    */
   extractFromWhatsAppPayload(payload: any): ContactData | null {
     try {
-      // Formato Twilio/WhatsApp: payload pode conter ProfileName e WaId
+      // Formato Evolution API: contactMessage
+      if (payload?.message?.contactMessage) {
+        const cm = payload.message.contactMessage;
+        if (cm.vcard) {
+          const fromVCard = this.extractFromVCard(cm.vcard);
+          if (fromVCard) return fromVCard;
+        }
+        if (cm.displayName) {
+          return { name: cm.displayName, phone: '' };
+        }
+      }
+
+      // Formato Twilio/WhatsApp legado
       if (payload.ProfileName && payload.WaId) {
         return {
           name: payload.ProfileName,
@@ -87,17 +138,13 @@ Responda apenas com o JSON, sem explicações.
   }
 
   /**
-   * Normaliza número de telefone para formato padrão
-   * Remove caracteres especiais e garante que começa com +
+   * Normaliza número de telefone para formato padrão +55XXXXXXXXXXX
    */
-  private normalizePhone(phone: string): string {
-    // Remove tudo exceto números e +
+  normalizePhone(phone: string): string {
     let normalized = phone.replace(/[^\d+]/g, '');
 
-    // Se não começa com +, adiciona +55 (Brasil) como padrão
     if (!normalized.startsWith('+')) {
-      // Se já tem 55 no início (código do Brasil)
-      if (normalized.startsWith('55')) {
+      if (normalized.startsWith('55') && normalized.length >= 12) {
         normalized = '+' + normalized;
       } else {
         normalized = '+55' + normalized;
@@ -105,47 +152,6 @@ Responda apenas com o JSON, sem explicações.
     }
 
     return normalized;
-  }
-
-  /**
-   * Detecta se uma mensagem contém um vCard (formato de contato)
-   */
-  isVCard(message: string): boolean {
-    return message.includes('BEGIN:VCARD') || message.includes('FN:') || message.includes('TEL:');
-  }
-
-  /**
-   * Extrai dados de um vCard formatado
-   */
-  extractFromVCard(vcard: string): ContactData | null {
-    try {
-      const lines = vcard.split('\n');
-      const data: Partial<ContactData> = {};
-
-      for (const line of lines) {
-        if (line.startsWith('FN:')) {
-          data.name = line.substring(3).trim();
-        } else if (line.startsWith('TEL:') || line.startsWith('TEL;')) {
-          const phone = line.split(':')[1]?.trim();
-          if (phone) {
-            data.phone = this.normalizePhone(phone);
-          }
-        } else if (line.startsWith('EMAIL:') || line.startsWith('EMAIL;')) {
-          data.email = line.split(':')[1]?.trim();
-        } else if (line.startsWith('ORG:')) {
-          data.company = line.substring(4).trim();
-        }
-      }
-
-      if (data.name && data.phone) {
-        return data as ContactData;
-      }
-
-      return null;
-    } catch (error) {
-      logger.error('Failed to parse vCard', { error });
-      return null;
-    }
   }
 }
 

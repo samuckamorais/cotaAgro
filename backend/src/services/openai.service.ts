@@ -334,6 +334,38 @@ Retorne APENAS o JSON, sem texto adicional.`;
     // Desconhecido
     return { intent: 'desconhecido', entities: {}, confidence: 0.5 };
   }
+
+  /**
+   * Extrai dados de contato de um texto livre ou vCard malformado usando OpenAI
+   */
+  async extractContactFromText(text: string): Promise<{ name: string; phone: string; company?: string; email?: string } | null> {
+    if (!this.client) return null;
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model: env.OPENAI_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `Extraia dados de contato do texto abaixo e retorne APENAS um JSON com os campos: name, phone, company (opcional), email (opcional).
+O campo phone deve estar no formato +5564999999999. Se não encontrar nome ou telefone, retorne null.
+Retorne SOMENTE o JSON, sem explicações.`,
+          },
+          { role: 'user', content: text },
+        ],
+        temperature: 0,
+        max_tokens: 150,
+      });
+
+      const content = response.choices[0]?.message?.content?.trim() || '';
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      if (cleaned === 'null') return null;
+      return JSON.parse(cleaned);
+    } catch (error) {
+      logger.error('extractContactFromText failed', { error });
+      return null;
+    }
+  }
 }
 
 // Singleton
