@@ -13,37 +13,6 @@ import { supplierNotificationService } from '../services/supplier-notification.s
 import { ProducerSettingsService } from '../services/producer-settings.service';
 import { QuoteTokenService } from '../services/quote-token.service';
 
-/**
- * Mapa de progresso para cada estado do fluxo
- * Usado para mostrar "Passo X de Y" nas mensagens
- */
-const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label: string; icon: string } | null> = {
-  'IDLE': null,
-  'AWAITING_REPEAT_CHOICE': null,
-  'AWAITING_IMAGE_CHOICE': null,
-  'AWAITING_PROACTIVE_CHOICE': null,
-  'AWAITING_QUOTE_MODE': null,
-  'AWAITING_QUOTE_FORM': null,
-  'AWAITING_CATEGORY': { step: 1, total: 7, label: 'Categoria', icon: '🏷️' },
-  'AWAITING_PRODUCT': { step: 2, total: 7, label: 'Produto', icon: '📦' },
-  'AWAITING_QUANTITY': { step: 3, total: 7, label: 'Quantidade', icon: '📊' },
-  'AWAITING_MORE_ITEMS': null,
-  'AWAITING_REGION': { step: 4, total: 7, label: 'Região', icon: '📍' },
-  'AWAITING_DEADLINE': { step: 5, total: 7, label: 'Prazo', icon: '⏰' },
-  'AWAITING_OBSERVATIONS': null,
-  'AWAITING_FREIGHT': { step: 6, total: 7, label: 'Frete', icon: '🚚' },
-  'AWAITING_PAYMENT_TERMS': { step: 7, total: 7, label: 'Pagamento', icon: '💳' },
-  'AWAITING_SUPPLIER_SCOPE': null,
-  'AWAITING_SUPPLIER_SELECTION': null,
-  'AWAITING_SUPPLIER_EXCLUSION': null,
-  'AWAITING_SUPPLIER_CONFIRMATION': null,
-  'AWAITING_CONFIRMATION': null,
-  'AWAITING_CHOICE': null,
-  'AWAITING_SUPPLIER_CONTACT': null,
-  'AWAITING_SUPPLIER_CATEGORY': null,
-  'QUOTE_ACTIVE': null,
-  'CLOSED': null,
-};
 
 /**
  * FSM do Produtor - Gerencia fluxo de criação de cotações
