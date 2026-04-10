@@ -4,7 +4,7 @@ import { useCreateProducer, useUpdateProducer } from '../../hooks/useProducers';
 import { isValidCpfCnpj, formatCpfCnpj } from '../../lib/validators';
 import { useToast } from '../../hooks/use-toast';
 import { X } from 'lucide-react';
-import { BRAZIL_STATES, getCitiesByState } from '../../data/brazil-locations';
+import { BRAZIL_STATES } from '../../data/brazil-locations';
 
 interface ProducerFormModalProps {
   isOpen: boolean;
@@ -24,26 +24,33 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [cities, setCities] = useState<string[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
 
   const createMutation = useCreateProducer();
   const updateMutation = useUpdateProducer();
   const { toast } = useToast();
 
-  // Derivar estado a partir da cidade salva (edição)
-  const inferState = (savedCity: string, savedRegion: string): string => {
-    // Prioriza UF salva no campo region (ex: "GO")
+  // Derivar estado a partir da região salva (edição)
+  const inferState = (savedRegion: string): string => {
     const byUf = BRAZIL_STATES.find((s) => s.uf === savedRegion?.trim().toUpperCase());
-    if (byUf) return byUf.uf;
-    // Fallback: buscar pelo nome da cidade
-    const byCity = BRAZIL_STATES.find((s) =>
-      s.cities.some((c) => c.toLowerCase() === savedCity?.toLowerCase())
-    );
-    return byCity?.uf ?? '';
+    return byUf?.uf ?? '';
   };
+
+  // Busca municípios do IBGE sempre que o estado muda
+  useEffect(() => {
+    if (!formData.state) { setCities([]); return; }
+    setCitiesLoading(true);
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${formData.state}/municipios?orderBy=nome`)
+      .then((r) => r.json())
+      .then((data: Array<{ nome: string }>) => setCities(data.map((m) => m.nome)))
+      .catch(() => setCities([]))
+      .finally(() => setCitiesLoading(false));
+  }, [formData.state]);
 
   useEffect(() => {
     if (producer) {
-      const state = inferState(producer.city || '', producer.region || '');
+      const state = inferState(producer.region || '');
       setFormData({
         name: producer.name || '',
         cpfCnpj: producer.cpfCnpj || '',
@@ -111,8 +118,6 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
       toast({ title: 'Erro ao salvar produtor', description: error.response?.data?.message, variant: 'destructive' });
     }
   };
-
-  const cities = getCitiesByState(formData.state);
 
   if (!isOpen) return null;
 
@@ -222,10 +227,12 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
                 required
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                disabled={!formData.state}
+                disabled={!formData.state || citiesLoading}
                 className={selectClass}
               >
-                <option value="">{formData.state ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>
+                <option value="">
+                  {!formData.state ? 'Selecione o estado primeiro' : citiesLoading ? 'Carregando municípios...' : 'Selecione o município'}
+                </option>
                 {cities.map((city) => (
                   <option key={city} value={city}>{city}</option>
                 ))}
