@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './hooks/use-toast';
 import { ProposalForm } from './pages/ProposalForm';
+import { QuoteForm } from './pages/QuoteForm';
 import { useAnalytics } from './hooks/useAnalytics';
 import { usePerformance } from './hooks/usePerformance';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -40,6 +41,8 @@ function App() {
                 {/* Rota pública para formulário de proposta do fornecedor */}
                 <Route path="/proposta/:token" element={<ProposalForm />} />
                 <Route path="/p/:token" element={<ProposalForm />} />
+                {/* Rota pública para formulário de cotação do produtor */}
+                <Route path="/cotacao/:token" element={<QuoteForm />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/*" element={<ProtectedLayout />} />
               </Routes>

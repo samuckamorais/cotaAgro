@@ -34,6 +34,7 @@ model Tenant {
   conversationMetrics   ConversationMetric[]
   experiments           Experiment[]
   experimentAssignments ExperimentAssignment[]
+  quoteTokens           QuoteToken[]
 
   @@index([slug])
   @@index([active])
@@ -116,6 +117,7 @@ model Producer {
   conversationState ConversationState?
   user              User?
   settings          ProducerSettings?
+  quoteTokens       QuoteToken[]
 
   @@unique([tenantId, cpfCnpj])
   @@unique([tenantId, phone])
@@ -210,6 +212,7 @@ model QuoteItem {
   product           String
   quantity          Float
   unit              String
+  observation       String? // observação específica deste item
   winningSupplierId String? // vencedor no modo "por item"
 
   proposals ProposalItem[]
@@ -255,6 +258,22 @@ model ProposalItem {
   @@index([proposalId])
   @@index([quoteItemId])
   @@map("proposal_items")
+}
+
+model QuoteToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId   String
+  producer   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  producerId String
+  used       Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([token])
+  @@index([producerId])
+  @@map("quote_tokens")
 }
 
 model ProposalToken {

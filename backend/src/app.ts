@@ -19,6 +19,7 @@ import { UserController } from './modules/users/user.controller';
 import { ProposalController } from './modules/proposals/proposal.controller';
 import { SettingsController } from './modules/settings/settings.controller';
 import { ReportController } from './modules/reports/report.controller';
+import { QuoteFormController } from './modules/quote-form/quote-form.controller';
 import subscriptionsRouter from './modules/subscriptions/subscriptions.routes';
 
 /**
@@ -60,6 +61,10 @@ export function createApp(): Application {
   apiRouter.post('/proposta/:token', ProposalController.submitForm);
   apiRouter.get('/p/:token', ProposalController.getForm);
   apiRouter.post('/p/:token', ProposalController.submitForm);
+
+  // Quote form routes (public — token-based, produtor preenche cotação via link)
+  apiRouter.get('/cotacao/:token', QuoteFormController.getForm);
+  apiRouter.post('/cotacao/:token', QuoteFormController.submitForm);
 
   // WhatsApp webhook routes (public)
   apiRouter.get('/whatsapp/webhook', WhatsAppController.verifyWebhook);

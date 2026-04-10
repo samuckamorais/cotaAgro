@@ -11,6 +11,7 @@ import { nluExtractorService } from '../services/nlu-extractor.service';
 import { openaiService } from '../services/openai.service';
 import { supplierNotificationService } from '../services/supplier-notification.service';
 import { ProducerSettingsService } from '../services/producer-settings.service';
+import { QuoteTokenService } from '../services/quote-token.service';
 
 /**
  * Mapa de progresso para cada estado do fluxo
@@ -21,6 +22,8 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
   'AWAITING_REPEAT_CHOICE': null,
   'AWAITING_IMAGE_CHOICE': null,
   'AWAITING_PROACTIVE_CHOICE': null,
+  'AWAITING_QUOTE_MODE': null,
+  'AWAITING_QUOTE_FORM': null,
   'AWAITING_CATEGORY': { step: 1, total: 7, label: 'Categoria', icon: '🏷️' },
   'AWAITING_PRODUCT': { step: 2, total: 7, label: 'Produto', icon: '📦' },
   'AWAITING_QUANTITY': { step: 3, total: 7, label: 'Quantidade', icon: '📊' },
@@ -100,6 +103,14 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
         case 'AWAITING_REPEAT_CHOICE':
           await this.handleAwaitingRepeatChoice(producerId, producer.phone, message, context);
+          break;
+
+        case 'AWAITING_QUOTE_MODE':
+          await this.handleAwaitingQuoteMode(producerId, producer.phone, message, producer.tenantId);
+          break;
+
+        case 'AWAITING_QUOTE_FORM':
+          await this.handleAwaitingQuoteForm(producerId, producer.phone);
           break;
 
         case 'AWAITING_CATEGORY':
@@ -256,22 +267,28 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
         return;
       }
 
-      // Iniciar fluxo normal: perguntar categoria primeiro
-      await this.startCategorySelection(producerId, phone, producer.tenantId);
+      // Perguntar modo: chat ou formulário web
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.ASK_QUOTE_MODE,
+      });
+      await this.setState(producerId, 'producer', 'AWAITING_QUOTE_MODE', {});
       return;
     }
 
-    // Se NLU detectou intenção de nova cotação, pré-preencher produto no contexto
-    // mas ainda iniciar pelo passo de categoria
+    // Se NLU detectou intenção de nova cotação — também perguntar o modo
     if (nluResult?.intent === 'nova_cotacao' && nluResult.entities.product) {
-      const prefilledContext: ConversationContext = {
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.ASK_QUOTE_MODE,
+      });
+      await this.setState(producerId, 'producer', 'AWAITING_QUOTE_MODE', {
         product: nluResult.entities.product,
         quantity: nluResult.entities.quantity,
         unit: nluResult.entities.unit,
         region: nluResult.entities.region,
         deadline: nluResult.entities.deadline,
-      };
-      await this.startCategorySelection(producerId, phone, producer.tenantId, prefilledContext);
+      });
       return;
     }
 
@@ -281,6 +298,69 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       to: phone,
       body: Messages.WELCOME(producer.name, isReturning),
     });
+  }
+
+  /**
+   * Estado AWAITING_QUOTE_MODE - Escolha entre cotação pelo chat ou via formulário web
+   */
+  private async handleAwaitingQuoteMode(
+    producerId: string,
+    phone: string,
+    message: string,
+    tenantId: string
+  ): Promise<void> {
+    const normalized = message.trim();
+
+    if (normalized === '1' || normalized.toLowerCase().includes('chat')) {
+      await this.startCategorySelection(producerId, phone, tenantId);
+      return;
+    }
+
+    if (normalized === '2' || normalized.toLowerCase().includes('formulário') || normalized.toLowerCase().includes('formulario') || normalized.toLowerCase().includes('form')) {
+      const url = await QuoteTokenService.generateFormUrl(producerId, tenantId);
+      await whatsappService.sendMessage({
+        to: phone,
+        body: Messages.QUOTE_FORM_LINK(url),
+      });
+      await this.setState(producerId, 'producer', 'AWAITING_QUOTE_FORM', {});
+      return;
+    }
+
+    await whatsappService.sendMessage({
+      to: phone,
+      body: 'Digite *1* para preencher pelo chat ou *2* para usar o formulário web.',
+    });
+  }
+
+  /**
+   * Estado AWAITING_QUOTE_FORM - Aguardando o produtor preencher o formulário web
+   */
+  private async handleAwaitingQuoteForm(
+    producerId: string,
+    phone: string
+  ): Promise<void> {
+    const token = await prisma.quoteToken.findFirst({
+      where: {
+        producerId,
+        used: false,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (token) {
+      const url = QuoteTokenService.buildUrl(token.token);
+      await whatsappService.sendMessage({
+        to: phone,
+        body: `Seu formulário ainda está disponível:\n${url}\n\nPreencha para finalizar a cotação.\n\nPara cancelar, digite *cancelar*.`,
+      });
+    } else {
+      // Token expirado ou não encontrado — resetar
+      await this.resetState(producerId, 'producer');
+      await whatsappService.sendMessage({
+        to: phone,
+        body: 'O link da sua cotação expirou. Digite *nova cotação* para recomeçar.',
+      });
+    }
   }
 
   /**
