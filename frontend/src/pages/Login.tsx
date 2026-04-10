@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
-import { Eye, EyeOff, Wheat, TrendingUp, Building2, MessageSquare } from 'lucide-react';
+import { LogoMark, LogoFull } from '../components/ui/logo';
+import { Eye, EyeOff, TrendingUp, Building2, MessageSquare } from 'lucide-react';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -33,22 +34,17 @@ export function Login() {
     <div className="min-h-screen flex">
       {/* Left Side - Branding & Features */}
       <div className="hidden lg:flex lg:flex-1 bg-primary relative overflow-hidden">
-        {/* Background Pattern — um único ícone centralizado, sutil */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-          <Wheat className="w-[420px] h-[420px] text-primary-foreground" />
+        {/* Background Pattern — LogoMark centralizado, opacidade baixa */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
+          <LogoMark size={420} />
         </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           {/* Logo & Title */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-12 h-12 bg-primary-foreground/10 rounded-xl backdrop-blur-sm border border-primary-foreground/10">
-              <Wheat className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">FarmFlow</h1>
-              <p className="text-primary-foreground/70 text-xs">Gestão Inteligente de Cotações</p>
-            </div>
+          <div>
+            <LogoFull iconSize={40} textColor="white" layout="horizontal" />
+            <p className="text-primary-foreground/60 text-xs mt-1 ml-[52px]">Gestão Inteligente de Cotações</p>
           </div>
 
           {/* Features */}
@@ -111,11 +107,8 @@ export function Login() {
         <div className="w-full max-w-sm">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-xl mb-3">
-              <Wheat className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground mb-1">FarmFlow</h1>
-            <p className="text-sm text-muted-foreground">Gestão de Cotações Agrícolas</p>
+            <LogoFull iconSize={52} layout="vertical" className="mb-1" />
+            <p className="text-sm text-muted-foreground mt-2">Gestão de Cotações Agrícolas</p>
           </div>
 
           {/* Welcome Message */}

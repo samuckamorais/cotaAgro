@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X, Search, Sun, Moon, Monitor, LogOut, User as UserIcon, FileText, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { LogoMark } from '../ui/logo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -52,11 +53,9 @@ export function MobileHeader({ onOpenCommandPalette, title }: MobileHeaderProps)
             {title ? (
               <h1 className="text-sm font-medium text-foreground truncate">{title}</h1>
             ) : (
-              <div className="flex items-center justify-center gap-1.5">
-                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
-                  <span className="text-[10px] font-medium text-primary-foreground">CA</span>
-                </div>
-                <span className="text-sm font-medium text-foreground">FarmFlow</span>
+              <div className="flex items-center justify-center gap-2">
+                <LogoMark size={24} />
+                <span className="text-sm font-bold tracking-wide text-foreground">FARMFLOW</span>
               </div>
             )}
           </div>

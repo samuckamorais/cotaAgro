@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, FileText, Users, Building2, CreditCard, Shield, MessageSquare, Settings2, BarChart2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
+import { LogoMark } from '../ui/logo';
 
 const menuItems = [
   { name: 'Dashboard', path: '/dashboard', icon: Home, resource: 'DASHBOARD' },
@@ -22,14 +23,12 @@ export function Sidebar() {
   return (
     <aside className="w-56 bg-[hsl(var(--sidebar))] border-r border-border/50 flex flex-col">
       {/* Logo */}
-      <div className="p-5 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
-            <span className="text-xs font-medium text-primary-foreground">CA</span>
-          </div>
+      <div className="p-4 border-b border-border/50">
+        <div className="flex items-center gap-2.5">
+          <LogoMark size={30} />
           <div>
-            <div className="text-sm font-medium text-foreground">FarmFlow</div>
-            <div className="text-xs text-muted-foreground">Painel Admin</div>
+            <div className="text-sm font-bold tracking-wide text-foreground">FARMFLOW</div>
+            <div className="text-[10px] text-muted-foreground">Painel Admin</div>
           </div>
         </div>
       </div>
