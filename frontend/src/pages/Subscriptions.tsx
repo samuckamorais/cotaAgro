@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { SubscriptionFormModal } from '../components/subscriptions/SubscriptionFormModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/use-toast';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 
 const planLabels: Record<string, string> = {
   BASIC: 'Basic',
@@ -52,6 +54,7 @@ export function Subscriptions() {
   const [statusFilter, setStatusFilter] = useState('');
   const [planFilter, setPlanFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [confirmCancel, setConfirmCancel] = useState<{ id: string; producerName: string } | null>(null);
   const limit = 15;
 
   const { data, isLoading, error } = useSubscriptions(page, limit, {
@@ -62,22 +65,19 @@ export function Subscriptions() {
 
   const cancelMutation = useCancelSubscription();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
 
-  const handleCancel = async (id: string, producerName: string) => {
-    if (!confirm(`Tem certeza que deseja cancelar a assinatura de "${producerName}"?`)) {
-      return;
-    }
-
-    const reason = prompt('Motivo do cancelamento (opcional):');
-
+  const handleCancel = async () => {
+    if (!confirmCancel) return;
     try {
       await cancelMutation.mutateAsync({
-        id,
-        data: { immediate: false, reason: reason || undefined },
+        id: confirmCancel.id,
+        data: { immediate: false },
       });
-      alert('Assinatura cancelada com sucesso!');
-    } catch (error) {
-      alert('Erro ao cancelar assinatura. Tente novamente.');
+      toast({ title: 'Assinatura cancelada com sucesso!', variant: 'success' });
+      setConfirmCancel(null);
+    } catch {
+      toast({ title: 'Erro ao cancelar assinatura', description: 'Tente novamente.', variant: 'destructive' });
     }
   };
 
@@ -530,7 +530,7 @@ export function Subscriptions() {
                             size="sm"
                             className="flex-1 gap-1.5"
                             onClick={() =>
-                              handleCancel(subscription.id, subscription.producer.name)
+                              setConfirmCancel({ id: subscription.id, producerName: subscription.producer.name })
                             }
                             disabled={cancelMutation.isPending}
                           >
@@ -587,6 +587,17 @@ export function Subscriptions() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         subscription={editingSubscription}
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmCancel}
+        onClose={() => setConfirmCancel(null)}
+        onConfirm={handleCancel}
+        title="Cancelar assinatura"
+        description={`Tem certeza que deseja cancelar a assinatura de "${confirmCancel?.producerName}"? O acesso será mantido até o fim do período atual.`}
+        confirmLabel="Cancelar assinatura"
+        variant="warning"
+        isLoading={cancelMutation.isPending}
       />
     </div>
   );

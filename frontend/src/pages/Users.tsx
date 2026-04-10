@@ -4,6 +4,8 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useUsers, useDeleteUser } from '../hooks/useUsers';
 import { formatDate } from '../lib/utils';
+import { useToast } from '../hooks/use-toast';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,7 +18,8 @@ import {
   ShieldCheck,
   Eye,
   CheckCircle,
-  XCircle
+  XCircle,
+  Search,
 } from 'lucide-react';
 import { UserFormModal } from '../components/users/UserFormModal';
 import { UserStatusToggle } from '../components/users/UserStatusToggle';
@@ -24,24 +27,25 @@ import { useAuth } from '../contexts/AuthContext';
 
 export function Users() {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const limit = 12;
 
   const { data, isLoading, error } = useUsers(page, limit);
   const deleteMutation = useDeleteUser();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o usuário "${name}"?`)) {
-      return;
-    }
-
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
     try {
-      await deleteMutation.mutateAsync(id);
-      alert('Usuário excluído com sucesso!');
-    } catch (error) {
-      alert('Erro ao excluir usuário. Tente novamente.');
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast({ title: 'Usuário excluído com sucesso!', variant: 'success' });
+      setConfirmDelete(null);
+    } catch {
+      toast({ title: 'Erro ao excluir usuário', description: 'Tente novamente.', variant: 'destructive' });
     }
   };
 
@@ -98,8 +102,15 @@ export function Users() {
     );
   }
 
-  const users = data?.data || [];
+  const allUsers = data?.data || [];
   const pagination = data?.pagination;
+
+  const users = search.trim()
+    ? allUsers.filter((u: any) =>
+        u.name?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email?.toLowerCase().includes(search.toLowerCase())
+      )
+    : allUsers;
 
   return (
     <div className="space-y-6">
@@ -117,17 +128,29 @@ export function Users() {
         )}
       </div>
 
+      {/* Busca */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Buscar por nome ou e-mail..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
       {/* Empty State */}
       {users.length === 0 ? (
         <Card className="p-16 text-center">
           <User className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-base font-medium text-foreground mb-2">
-            Nenhum usuário cadastrado
+            {search ? 'Nenhum resultado encontrado' : 'Nenhum usuário cadastrado'}
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Cadastre o primeiro usuário para começar
+            {search ? `Nenhum usuário corresponde a "${search}"` : 'Cadastre o primeiro usuário para começar'}
           </p>
-          {isAdmin() && (
+          {isAdmin() && !search && (
             <Button onClick={() => setIsModalOpen(true)} className="gap-2">
               <Plus className="w-3.5 h-3.5" />
               Cadastrar Usuário
@@ -189,7 +212,7 @@ export function Users() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(user.id, user.name)}
+                          onClick={() => setConfirmDelete({ id: user.id, name: user.name })}
                           disabled={deleteMutation.isPending}
                           className="h-8 w-8 p-0 text-[hsl(var(--error))] hover:text-[hsl(var(--error))] hover:bg-[hsl(var(--error-bg))]"
                         >
@@ -300,6 +323,16 @@ export function Users() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         user={editingUser}
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Excluir usuário"
+        description={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

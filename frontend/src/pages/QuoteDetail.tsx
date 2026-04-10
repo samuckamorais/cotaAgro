@@ -4,6 +4,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useQuote, useCloseQuote } from '../hooks/useQuotes';
 import { formatDate, formatCurrency } from '../lib/utils';
+import { useToast } from '../hooks/use-toast';
 import {
   ArrowLeft,
   CheckCircle,
@@ -37,15 +38,16 @@ export function QuoteDetail() {
   const navigate = useNavigate();
   const { data: quote, isLoading, error } = useQuote(id!);
   const closeQuoteMutation = useCloseQuote();
+  const { toast } = useToast();
 
   const handleCloseQuote = async (supplierId: string) => {
     if (!id) return;
 
     try {
       await closeQuoteMutation.mutateAsync({ quoteId: id, supplierId });
-      alert('Cotação fechada com sucesso!');
-    } catch (error) {
-      alert('Erro ao fechar cotação. Tente novamente.');
+      toast({ title: 'Cotação fechada com sucesso!', variant: 'success' });
+    } catch {
+      toast({ title: 'Erro ao fechar cotação', description: 'Tente novamente.', variant: 'destructive' });
     }
   };
 

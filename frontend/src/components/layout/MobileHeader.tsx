@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
+import { ConfirmModal } from '../ui/confirm-modal';
 
 interface MobileHeaderProps {
   onOpenCommandPalette?: () => void;
@@ -17,12 +18,11 @@ export function MobileHeader({ onOpenCommandPalette, title }: MobileHeaderProps)
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const handleLogout = () => {
-    if (confirm('Tem certeza que deseja sair?')) {
-      logout();
-      navigate('/login');
-    }
+    logout();
+    navigate('/login');
   };
 
   const themeOptions = [
@@ -188,7 +188,7 @@ export function MobileHeader({ onOpenCommandPalette, title }: MobileHeaderProps)
                 <Button
                   variant="outline"
                   className="w-full justify-start text-destructive border-destructive/30 hover:bg-destructive/10 touch-manipulation"
-                  onClick={handleLogout}
+                  onClick={() => setConfirmLogout(true)}
                 >
                   <LogOut className="w-4 h-4 mr-3" />
                   Sair
@@ -198,6 +198,16 @@ export function MobileHeader({ onOpenCommandPalette, title }: MobileHeaderProps)
           </div>
         </>
       )}
+
+      <ConfirmModal
+        isOpen={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={handleLogout}
+        title="Sair do sistema"
+        description="Tem certeza que deseja encerrar a sessão?"
+        confirmLabel="Sair"
+        variant="warning"
+      />
     </>
   );
 }

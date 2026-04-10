@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { LogOut, User as UserIcon, ShieldCheck, Sun, Moon, Monitor, Search } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { ConfirmModal } from '../ui/confirm-modal';
 
 interface HeaderProps {
   onOpenCommandPalette?: () => void;
@@ -15,12 +16,11 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const handleLogout = () => {
-    if (confirm('Tem certeza que deseja sair?')) {
-      logout();
-      navigate('/login');
-    }
+    logout();
+    navigate('/login');
   };
 
   const themeOptions = [
@@ -123,13 +123,23 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleLogout}
+          onClick={() => setConfirmLogout(true)}
           className="gap-2"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span className="text-xs">Sair</span>
         </Button>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={handleLogout}
+        title="Sair do sistema"
+        description="Tem certeza que deseja encerrar a sessão?"
+        confirmLabel="Sair"
+        variant="warning"
+      />
     </header>
   );
 }

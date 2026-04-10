@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useCreateSubscription, useUpdatePlan, useRenewSubscription } from '../../hooks/useSubscriptions';
 import { useProducers } from '../../hooks/useProducers';
+import { useToast } from '../../hooks/use-toast';
 
 interface SubscriptionFormModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function SubscriptionFormModal({ isOpen, onClose, subscription }: Subscri
   const createMutation = useCreateSubscription();
   const updatePlanMutation = useUpdatePlan();
   const renewMutation = useRenewSubscription();
+  const { toast } = useToast();
 
   const { data: producersData } = useProducers(1, 100);
   const producers = producersData?.data || [];
@@ -50,7 +52,7 @@ export function SubscriptionFormModal({ isOpen, onClose, subscription }: Subscri
           duration,
           isTrial,
         });
-        alert('Assinatura criada com sucesso!');
+        toast({ title: 'Assinatura criada com sucesso!', variant: 'success' });
       } else if (mode === 'edit') {
         await updatePlanMutation.mutateAsync({
           id: subscription.id,
@@ -59,7 +61,7 @@ export function SubscriptionFormModal({ isOpen, onClose, subscription }: Subscri
             applyImmediately,
           },
         });
-        alert('Plano atualizado com sucesso!');
+        toast({ title: 'Plano atualizado com sucesso!', variant: 'success' });
       } else if (mode === 'renew') {
         await renewMutation.mutateAsync({
           id: subscription.id,
@@ -68,12 +70,12 @@ export function SubscriptionFormModal({ isOpen, onClose, subscription }: Subscri
             paymentMethod: 'PIX',
           },
         });
-        alert('Assinatura renovada com sucesso!');
+        toast({ title: 'Assinatura renovada com sucesso!', variant: 'success' });
       }
 
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Erro ao salvar assinatura');
+      toast({ title: 'Erro ao salvar assinatura', description: error.response?.data?.error, variant: 'destructive' });
     }
   };
 

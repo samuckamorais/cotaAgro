@@ -5,6 +5,8 @@ import { Button } from '../components/ui/button';
 import { useSuppliers, useDeleteSupplier } from '../hooks/useSuppliers';
 import { formatDate } from '../lib/utils';
 import { getCategoryLabel } from '../types/supplier';
+import { useToast } from '../hooks/use-toast';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,29 +18,41 @@ import {
   Phone,
   Package,
   Users,
-  FileText
+  FileText,
+  Search,
 } from 'lucide-react';
 import { SupplierFormModal } from '../components/suppliers/SupplierFormModal';
 
+type FilterType = 'all' | 'own' | 'network';
+
 export function Suppliers() {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const limit = 15;
 
-  const { data, isLoading, error } = useSuppliers(page, limit);
+  const filters =
+    activeFilter === 'own'
+      ? { isNetworkSupplier: 'false' }
+      : activeFilter === 'network'
+        ? { isNetworkSupplier: 'true' }
+        : undefined;
+
+  const { data, isLoading, error } = useSuppliers(page, limit, filters);
   const deleteMutation = useDeleteSupplier();
+  const { toast } = useToast();
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o fornecedor "${name}"?`)) {
-      return;
-    }
-
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
     try {
-      await deleteMutation.mutateAsync(id);
-      alert('Fornecedor excluído com sucesso!');
-    } catch (error) {
-      alert('Erro ao excluir fornecedor. Tente novamente.');
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      toast({ title: 'Fornecedor excluído', variant: 'success' });
+      setConfirmDelete(null);
+    } catch {
+      toast({ title: 'Erro ao excluir fornecedor', description: 'Tente novamente.', variant: 'destructive' });
     }
   };
 
@@ -50,6 +64,11 @@ export function Suppliers() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingSupplier(null);
+  };
+
+  const handleFilterChange = (filter: FilterType) => {
+    setActiveFilter(filter);
+    setPage(1);
   };
 
   if (isLoading) {
@@ -95,8 +114,16 @@ export function Suppliers() {
     );
   }
 
-  const suppliers = data?.data || [];
+  const allSuppliers = data?.data || [];
   const pagination = data?.pagination;
+
+  const suppliers = search.trim()
+    ? allSuppliers.filter((s: any) =>
+        s.name?.toLowerCase().includes(search.toLowerCase()) ||
+        s.phone?.includes(search) ||
+        s.company?.toLowerCase().includes(search.toLowerCase())
+      )
+    : allSuppliers;
 
   return (
     <div className="space-y-6">
@@ -112,17 +139,41 @@ export function Suppliers() {
         </Button>
       </div>
 
-      {/* Filtros rápidos */}
-      <div className="flex gap-2">
-        <Badge variant="default" className="cursor-pointer text-xs">
-          Todos ({pagination?.total || 0})
-        </Badge>
-        <Badge variant="outline" className="cursor-pointer text-xs">
-          Meus Fornecedores
-        </Badge>
-        <Badge variant="outline" className="cursor-pointer text-xs">
-          Rede FarmFlow
-        </Badge>
+      {/* Busca e Filtros */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, telefone ou empresa..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Badge
+            variant={activeFilter === 'all' ? 'default' : 'outline'}
+            className="cursor-pointer text-xs"
+            onClick={() => handleFilterChange('all')}
+          >
+            Todos ({pagination?.total || 0})
+          </Badge>
+          <Badge
+            variant={activeFilter === 'own' ? 'default' : 'outline'}
+            className="cursor-pointer text-xs"
+            onClick={() => handleFilterChange('own')}
+          >
+            Meus Fornecedores
+          </Badge>
+          <Badge
+            variant={activeFilter === 'network' ? 'default' : 'outline'}
+            className="cursor-pointer text-xs"
+            onClick={() => handleFilterChange('network')}
+          >
+            Rede FarmFlow
+          </Badge>
+        </div>
       </div>
 
       {/* Empty State ou Grid de Cards */}
@@ -130,15 +181,19 @@ export function Suppliers() {
         <Card className="p-16 text-center">
           <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-base font-medium text-foreground mb-2">
-            Nenhum fornecedor cadastrado
+            {search ? 'Nenhum resultado encontrado' : 'Nenhum fornecedor cadastrado'}
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Cadastre o primeiro fornecedor para começar
+            {search
+              ? `Nenhum fornecedor corresponde a "${search}"`
+              : 'Cadastre o primeiro fornecedor para começar'}
           </p>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <Plus className="w-3.5 h-3.5" />
-            Cadastrar Fornecedor
-          </Button>
+          {!search && (
+            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+              <Plus className="w-3.5 h-3.5" />
+              Cadastrar Fornecedor
+            </Button>
+          )}
         </Card>
       ) : (
         <>
@@ -176,7 +231,7 @@ export function Suppliers() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(supplier.id, supplier.name)}
+                        onClick={() => setConfirmDelete({ id: supplier.id, name: supplier.name })}
                         disabled={deleteMutation.isPending}
                         className="h-8 w-8 p-0 text-[hsl(var(--error))] hover:text-[hsl(var(--error))] hover:bg-[hsl(var(--error-bg))]"
                       >
@@ -293,6 +348,17 @@ export function Suppliers() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         supplier={editingSupplier}
+      />
+
+      {/* Modal de confirmação de exclusão */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Excluir fornecedor"
+        description={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

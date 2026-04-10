@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { useCreateProducer, useUpdateProducer } from '../../hooks/useProducers';
 import { isValidCpfCnpj, formatCpfCnpj } from '../../lib/validators';
+import { useToast } from '../../hooks/use-toast';
 import { X } from 'lucide-react';
 import { BRAZIL_STATES, getCitiesByState } from '../../data/brazil-locations';
 
@@ -26,6 +27,7 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
 
   const createMutation = useCreateProducer();
   const updateMutation = useUpdateProducer();
+  const { toast } = useToast();
 
   // Derivar estado a partir da cidade salva (edição)
   const inferState = (savedCity: string, savedRegion: string): string => {
@@ -99,14 +101,14 @@ export function ProducerFormModal({ isOpen, onClose, producer }: ProducerFormMod
     try {
       if (producer) {
         await updateMutation.mutateAsync({ id: producer.id, data: payload });
-        alert('Produtor atualizado com sucesso!');
+        toast({ title: 'Produtor atualizado com sucesso!', variant: 'success' });
       } else {
         await createMutation.mutateAsync(payload);
-        alert('Produtor cadastrado com sucesso!');
+        toast({ title: 'Produtor cadastrado com sucesso!', variant: 'success' });
       }
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao salvar produtor');
+      toast({ title: 'Erro ao salvar produtor', description: error.response?.data?.message, variant: 'destructive' });
     }
   };
 

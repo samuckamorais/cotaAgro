@@ -5,6 +5,8 @@ import { Button } from '../components/ui/button';
 import { useProducers, useDeleteProducer } from '../hooks/useProducers';
 import { formatDate } from '../lib/utils';
 import { formatCpfCnpj } from '../lib/validators';
+import { useToast } from '../hooks/use-toast';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,28 +19,30 @@ import {
   Building2,
   FileText,
   ShoppingCart,
-  Users
+  Users,
+  Search,
 } from 'lucide-react';
 import { ProducerFormModal } from '../components/producers/ProducerFormModal';
 
 export function Producers() {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProducer, setEditingProducer] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const limit = 15;
 
   const { data, isLoading, error } = useProducers(page, limit);
   const deleteMutation = useDeleteProducer();
+  const { toast } = useToast();
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o produtor "${name}"?`)) {
-      return;
-    }
-
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
     try {
-      await deleteMutation.mutateAsync(id);
-    } catch (error) {
-      alert('Erro ao excluir produtor. Tente novamente.');
+      await deleteMutation.mutateAsync(confirmDelete.id);
+      setConfirmDelete(null);
+    } catch {
+      toast({ title: 'Erro ao excluir produtor', description: 'Tente novamente.', variant: 'destructive' });
     }
   };
 
@@ -95,8 +99,16 @@ export function Producers() {
     );
   }
 
-  const producers = data?.data || [];
+  const allProducers = data?.data || [];
   const pagination = data?.pagination;
+
+  const producers = search.trim()
+    ? allProducers.filter((p: any) =>
+        p.name?.toLowerCase().includes(search.toLowerCase()) ||
+        p.phone?.includes(search) ||
+        p.city?.toLowerCase().includes(search.toLowerCase())
+      )
+    : allProducers;
 
   return (
     <div className="space-y-6">
@@ -112,20 +124,34 @@ export function Producers() {
         </Button>
       </div>
 
+      {/* Busca */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Buscar por nome, telefone ou cidade..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
       {/* Empty State */}
       {producers.length === 0 ? (
         <Card className="p-16 text-center">
           <User className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-base font-medium text-foreground mb-2">
-            Nenhum produtor cadastrado
+            {search ? 'Nenhum resultado encontrado' : 'Nenhum produtor cadastrado'}
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Cadastre o primeiro produtor para começar
+            {search ? `Nenhum produtor corresponde a "${search}"` : 'Cadastre o primeiro produtor para começar'}
           </p>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <Plus className="w-3.5 h-3.5" />
-            Cadastrar Produtor
-          </Button>
+          {!search && (
+            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+              <Plus className="w-3.5 h-3.5" />
+              Cadastrar Produtor
+            </Button>
+          )}
         </Card>
       ) : (
         <>
@@ -158,7 +184,7 @@ export function Producers() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(producer.id, producer.name)}
+                        onClick={() => setConfirmDelete({ id: producer.id, name: producer.name })}
                         disabled={deleteMutation.isPending}
                         className="h-8 w-8 p-0 text-[hsl(var(--error))] hover:text-[hsl(var(--error))] hover:bg-[hsl(var(--error-bg))]"
                       >
@@ -257,6 +283,17 @@ export function Producers() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         producer={editingProducer}
+      />
+
+      {/* Modal de confirmação de exclusão */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+        title="Excluir produtor"
+        description={`Tem certeza que deseja excluir "${confirmDelete?.name}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

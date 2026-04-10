@@ -44,6 +44,7 @@ export function ProposalForm() {
   const [observations, setObservations] = useState('');
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -105,10 +106,11 @@ export function ProposalForm() {
       .filter((it) => it.unitPrice > 0);
 
     if (items.length === 0) {
-      alert('Informe o preço de ao menos um item.');
+      setSubmitError('Informe o preço de ao menos um item.');
       return;
     }
 
+    setSubmitError(null);
     setSubmitting(true);
     try {
       await axios.post(`${API_BASE}/${token}`, {
@@ -120,7 +122,7 @@ export function ProposalForm() {
       setSubmitted(true);
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || 'Erro ao enviar proposta.';
-      alert(msg);
+      setSubmitError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -306,6 +308,12 @@ export function ProposalForm() {
               />
             </div>
           </div>
+
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-700">{submitError}</p>
+            </div>
+          )}
 
           <button
             type="submit"

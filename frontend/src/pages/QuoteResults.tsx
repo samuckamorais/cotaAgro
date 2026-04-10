@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuoteResults, useCloseTotalWinner, useCloseByItem } from '../hooks/useQuotes';
 import { Trophy, Package, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { useToast } from '../hooks/use-toast';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 
 type ViewMode = 'total' | 'byItem';
 
@@ -12,10 +14,12 @@ export function QuoteResults() {
   const { data: results, isLoading, error } = useQuoteResults(id!);
   const closeTotalMutation = useCloseTotalWinner();
   const closeByItemMutation = useCloseByItem();
+  const { toast } = useToast();
 
   const [mode, setMode] = useState<ViewMode>('total');
-  // Modo "por item": seleção de fornecedor por QuoteItem
-  const [itemSelections, setItemSelections] = useState<Record<string, string>>({}); // quoteItemId → supplierId
+  const [itemSelections, setItemSelections] = useState<Record<string, string>>({});
+  const [confirmTotal, setConfirmTotal] = useState<{ supplierId: string; supplierName: string } | null>(null);
+  const [confirmByItem, setConfirmByItem] = useState(false);
 
   if (isLoading) {
     return (
@@ -36,34 +40,37 @@ export function QuoteResults() {
 
   const isClosed = results.status === 'CLOSED';
 
-  const handleCloseTotal = async (supplierId: string) => {
-    if (!confirm('Confirmar este fornecedor como vencedor?')) return;
+  const handleConfirmTotal = async () => {
+    if (!confirmTotal) return;
     try {
-      await closeTotalMutation.mutateAsync({ quoteId: id!, supplierId });
-      alert('Cotação fechada com sucesso!');
+      await closeTotalMutation.mutateAsync({ quoteId: id!, supplierId: confirmTotal.supplierId });
+      toast({ title: 'Cotação fechada com sucesso!', variant: 'success' });
+      setConfirmTotal(null);
     } catch (e: any) {
-      alert(e.response?.data?.error?.message || 'Erro ao fechar cotação');
+      toast({ title: 'Erro ao fechar cotação', description: e.response?.data?.error?.message, variant: 'destructive' });
     }
   };
 
-  const handleCloseByItem = async () => {
+  const handleConfirmByItem = async () => {
     const winners = Object.entries(itemSelections)
       .filter(([, supplierId]) => supplierId)
       .map(([quoteItemId, supplierId]) => ({ quoteItemId, supplierId }));
-
-    if (winners.length === 0) {
-      alert('Selecione o vencedor de ao menos um item.');
-      return;
-    }
-
-    if (!confirm(`Confirmar vencedores selecionados (${winners.length} item(s))?`)) return;
-
     try {
       await closeByItemMutation.mutateAsync({ quoteId: id!, winners });
-      alert('Cotação fechada com sucesso!');
+      toast({ title: 'Cotação fechada com sucesso!', variant: 'success' });
+      setConfirmByItem(false);
     } catch (e: any) {
-      alert(e.response?.data?.error?.message || 'Erro ao fechar cotação');
+      toast({ title: 'Erro ao fechar cotação', description: e.response?.data?.error?.message, variant: 'destructive' });
     }
+  };
+
+  const handleCloseByItemClick = () => {
+    const winners = Object.entries(itemSelections).filter(([, s]) => s);
+    if (winners.length === 0) {
+      toast({ title: 'Selecione o vencedor de ao menos um item.', variant: 'destructive' });
+      return;
+    }
+    setConfirmByItem(true);
   };
 
   const freightLabel = (f: string | null) => {
@@ -180,7 +187,7 @@ export function QuoteResults() {
                         size="sm"
                         className="mt-1"
                         disabled={closeTotalMutation.isPending}
-                        onClick={() => handleCloseTotal(r.supplierId)}
+                        onClick={() => setConfirmTotal({ supplierId: r.supplierId, supplierName: r.supplierName })}
                       >
                         <CheckCircle className="w-3 h-3 mr-1" /> Selecionar
                       </Button>
@@ -286,7 +293,7 @@ export function QuoteResults() {
             <Button
               className="w-full"
               disabled={closeByItemMutation.isPending}
-              onClick={handleCloseByItem}
+              onClick={handleCloseByItemClick}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               Confirmar vencedores selecionados
@@ -294,6 +301,28 @@ export function QuoteResults() {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmTotal}
+        onClose={() => setConfirmTotal(null)}
+        onConfirm={handleConfirmTotal}
+        title="Confirmar vencedor"
+        description={`Deseja fechar a cotação com "${confirmTotal?.supplierName}"? Os demais fornecedores serão notificados.`}
+        confirmLabel="Confirmar"
+        variant="warning"
+        isLoading={closeTotalMutation.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={confirmByItem}
+        onClose={() => setConfirmByItem(false)}
+        onConfirm={handleConfirmByItem}
+        title="Confirmar vencedores por item"
+        description={`Deseja fechar a cotação com os fornecedores selecionados por item? Os demais serão notificados.`}
+        confirmLabel="Confirmar"
+        variant="warning"
+        isLoading={closeByItemMutation.isPending}
+      />
     </div>
   );
 }

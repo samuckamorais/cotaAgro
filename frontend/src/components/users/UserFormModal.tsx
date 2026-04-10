@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { useCreateUser, useUpdateUser } from '../../hooks/useUsers';
 import { useProducers } from '../../hooks/useProducers';
+import { useToast } from '../../hooks/use-toast';
 import { X } from 'lucide-react';
 
 interface UserFormModalProps {
@@ -40,6 +41,7 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
 
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -148,25 +150,23 @@ export function UserFormModal({ isOpen, onClose, user }: UserFormModalProps) {
     try {
       if (user) {
         await updateMutation.mutateAsync({ id: user.id, data: payload });
-        alert('Usuário atualizado com sucesso!');
+        toast({ title: 'Usuário atualizado com sucesso!', variant: 'success' });
       } else {
         if (!formData.password) {
-          alert('Senha é obrigatória para novos usuários');
+          toast({ title: 'Senha obrigatória', description: 'Informe uma senha para o novo usuário.', variant: 'destructive' });
           return;
         }
         await createMutation.mutateAsync(payload);
-        alert('Usuário cadastrado com sucesso!');
+        toast({ title: 'Usuário cadastrado com sucesso!', variant: 'success' });
       }
       onClose();
     } catch (error: any) {
       const details = error.response?.data?.error?.details;
       const message = error.response?.data?.error?.message || error.response?.data?.message || 'Erro ao salvar usuário';
-      if (details?.length) {
-        const fieldErrors = details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
-        alert(`${message}\n\n${fieldErrors}`);
-      } else {
-        alert(message);
-      }
+      const description = details?.length
+        ? details.map((d: any) => `${d.field}: ${d.message}`).join(' · ')
+        : undefined;
+      toast({ title: message, description, variant: 'destructive' });
     }
   };
 

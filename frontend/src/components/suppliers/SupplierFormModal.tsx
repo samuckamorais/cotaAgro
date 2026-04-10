@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { useCreateSupplier, useUpdateSupplier } from '../../hooks/useSuppliers';
 import { SUPPLIER_CATEGORIES } from '../../types/supplier';
+import { useToast } from '../../hooks/use-toast';
 import { X } from 'lucide-react';
 import { BRAZIL_STATES } from '../../data/brazil-locations';
 
@@ -24,6 +25,7 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
 
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (supplier) {
@@ -91,14 +93,14 @@ export function SupplierFormModal({ isOpen, onClose, supplier }: SupplierFormMod
     try {
       if (supplier) {
         await updateMutation.mutateAsync({ id: supplier.id, data: payload });
-        alert('Fornecedor atualizado com sucesso!');
+        toast({ title: 'Fornecedor atualizado com sucesso!', variant: 'success' });
       } else {
         await createMutation.mutateAsync(payload);
-        alert('Fornecedor cadastrado com sucesso!');
+        toast({ title: 'Fornecedor cadastrado com sucesso!', variant: 'success' });
       }
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao salvar fornecedor');
+      toast({ title: 'Erro ao salvar fornecedor', description: error.response?.data?.message, variant: 'destructive' });
     }
   };
 
