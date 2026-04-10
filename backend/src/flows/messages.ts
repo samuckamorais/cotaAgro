@@ -32,13 +32,13 @@ Por onde quer começar?
 _ajuda_ — Ver como funciona`;
   },
 
-  ASK_QUOTE_MODE: `Certo! Como prefere preencher sua cotação?
+  ASK_QUOTE_MODE: `Certo! Sua cotação tem *mais de 1 produto*?
 
-1 — Pelo chat (respondo as perguntas aqui)
-2 — Pelo formulário web (link com todos os campos de uma vez — ideal para múltiplos produtos)`,
+1 — Sim, são vários produtos
+2 — Não, é apenas 1 produto`,
 
   QUOTE_FORM_LINK: (url: string) =>
-    `Preparei seu formulário de cotação 📋\n\n${url}\n\n_Válido por 2 horas._ Após preencher e enviar, vou disparar para os fornecedores e te aviso aqui pelo WhatsApp.\n\nQualquer dúvida, é só chamar.`,
+    `Ótimo! Como sua cotação tem vários produtos, preparei um formulário para você preencher tudo de uma vez 📋\n\n${url}\n\n_Válido por 2 horas._ Após enviar, eu disparo para os fornecedores e te aviso aqui pelo WhatsApp.\n\nQualquer dúvida, é só chamar.`,
 
   START_QUOTE: `Certo! Vamos criar sua cotação.`,
 

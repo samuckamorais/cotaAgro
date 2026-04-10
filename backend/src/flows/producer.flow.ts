@@ -259,7 +259,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
   }
 
   /**
-   * Estado AWAITING_QUOTE_MODE - Escolha entre cotação pelo chat ou via formulário web
+   * Estado AWAITING_QUOTE_MODE - Pergunta se a cotação tem mais de 1 produto.
+   * Sim → gera link do formulário web.
+   * Não → inicia fluxo normal pelo chat.
    */
   private async handleAwaitingQuoteMode(
     producerId: string,
@@ -267,14 +269,26 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     message: string,
     tenantId: string
   ): Promise<void> {
-    const normalized = message.trim();
+    const normalized = message.toLowerCase().trim();
 
-    if (normalized === '1' || normalized.toLowerCase().includes('chat')) {
-      await this.startCategorySelection(producerId, phone, tenantId);
-      return;
-    }
+    const isMultiple =
+      normalized === '1' ||
+      normalized.includes('sim') ||
+      normalized.includes('vários') ||
+      normalized.includes('varios') ||
+      normalized.includes('mais');
 
-    if (normalized === '2' || normalized.toLowerCase().includes('formulário') || normalized.toLowerCase().includes('formulario') || normalized.toLowerCase().includes('form')) {
+    const isSingle =
+      normalized === '2' ||
+      normalized.includes('não') ||
+      normalized.includes('nao') ||
+      normalized.includes('apenas') ||
+      normalized.includes('só') ||
+      normalized.includes('so') ||
+      normalized.includes('1 produto') ||
+      normalized.includes('um produto');
+
+    if (isMultiple) {
       const url = await QuoteTokenService.generateFormUrl(producerId, tenantId);
       await whatsappService.sendMessage({
         to: phone,
@@ -284,9 +298,14 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       return;
     }
 
+    if (isSingle) {
+      await this.startCategorySelection(producerId, phone, tenantId);
+      return;
+    }
+
     await whatsappService.sendMessage({
       to: phone,
-      body: 'Digite *1* para preencher pelo chat ou *2* para usar o formulário web.',
+      body: 'Digite *1* para vários produtos ou *2* para apenas 1 produto.',
     });
   }
 
