@@ -8,93 +8,78 @@ export const Messages = {
   // MENSAGENS DO PRODUTOR
   // ===================================
 
-  WELCOME: (producerName?: string) => {
-    const greeting = producerName ? `Olá ${producerName}!` : 'Olá!';
-    return `${greeting} 👋 Bem-vindo ao *FarmFlow*
+  /**
+   * Boas-vindas — diferencia primeira vez de usuário recorrente
+   */
+  WELCOME: (producerName?: string, isReturning = false) => {
+    const name = producerName ? ` ${producerName}` : '';
 
-💡 *Economize até 5 horas por semana* em cotações de insumos agrícolas.
+    if (isReturning) {
+      return `Olá${name}! 👋 O que vamos cotar hoje?
 
-Vou te ajudar a encontrar os melhores preços de forma rápida e automática!
+1 — Nova cotação
+2 — Adicionar fornecedor`;
+    }
 
-🚀 Pronto para sua primeira cotação?
-• *1* ou *começar* - Solicitar cotação
-• *2* ou *fornecedor* - Adicionar fornecedor
-• *ajuda* - Ver como funciona`;
+    return `Olá${name}! 👋 Seja bem-vindo ao *FarmFlow*.
+
+Sou seu assistente de cotações agrícolas — você me descreve o que precisa e eu envio para seus fornecedores, organizando as propostas pra você.
+
+Por onde quer começar?
+
+1 — Fazer uma cotação
+2 — Cadastrar fornecedor
+_ajuda_ — Ver como funciona`;
   },
 
-  START_QUOTE: `Ótimo! Vamos criar sua cotação. 📋`,
+  START_QUOTE: `Certo! Vamos criar sua cotação.`,
 
   ASK_CATEGORY: (categories: string[]) => {
     if (categories.length === 0) {
-      return `Qual a *categoria* do produto que deseja cotar?\n\nDigite a categoria (ex: sementes, fertilizantes, defensivos, rações)`;
+      return `Qual a *categoria* do produto?\n\nEx: sementes, fertilizantes, defensivos, rações`;
     }
 
-    let message = `*Qual categoria você deseja cotar?*\n\n`;
+    let message = `Qual a categoria do produto?\n\n`;
     categories.forEach((cat, i) => {
-      message += `${i + 1}️⃣ ${cat}\n`;
+      message += `${i + 1} — ${cat}\n`;
     });
-    message += `\nResponda com o *número* da categoria ou digite outra.`;
+    message += `\nResponda com o número ou escreva outra categoria.`;
     return message;
   },
 
-  ASK_FREIGHT: `*O frete é CIF ou FOB?*
+  ASK_PRODUCT: (category: string) =>
+    `Categoria: *${category}*\n\nQual produto você quer cotar?\n\nEx: soja, milho, fertilizante NPK, herbicida`,
 
-🚚 *1 - CIF* — O fornecedor entrega na sua propriedade (frete incluso no preço)
-📦 *2 - FOB* — Você retira no fornecedor (frete por sua conta)
-
-Responda com *1* ou *2*.`,
-
-  ASK_PAYMENT_TERMS: (freight: string) => `✅ *Frete:* ${freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}
-
-💳 *Qual a forma de pagamento desejada?*
-
-Exemplos:
-• À vista
-• 30/60
-• Safra
-• Safrinha`,
-
-  ASK_QUANTITY: (product: string) => `✅ *Produto:* ${product}
-
-*Qual a quantidade desejada?*
-
-Exemplos: 100 sacos, 500 kg, 20 litros`,
-
-  ASK_REGION: (quantity?: string, unit?: string) => {
-    const quantityText = quantity && unit ? `✅ *Quantidade:* ${quantity} ${unit}\n\n` : '';
-    return `${quantityText}*Qual a região/cidade de entrega?*
-
-Exemplo: Goiânia, Rio Verde, Jataí`;
+  ASK_MORE_ITEMS: (items: Array<{ product: string; quantity: number; unit: string }>) => {
+    const list = items.map((it, i) => `  ${i + 1}. ${it.product} — ${it.quantity} ${it.unit}`).join('\n');
+    return `Itens até agora:\n${list}\n\nQuer adicionar mais um item?\n\n1 — Sim, adicionar\n2 — Não, continuar`;
   },
 
-  ASK_DEADLINE: (region?: string) => {
-    const regionText = region ? `✅ *Região:* ${region}\n\n` : '';
-    return `${regionText}*Qual o prazo desejado para entrega?*
+  ASK_QUANTITY: (product: string) =>
+    `Qual a quantidade de *${product}*?\n\nEx: 100 sacas, 500 kg, 20 litros`,
 
-Exemplos:
-• amanhã
-• em 5 dias
-• 30/03/2024`;
-  },
+  ASK_REGION: () =>
+    `Qual a cidade ou região de entrega?\n\nEx: Goiânia, Rio Verde, Jataí`,
 
-  ASK_OBSERVATIONS_OPTIONAL: (deadline: string) => `✅ *Prazo:* ${deadline}
+  ASK_DEADLINE: () =>
+    `Qual o prazo máximo para entrega?\n\nEx: amanhã, em 5 dias, 30/06`,
 
-📝 *Alguma observação adicional?*
+  ASK_OBSERVATIONS_OPTIONAL: () =>
+    `Tem alguma observação para os fornecedores?\n\nSe não tiver, responda *não*.`,
 
-Se não tiver observações, é só confirmar:
-✅ Continuar sem observações
+  ASK_FREIGHT: `O frete é CIF ou FOB?
 
-Ou digite sua observação e pressione Enter.`,
+1 — *CIF* — fornecedor entrega na propriedade
+2 — *FOB* — você retira no fornecedor`,
 
-  ASK_SUPPLIER_SCOPE: `Entendido! 📝
+  ASK_PAYMENT_TERMS: (freight: string) =>
+    `Frete: *${freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}*\n\nQual a condição de pagamento?\n\nEx: à vista, 30/60, safra, safrinha`,
 
-*Para quais fornecedores deseja enviar a cotação?*
+  ASK_SUPPLIER_SCOPE: `Para quais fornecedores enviar?
 
-1️⃣ Apenas meus fornecedores
-2️⃣ Apenas rede FarmFlow
-3️⃣ Todos (meus + rede)
-
-*Responda com o número:* 1, 2 ou 3`,
+1 — Meus fornecedores
+2 — Rede FarmFlow
+3 — Todos`,
 
   CONFIRM_QUOTE: (summary: {
     category?: string;
@@ -110,25 +95,21 @@ Ou digite sua observação e pressione Enter.`,
       .map((it, i) => `  ${i + 1}. ${it.product} — ${it.quantity} ${it.unit}`)
       .join('\n');
 
-    return `✅ *Confirme os dados da sua cotação:*
-
-${summary.category ? `🏷️ *Categoria:* ${summary.category}\n` : ''}📦 *Produtos:*\n${itemsText}
-📍 *Região:* ${summary.region}
-⏰ *Prazo:* ${summary.deadline}
-${summary.observations ? `📝 *Obs:* ${summary.observations}\n` : ''}${summary.freight ? `🚚 *Frete:* ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n` : ''}${summary.quotePaymentTerms ? `💳 *Pagamento:* ${summary.quotePaymentTerms}\n` : ''}🎯 *Fornecedores:* ${summary.scope}
-
-✅ Sim, enviar
-✏️ Corrigir
-
-*Está correto?*`;
+    let msg = `*Resumo da cotação:*\n\n`;
+    if (summary.category) msg += `Categoria: ${summary.category}\n`;
+    msg += `Produtos:\n${itemsText}\n`;
+    msg += `Região: ${summary.region}\n`;
+    msg += `Prazo: ${summary.deadline}\n`;
+    if (summary.freight) msg += `Frete: ${summary.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira)'}\n`;
+    if (summary.quotePaymentTerms) msg += `Pagamento: ${summary.quotePaymentTerms}\n`;
+    if (summary.observations) msg += `Obs: ${summary.observations}\n`;
+    msg += `Fornecedores: ${summary.scope}\n`;
+    msg += `\nConfirma?\n\n*sim* — enviar\n*corrigir* — recomeçar`;
+    return msg;
   },
 
-  QUOTE_DISPATCHED: (quoteId: string, suppliersCount: number) => `Cotação enviada com sucesso! 🚀
-
-*ID da cotação:* ${quoteId.substring(0, 8)}
-*Enviada para:* ${suppliersCount} fornecedor(es)
-
-Você receberá um resumo com as propostas em breve. ⏳`,
+  QUOTE_DISPATCHED: (suppliersCount: number) =>
+    `Cotação enviada para *${suppliersCount} fornecedor(es)*. ✅\n\nVocê receberá um resumo das propostas assim que elas chegarem. Fique de olho aqui! 👀`,
 
   QUOTE_SUMMARY: (proposals: Array<{
     rank: number;
@@ -139,101 +120,75 @@ Você receberá um resumo com as propostas em breve. ⏳`,
     paymentTerms: string;
     observations?: string;
   }>) => {
-    let message = `📊 *Resumo da Cotação*\n\n`;
-    message += `Propostas recebidas (menor → maior valor):\n\n`;
+    let message = `*Propostas recebidas* (do menor ao maior preço):\n\n`;
 
     proposals.forEach((p) => {
-      const badge = p.isOwn ? '(Seu fornecedor)' : '(Rede FarmFlow)';
-      message += `${p.rank}️⃣ *${p.supplierName}* ${badge}\n`;
-      message += `💰 R$ ${p.totalPrice.toFixed(2)}\n`;
-      message += `📅 Entrega em ${p.deliveryDays} dias\n`;
-      message += `💳 ${p.paymentTerms}\n`;
-      if (p.observations) {
-        message += `📝 ${p.observations}\n`;
-      }
+      const badge = p.isOwn ? 'seu fornecedor' : 'rede FarmFlow';
+      message += `*${p.rank}. ${p.supplierName}* (${badge})\n`;
+      message += `   💰 R$ ${p.totalPrice.toFixed(2)}`;
+      message += ` · 📅 ${p.deliveryDays} dias`;
+      message += ` · 💳 ${p.paymentTerms}\n`;
+      if (p.observations) message += `   📝 ${p.observations}\n`;
       message += `\n`;
     });
 
-    message += `Responda com o *número* do fornecedor que deseja escolher ou *cancelar* para encerrar.`;
+    message += `Responda com o *número* para escolher o fornecedor\nou *cancelar* para encerrar sem escolher.`;
     return message;
   },
 
-  QUOTE_CLOSED: (supplierName: string) => `Cotação fechada com sucesso! 🎉
+  QUOTE_CLOSED: (supplierName: string) =>
+    `Fechado com *${supplierName}*! 🎉\n\nO fornecedor já foi notificado. Boa negociação! 🤝`,
 
-Fornecedor escolhido: *${supplierName}*
+  QUOTE_CANCELLED: `Cotação cancelada.\n\nQuando quiser, é só mandar "nova cotação".`,
 
-Entraremos em contato para finalizar os detalhes. Obrigado por usar o FarmFlow! 🌾`,
-
-  QUOTE_CANCELLED: `Cotação cancelada. ❌
-
-Se precisar de ajuda, digite *ajuda*.`,
-
-  QUOTA_EXCEEDED: (limit: number) => `⚠️ *Limite de cotações atingido!*
-
-Você atingiu o limite de *${limit} cotações* do seu plano neste mês.
-
-Entre em contato para fazer upgrade do seu plano. 📈`,
+  QUOTA_EXCEEDED: (limit: number) =>
+    `Você atingiu o limite de *${limit} cotações* do seu plano este mês.\n\nEntre em contato para fazer upgrade. 📈`,
 
   // ===================================
   // CADASTRO DE FORNECEDOR
   // ===================================
 
-  ADD_SUPPLIER_INSTRUCTIONS: `Ótimo! Vou te ajudar a cadastrar um fornecedor. 📇
+  ADD_SUPPLIER_INSTRUCTIONS: `Ótimo! Para cadastrar um fornecedor, *compartilhe o contato* dele pelo WhatsApp:
 
-*Compartilhe o contato* do fornecedor usando o WhatsApp:
-1. Toque no ícone de anexo (📎)
+1. Toque no clipe (📎)
 2. Selecione "Contato"
-3. Escolha o fornecedor
-4. Envie
+3. Escolha o fornecedor e envie
 
-Ou você pode digitar os dados no formato:
+Ou, se preferir, digita assim:
 *Nome:* João Silva
-*Telefone:* 64999999999
-*Empresa:* (opcional)
-*Email:* (opcional)`,
+*Telefone:* 64999999999`,
 
-  SUPPLIER_ADDED_SUCCESS: (supplierName: string) => `✅ *Fornecedor cadastrado com sucesso!*
-
-*Nome:* ${supplierName}
-
-O fornecedor foi adicionado à sua rede pessoal e já pode receber cotações.
-
-Digite *1* para fazer uma nova cotação ou *ajuda* para ver mais opções.`,
+  SUPPLIER_ADDED_SUCCESS: (supplierName: string) =>
+    `*${supplierName}* foi cadastrado! ✅\n\nEle já pode receber cotações suas.\n\nQuer fazer uma cotação agora? Manda *1*.`,
 
   ASK_SUPPLIER_CATEGORY: (supplierName: string, categories: string[]) => {
-    let message = `✅ *Fornecedor cadastrado:* ${supplierName}\n\n`;
-    message += `📂 *Qual é a categoria deste fornecedor?*\n\n`;
+    let message = `*${supplierName}* adicionado!\n\n`;
+    message += `Qual é a área de atuação dele?\n\n`;
 
     if (categories.length > 0) {
       categories.forEach((cat, i) => {
-        message += `${i + 1}️⃣ ${cat}\n`;
+        message += `${i + 1} — ${cat}\n`;
       });
-      message += `\nResponda com o(s) *número(s)* (ex: *1* ou *1,3*) ou digite uma nova categoria.`;
+      message += `\nResponda com o(s) número(s) ou escreva a categoria.\nEx: *1* ou *1,3*`;
     } else {
-      message += `Digite a categoria do fornecedor.\n\nExemplos: sementes, fertilizantes, defensivos, rações`;
+      message += `Ex: sementes, fertilizantes, defensivos, rações`;
     }
 
     return message;
   },
 
   SUPPLIER_CATEGORY_SAVED: (supplierName: string, categories: string[]) =>
-    `✅ *Fornecedor atualizado!*\n\n*Nome:* ${supplierName}\n📂 *Categorias:* ${categories.join(', ')}\n\nO fornecedor já pode receber cotações.\n\nDigite *1* para fazer uma nova cotação ou *2* para adicionar outro fornecedor.`,
+    `Pronto! *${supplierName}* está cadastrado com: ${categories.join(', ')}.\n\nJá pode receber cotações. 👍\n\n1 — Nova cotação\n2 — Cadastrar outro fornecedor`,
 
-  SUPPLIER_ALREADY_EXISTS: (supplierName: string) => `⚠️ Este fornecedor já está cadastrado!
+  SUPPLIER_ALREADY_EXISTS: (supplierName: string) =>
+    `*${supplierName}* já está na sua lista de fornecedores.\n\n1 — Nova cotação\n2 — Cadastrar outro`,
 
-*Nome:* ${supplierName}
+  SUPPLIER_ADD_ERROR: `Não consegui identificar o contato. Tente de novo ou escreva assim:
 
-Digite *1* para fazer uma nova cotação ou *2* para adicionar outro fornecedor.`,
-
-  SUPPLIER_ADD_ERROR: `❌ Não consegui processar o contato.
-
-Por favor, tente novamente ou digite os dados manualmente no formato:
 *Nome:* João Silva
 *Telefone:* 64999999999
-*Empresa:* (opcional)
-*Email:* (opcional)
 
-Digite *cancelar* para voltar ao menu.`,
+_cancelar_ — voltar ao menu`,
 
   // ===================================
   // MENSAGENS DO FORNECEDOR
@@ -244,9 +199,7 @@ Digite *cancelar* para voltar ao menu.`,
     producerName: string;
     producerCity: string;
     category?: string;
-    // Multi-item
     items?: Array<{ product: string; quantity: number | string; unit: string }>;
-    // Legado (1 item)
     product?: string;
     quantity?: string;
     unit?: string;
@@ -255,94 +208,57 @@ Digite *cancelar* para voltar ao menu.`,
     observations?: string;
     freight?: string;
     paymentTerms?: string;
-    proposalFormUrl?: string; // link para formulário web (multi-item)
+    proposalFormUrl?: string;
   }) => {
     const items = quote.items && quote.items.length > 0
       ? quote.items
-      : quote.product ? [{ product: quote.product, quantity: quote.quantity || '', unit: quote.unit || '' }] : [];
+      : quote.product
+        ? [{ product: quote.product, quantity: quote.quantity || '', unit: quote.unit || '' }]
+        : [];
 
-    let message = `Olá! 👋 Sou o *FarmFlow*, assistente de cotações do produtor *${quote.producerName}* (${quote.producerCity}).\n\n`;
-    message += `Ele está buscando proposta para:\n\n`;
+    let message = `Olá! 👋 Chegou uma solicitação de cotação de *${quote.producerName}* (${quote.producerCity}).\n\n`;
 
-    if (quote.category) message += `🏷️ *Categoria:* ${quote.category}\n`;
-    message += `📦 *Produtos solicitados:*\n`;
+    if (quote.category) message += `Categoria: *${quote.category}*\n`;
+    message += `Produtos:\n`;
     items.forEach((it) => {
       message += `  • ${it.product} — ${it.quantity} ${it.unit}\n`;
     });
-    message += `\n📅 *Dt. Entrega:* ${quote.deadline}\n`;
-    message += `📍 ${quote.region}\n`;
-    if (quote.freight) {
-      message += `🚚 *Frete:* ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira no fornecedor)'}\n`;
-    }
-    if (quote.paymentTerms) message += `💳 *Pagamento:* ${quote.paymentTerms}\n`;
-    if (quote.observations) message += `📝 *Obs:* ${quote.observations}\n`;
+    message += `\nEntrega: ${quote.deadline} — ${quote.region}\n`;
+    if (quote.freight) message += `Frete: ${quote.freight === 'CIF' ? 'CIF (entrega inclusa)' : 'FOB (retira)'}\n`;
+    if (quote.paymentTerms) message += `Pagamento: ${quote.paymentTerms}\n`;
+    if (quote.observations) message += `Obs: ${quote.observations}\n`;
 
-    message += `\nVocê tem interesse em enviar uma proposta?\n`;
+    message += `\nTem interesse em enviar proposta?\n\n`;
 
     if (quote.proposalFormUrl) {
-      // Multi-item: link para formulário web (URL sozinha na linha para ser clicável no WhatsApp)
-      message += `\n✅ Para enviar sua proposta, acesse:\n`;
+      message += `Acesse o formulário:\n`;
       message += `${quote.proposalFormUrl}\n\n`;
       message += `*2* — Não tenho interesse desta vez`;
     } else {
-      // 1 item: fluxo WhatsApp
       message += `*1* — Sim, quero participar\n`;
-      message += `*2* — Não, desta vez não`;
+      message += `*2* — Não desta vez`;
     }
 
     return message;
   },
 
-  ASK_PRICE: `Ótimo! Vamos registrar sua proposta. 💰
+  ASK_PRICE: `Qual o *preço total* da sua proposta?\n\nEx: 15000`,
 
-*Qual o preço total da sua proposta?*
+  ASK_DELIVERY: `Qual o *prazo de entrega* em dias?\n\nEx: 5`,
 
-Exemplo: 15000 (apenas números, sem R$)`,
+  ASK_PAYMENT: `Qual a *condição de pagamento*?\n\nEx: à vista, 30 dias, 50% antecipado`,
 
-  ASK_DELIVERY: `Perfeito! 📦
+  ASK_SUPPLIER_OBS: `Alguma observação sobre sua proposta?\n\nSe não tiver, responda *não*.`,
 
-*Prazo de entrega em dias?*
+  PROPOSAL_SENT: `Proposta registrada! ✅\n\nO produtor vai receber junto com as demais. Você será avisado se for selecionado. 🎯`,
 
-Exemplo: 5 (apenas o número)`,
-
-  ASK_PAYMENT: `Entendido! ⏰
-
-*Qual a condição de pagamento?*
-
-Exemplo: 30 dias, à vista, 50% antecipado`,
-
-  ASK_SUPPLIER_OBS: `Certo! 💳
-
-*Alguma observação sobre sua proposta?*
-
-Digite *não* se não houver.`,
-
-  PROPOSAL_SENT: `Proposta enviada com sucesso! ✅
-
-O produtor receberá sua oferta junto com as demais propostas.
-
-Você será notificado se for selecionado. 🎯`,
-
-  /**
-   * Confirmação de envio de proposta (sem revelar posição/ranking)
-   */
   PROPOSAL_SENT_WITH_RANKING: (data: {
     totalProposals: number;
     yourPrice: number;
     expiresIn: string;
-  }) => {
-    let message = `✅ *Proposta enviada com sucesso!*\n\n`;
-    message += `💰 Sua proposta: R$ ${data.yourPrice.toFixed(2)}\n`;
-    message += `👥 ${data.totalProposals} proposta(s) recebida(s) até agora\n`;
-    message += `⏱️ Cotação expira em: ${data.expiresIn}\n\n`;
-    message += `Você será notificado quando o produtor tomar uma decisão. 🎯`;
+  }) =>
+    `Proposta enviada! ✅\n\nSua proposta: *R$ ${data.yourPrice.toFixed(2)}*\nTotal recebidas: ${data.totalProposals}\nCotação encerra em: ${data.expiresIn}\n\nVocê será avisado quando o produtor decidir.`,
 
-    return message;
-  },
-
-  /**
-   * Feedback para fornecedor que perdeu
-   */
   PROPOSAL_NOT_SELECTED: (data: {
     winningPrice: number;
     yourPrice: number;
@@ -351,92 +267,29 @@ Você será notificado se for selecionado. 🎯`,
     const diff = data.yourPrice - data.winningPrice;
     const diffPercent = ((diff / data.winningPrice) * 100).toFixed(1);
 
-    let message = `📊 *Resultado da Cotação*\n\n`;
-    message += `Infelizmente sua proposta não foi selecionada desta vez.\n\n`;
-    message += `*Feedback:*\n`;
-    message += `• Proposta vencedora: R$ ${data.winningPrice.toFixed(2)}\n`;
-    message += `• Sua proposta: R$ ${data.yourPrice.toFixed(2)}\n`;
-    message += `• Diferença: R$ ${diff.toFixed(2)} (${diffPercent}% mais cara)\n\n`;
+    let message = `A cotação de *${data.producerName}* foi encerrada.\n\n`;
+    message += `Desta vez outro fornecedor foi escolhido.\n\n`;
+    message += `Vencedor: R$ ${data.winningPrice.toFixed(2)}\n`;
+    message += `Sua proposta: R$ ${data.yourPrice.toFixed(2)} (+${diffPercent}%)\n\n`;
 
-    message += `💡 *Dica para próxima:*\n`;
-    if (diff > data.winningPrice * 0.1) {
-      message += `Reduza pelo menos 10% para ser mais competitivo\n`;
-    } else if (diff > data.winningPrice * 0.05) {
-      message += `Reduza 5-10% para aumentar suas chances\n`;
+    if (diff <= data.winningPrice * 0.05) {
+      message += `Você ficou muito próximo! Continue assim.`;
     } else {
-      message += `Você estava bem próximo! Continue assim.\n`;
+      message += `Na próxima, uma proposta mais competitiva pode fazer a diferença.`;
     }
-
-    message += `\nContinue participando! 🚀`;
 
     return message;
   },
 
-  /**
-   * Feedback para fornecedor que ganhou
-   */
-  PROPOSAL_SELECTED: (data: { producerName: string; producerPhone: string }) => `🎉 *Parabéns! Você foi selecionado!*
+  PROPOSAL_SELECTED: (data: { producerName: string; producerPhone: string }) =>
+    `Parabéns! 🎉 *${data.producerName}* escolheu você.\n\nEntre em contato para fechar os detalhes:\n📞 ${data.producerPhone}\n\nBoa negociação! 🤝`,
 
-O produtor *${data.producerName}* escolheu sua proposta.
-
-📞 *Próximos passos:*
-Entre em contato para finalizar os detalhes:
-Telefone: ${data.producerPhone}
-
-Boa negociação! 🤝`,
-
-  PROPOSAL_DECLINED: `Sem problemas! 👍
-
-Obrigado pelo retorno.`,
+  PROPOSAL_DECLINED: `Sem problemas, obrigado pelo retorno! 👍`,
 
   // ===================================
-  // MENSAGENS GENÉRICAS
+  // REPETIR ÚLTIMA COTAÇÃO
   // ===================================
 
-  UNKNOWN_INPUT: `Desculpe, não entendi sua mensagem. 🤔
-
-Digite *ajuda* para ver as opções disponíveis.`,
-
-  HELP: `*FarmFlow - Ajuda* 📚
-
-*Comandos disponíveis:*
-• *nova cotação* - Solicitar cotação
-• *cancelar* - Cancelar ação atual
-• *ajuda* - Ver esta mensagem
-
-*Como funciona:*
-1️⃣ Você solicita uma cotação
-2️⃣ Enviamos para seus fornecedores
-3️⃣ Você recebe as propostas organizadas
-4️⃣ Escolhe a melhor opção
-
-Dúvidas? Entre em contato com o suporte.`,
-
-  ERROR: `Ops! Ocorreu um erro. 😔
-
-Tente novamente em alguns instantes. Se o problema persistir, entre em contato com o suporte.`,
-
-  /**
-   * Mensagem de erro com sugestões inteligentes
-   */
-  ERROR_WITH_SUGGESTIONS: (userInput: string, suggestions: string[]) => {
-    let message = `❌ Não entendi "${userInput}".\n\n`;
-
-    if (suggestions.length > 0) {
-      message += `Você quis dizer:\n`;
-      suggestions.forEach((suggestion, index) => {
-        message += `${index + 1}️⃣ ${suggestion}\n`;
-      });
-      message += `\n`;
-    }
-
-    message += `Ou digite novamente:`;
-    return message;
-  },
-
-  /**
-   * Mensagem oferecendo repetir última cotação
-   */
   REPEAT_LAST_QUOTE: (last: {
     product: string;
     quantity: string;
@@ -444,18 +297,45 @@ Tente novamente em alguns instantes. Se o problema persistir, entre em contato c
     region: string;
     deadline?: string;
   }) => {
-    const deadlineText = last.deadline
-      ? `⏰ Prazo: ${new Date(last.deadline).toLocaleDateString('pt-BR')}`
-      : '';
+    return `Quer repetir sua última cotação?\n\n📦 ${last.product} — ${last.quantity} ${last.unit}\n📍 ${last.region}\n\n1 — Sim, repetir\n2 — Nova cotação`;
+  },
 
-    return `💡 *Quer repetir sua última cotação?*
+  // ===================================
+  // MENSAGENS GENÉRICAS
+  // ===================================
 
-📦 ${last.product}
-📊 ${last.quantity} ${last.unit}
-📍 ${last.region}
-${deadlineText}
+  UNKNOWN_INPUT: `Não entendi. 🤔\n\nDigite *ajuda* para ver o que posso fazer.`,
 
-1️⃣ Sim, repetir
-2️⃣ Nova cotação`;
+  HELP: `*FarmFlow — Ajuda* 📚
+
+*O que você pode fazer:*
+• *nova cotação* — Solicitar cotação de insumos
+• *fornecedor* — Cadastrar um fornecedor
+• *cancelar* — Cancelar o que está fazendo
+• *ajuda* — Ver esta mensagem
+
+*Como funciona:*
+1. Você descreve o que precisa
+2. Envio para seus fornecedores
+3. Você recebe as propostas aqui
+4. Escolhe a melhor
+
+Dúvidas? Fale com o suporte.`,
+
+  ERROR: `Algo deu errado por aqui. 😔\n\nTente novamente em instantes.`,
+
+  ERROR_WITH_SUGGESTIONS: (userInput: string, suggestions: string[]) => {
+    let message = `Não entendi "${userInput}".\n\n`;
+
+    if (suggestions.length > 0) {
+      message += `Você quis dizer:\n`;
+      suggestions.forEach((suggestion, index) => {
+        message += `${index + 1} — ${suggestion}\n`;
+      });
+      message += `\n`;
+    }
+
+    message += `Ou tente digitar novamente.`;
+    return message;
   },
 };

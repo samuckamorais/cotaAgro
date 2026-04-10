@@ -48,19 +48,14 @@ const FLOW_PROGRESS: Record<ProducerState, { step: number; total: number; label:
  */
 export class ProducerFSM extends FSMEngine<ProducerState> {
   /**
-   * Gera header de progresso para o estado atual
-   * @returns String formatada ou string vazia se estado não tem progresso
+   * Retorna indicador de progresso simplificado (ex: "Passo 3 de 7")
+   * Mantido para uso futuro ou reintrodução
    */
-  private getProgressHeader(state: ProducerState): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private getProgressLabel(state: ProducerState): string {
     const progress = FLOW_PROGRESS[state];
-
     if (!progress) return '';
-
-    // Barra de progresso visual
-    const filled = '▓'.repeat(progress.step);
-    const empty = '░'.repeat(progress.total - progress.step);
-
-    return `[${progress.step}/${progress.total}] ${progress.icon} *${progress.label}*\n${filled}${empty}\n\n`;
+    return `_Passo ${progress.step} de ${progress.total} — ${progress.label}_\n\n`;
   }
 
   /**
@@ -189,7 +184,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
           await this.resetState(producerId, 'producer');
           await whatsappService.sendMessage({
             to: producer.phone,
-            body: Messages.WELCOME(producer.name),
+            body: Messages.WELCOME(producer.name, !!producer.lastQuotePreferences),
           });
       }
     } catch (error) {
@@ -280,10 +275,11 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       return;
     }
 
-    // Mensagem padrão com nome personalizado
+    // Mensagem de boas-vindas — usuário recorrente recebe versão curta
+    const isReturning = !!producer.lastQuotePreferences;
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.WELCOME(producer.name),
+      body: Messages.WELCOME(producer.name, isReturning),
     });
   }
 
@@ -384,11 +380,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       .filter((c: string) => c && c.trim().length > 0)
       .sort();
 
-    const progressHeader = this.getProgressHeader('AWAITING_CATEGORY');
-
     await whatsappService.sendMessage({
       to: phone,
-      body: progressHeader + Messages.START_QUOTE + '\n\n' + Messages.ASK_CATEGORY(categories),
+      body: Messages.ASK_CATEGORY(categories),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_CATEGORY', {
@@ -430,11 +424,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     context.category = selectedCategory;
 
-    const progressHeader = this.getProgressHeader('AWAITING_PRODUCT');
-
     await whatsappService.sendMessage({
       to: phone,
-      body: `${progressHeader}✅ *Categoria:* ${selectedCategory}\n\n*Qual produto você deseja cotar?*\n\nExemplos: soja, milho, fertilizante, defensivo, semente`,
+      body: Messages.ASK_PRODUCT(selectedCategory),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', context);
@@ -467,10 +459,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     context.freight = freight;
 
-    const progressHeader = this.getProgressHeader('AWAITING_PAYMENT_TERMS');
     await whatsappService.sendMessage({
       to: phone,
-      body: progressHeader + Messages.ASK_PAYMENT_TERMS(freight),
+      body: Messages.ASK_PAYMENT_TERMS(freight),
     });
     await this.setState(producerId, 'producer', 'AWAITING_PAYMENT_TERMS', context);
   }
@@ -554,8 +545,6 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     // Determinar próximo estado baseado no que foi extraído
     const nextState = nluExtractorService.determineNextState(context);
 
-    // Continuar fluxo com progress header
-    const progressHeader = this.getProgressHeader(nextState);
     let askMessage = '';
 
     switch (nextState) {
@@ -563,10 +552,10 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
         askMessage = Messages.ASK_QUANTITY(context.product);
         break;
       case 'AWAITING_REGION':
-        askMessage = Messages.ASK_REGION(context.quantity, context.unit);
+        askMessage = Messages.ASK_REGION();
         break;
       case 'AWAITING_DEADLINE':
-        askMessage = Messages.ASK_DEADLINE(context.region);
+        askMessage = Messages.ASK_DEADLINE();
         break;
       case 'AWAITING_FREIGHT':
         askMessage = Messages.ASK_FREIGHT;
@@ -579,7 +568,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     await whatsappService.sendMessage({
       to: phone,
-      body: progressHeader + askMessage,
+      body: askMessage,
     });
 
     await this.setState(producerId, 'producer', nextState, context);
@@ -643,12 +632,11 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       // Limite atingido — avança direto para região
       await whatsappService.sendMessage({
         to: phone,
-        body: `✅ *Item adicionado!*\n\n📦 *Itens da cotação (${context.category}):*\n${itemsList}\n\n⚠️ Limite de ${settings.maxItemsPerQuote} itens por cotação atingido.`,
+        body: `Limite de ${settings.maxItemsPerQuote} itens atingido.\n\n${itemsList}`,
       });
-      const progressHeader = this.getProgressHeader('AWAITING_REGION');
       await whatsappService.sendMessage({
         to: phone,
-        body: progressHeader + Messages.ASK_REGION(context.quantity, context.unit),
+        body: Messages.ASK_REGION(),
       });
       await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
       return;
@@ -657,7 +645,7 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     // Perguntar se quer adicionar mais itens (mesma categoria)
     await whatsappService.sendMessage({
       to: phone,
-      body: `✅ *Item adicionado!*\n\n📦 *Itens da cotação (${context.category}):*\n${itemsList}\n\n*Deseja adicionar mais um produto desta categoria?*\n\n*1* — Sim, adicionar outro\n*2* — Não, continuar`,
+      body: Messages.ASK_MORE_ITEMS(context.items),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_MORE_ITEMS', context);
@@ -680,12 +668,11 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       context.quantity = undefined;
       context.unit = undefined;
 
-      const progressHeader = this.getProgressHeader('AWAITING_PRODUCT');
       const itemCount = context.items?.length || 0;
 
       await whatsappService.sendMessage({
         to: phone,
-        body: `${progressHeader}*Qual o próximo produto?* (item ${itemCount + 1})\n\nCategoria: *${context.category}*`,
+        body: Messages.ASK_PRODUCT(context.category || '') + `\n_(item ${itemCount + 1})_`,
       });
 
       await this.setState(producerId, 'producer', 'AWAITING_PRODUCT', context);
@@ -693,11 +680,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
     }
 
     if (normalized === '2' || normalized.includes('não') || normalized.includes('nao') || normalized.includes('continuar')) {
-      const progressHeader = this.getProgressHeader('AWAITING_REGION');
-
       await whatsappService.sendMessage({
         to: phone,
-        body: progressHeader + Messages.ASK_REGION(context.quantity, context.unit),
+        body: Messages.ASK_REGION(),
       });
 
       await this.setState(producerId, 'producer', 'AWAITING_REGION', context);
@@ -745,11 +730,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     context.region = region;
 
-    const progressHeader = this.getProgressHeader('AWAITING_DEADLINE');
-
     await whatsappService.sendMessage({
       to: phone,
-      body: progressHeader + Messages.ASK_DEADLINE(context.region),
+      body: Messages.ASK_DEADLINE(),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_DEADLINE', context);
@@ -792,11 +775,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     // Pular observações (agora opcional) e ir direto para escopo de fornecedores
     // Se usuário quiser adicionar observações, pode digitar antes de confirmar
-    const deadlineFormatted = deadline.toLocaleDateString('pt-BR');
-
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.ASK_OBSERVATIONS_OPTIONAL(deadlineFormatted),
+      body: Messages.ASK_OBSERVATIONS_OPTIONAL(),
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_OBSERVATIONS', context);
@@ -828,11 +809,9 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
       context.observations = message.trim();
     }
 
-    const progressHeader = this.getProgressHeader('AWAITING_FREIGHT');
-
     await whatsappService.sendMessage({
       to: phone,
-      body: progressHeader + Messages.ASK_FREIGHT,
+      body: Messages.ASK_FREIGHT,
     });
 
     await this.setState(producerId, 'producer', 'AWAITING_FREIGHT', context);
@@ -1310,7 +1289,7 @@ Por favor, responda com:
 
     await whatsappService.sendMessage({
       to: phone,
-      body: Messages.QUOTE_DISPATCHED(quote.id, suppliersCount),
+      body: Messages.QUOTE_DISPATCHED(suppliersCount),
     });
 
     context.quoteId = quote.id;
