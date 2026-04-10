@@ -175,10 +175,21 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
           await this.handleAwaitingSupplierCategory(producerId, producer.phone, message, context);
           break;
 
+        case 'QUOTE_ACTIVE':
+        case 'CLOSED':
+        case 'AWAITING_PROACTIVE_CHOICE':
+        case 'AWAITING_IMAGE_CHOICE':
+          // Estado finalizado ou sem handler ativo — tratar como IDLE
+          await this.resetState(producerId, 'producer');
+          await this.handleIdle(producerId, producer.phone, message, nluResult);
+          break;
+
         default:
+          // Estado desconhecido — resetar e enviar boas-vindas
+          await this.resetState(producerId, 'producer');
           await whatsappService.sendMessage({
             to: producer.phone,
-            body: Messages.UNKNOWN_INPUT,
+            body: Messages.WELCOME(producer.name),
           });
       }
     } catch (error) {
