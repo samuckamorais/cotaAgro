@@ -1453,6 +1453,9 @@ Por favor, responda com:
    * Cancela a ação atual e volta para IDLE
    */
   private async handleCancel(producerId: string, phone: string): Promise<void> {
+    // Cancelar tokens de formulário pendentes para este produtor
+    await QuoteTokenService.cancelByProducer(producerId);
+
     await whatsappService.sendMessage({
       to: phone,
       body: Messages.QUOTE_CANCELLED,

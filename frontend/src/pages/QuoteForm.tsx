@@ -98,6 +98,7 @@ export function QuoteForm() {
 
   const [formData, setFormData] = useState<FormDataResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadErrorCode, setLoadErrorCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -127,7 +128,9 @@ export function QuoteForm() {
         setLoading(false);
       })
       .catch((err) => {
-        setLoadError(err.response?.data?.error?.message || 'Link inválido ou expirado.');
+        const apiErr = err.response?.data?.error;
+        setLoadErrorCode(apiErr?.code || null);
+        setLoadError(apiErr?.message || 'Link inválido ou expirado.');
         setLoading(false);
       });
   }, [token]);
@@ -235,12 +238,19 @@ export function QuoteForm() {
   }
 
   if (loadError) {
+    const isCancelled = loadErrorCode === 'TOKEN_CANCELLED';
     return (
-      <div className="min-h-screen bg-red-50 flex flex-col items-center justify-center p-6 text-center">
-        <div className="text-5xl mb-4">⚠️</div>
-        <h1 className="text-xl font-bold text-red-700 mb-2">Link Inválido</h1>
-        <p className="text-red-600">{loadError}</p>
-        <p className="text-sm text-red-400 mt-3">Solicite um novo link pelo WhatsApp ao agente FarmFlow.</p>
+      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isCancelled ? 'bg-gray-50' : 'bg-red-50'}`}>
+        <div className="text-5xl mb-4">{isCancelled ? '🚫' : '⚠️'}</div>
+        <h1 className={`text-xl font-bold mb-2 ${isCancelled ? 'text-gray-700' : 'text-red-700'}`}>
+          {isCancelled ? 'Cotação cancelada' : 'Link Inválido'}
+        </h1>
+        <p className={isCancelled ? 'text-gray-600' : 'text-red-600'}>{loadError}</p>
+        <p className={`text-sm mt-3 ${isCancelled ? 'text-gray-400' : 'text-red-400'}`}>
+          {isCancelled
+            ? 'O produtor cancelou esta cotação pelo WhatsApp. Nenhuma ação é necessária.'
+            : 'Solicite um novo link pelo WhatsApp ao agente FarmFlow.'}
+        </p>
       </div>
     );
   }

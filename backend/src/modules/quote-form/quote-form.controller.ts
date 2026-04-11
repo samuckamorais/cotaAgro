@@ -26,6 +26,7 @@ const submitSchema = z.object({
 
 const TOKEN_ERROR_MESSAGES: Record<string, string> = {
   TOKEN_NOT_FOUND: 'Link inválido ou expirado.',
+  TOKEN_CANCELLED: 'Esta cotação foi cancelada pelo WhatsApp.',
   TOKEN_ALREADY_USED: 'Esta cotação já foi enviada.',
   TOKEN_EXPIRED: 'Este link expirou. Solicite um novo pelo WhatsApp.',
 };

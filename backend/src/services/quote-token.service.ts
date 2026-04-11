@@ -18,6 +18,7 @@ export class QuoteTokenService {
       where: {
         producerId,
         used: false,
+        cancelled: false,
         expiresAt: { gt: new Date() },
       },
     });
@@ -38,7 +39,7 @@ export class QuoteTokenService {
 
   /**
    * Valida token e retorna os dados do produtor.
-   * Lança erro se inválido, expirado ou já usado.
+   * Lança erro se inválido, cancelado, expirado ou já usado.
    */
   static async validate(token: string) {
     const record = await prisma.quoteToken.findUnique({
@@ -58,6 +59,7 @@ export class QuoteTokenService {
     });
 
     if (!record) throw new Error('TOKEN_NOT_FOUND');
+    if (record.cancelled) throw new Error('TOKEN_CANCELLED');
     if (record.used) throw new Error('TOKEN_ALREADY_USED');
     if (record.expiresAt < new Date()) throw new Error('TOKEN_EXPIRED');
 
@@ -71,6 +73,17 @@ export class QuoteTokenService {
     await prisma.quoteToken.update({
       where: { token },
       data: { used: true },
+    });
+  }
+
+  /**
+   * Cancela todos os tokens pendentes do produtor.
+   * Chamado quando o produtor digita "cancelar" no WhatsApp.
+   */
+  static async cancelByProducer(producerId: string): Promise<void> {
+    await prisma.quoteToken.updateMany({
+      where: { producerId, used: false, cancelled: false },
+      data: { cancelled: true },
     });
   }
 
