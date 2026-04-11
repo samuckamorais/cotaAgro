@@ -371,10 +371,6 @@ export class ProducerFSM extends FSMEngine<ProducerState> {
 
     if (normalized === '2' || normalized.includes('nova') || normalized.includes('diferente')) {
       // Nova cotação — passar pela pergunta de múltiplos produtos
-      const producer = await prisma.producer.findUniqueOrThrow({
-        where: { id: producerId },
-        select: { tenantId: true },
-      });
       await whatsappService.sendMessage({
         to: phone,
         body: Messages.ASK_QUOTE_MODE,
